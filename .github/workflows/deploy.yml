@@ -47,7 +47,7 @@ jobs:
 
             echo "=== Fixing permissions ==="
             sudo chown -R www-data:www-data storage bootstrap/cache
-            chmod -R 775 storage bootstrap/cache
+            sudo chmod -R 775 storage bootstrap/cache
 
             echo "=== Publishing assets ==="
             php artisan filament:assets 2>/dev/null || true
