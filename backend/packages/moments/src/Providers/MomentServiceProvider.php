@@ -40,6 +40,14 @@ class MomentServiceProvider extends ServiceProvider
         $this->registerTranslations();
         $this->loadRoutes();
 
+        // Design-time contract for UTD Studio (GET /api/utd/manifest). Guarded so
+        // the package still boots on a base that lacks the Studio infra.
+        if (class_exists(\App\Support\UtdManifest::class)) {
+            \App\Support\UtdManifest::registerPackage(
+                require self::PACKAGE_ROOT . '/config/utd_manifest.php'
+            );
+        }
+
         if ($this->app->make(PackageRegistry::class)->isEnabled('moment') && class_exists(ProfileContributorRegistry::class)) {
             $this->app->make(ProfileContributorRegistry::class)->register(new MomentProfileContributor());
         }

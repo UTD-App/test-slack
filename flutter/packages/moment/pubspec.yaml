@@ -17,6 +17,8 @@ dependencies:
   go_router: ^13.0.0
   dio: ^5.4.0
   provider: ^6.0.0
+  # Server-Driven UI: this package contributes Stac action parsers + data sources.
+  stac: ^1.5.0
   flutter_bloc: ^8.1.6
   bloc: ^8.1.4
   equatable: ^2.0.8

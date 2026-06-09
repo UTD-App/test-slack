@@ -2,22 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:utd_app/localization/localization.dart';
-import 'package:utd_app/shared/core/toast_manager.dart';
 
 import '../../../core/moment_strings.dart';
 import '../../domain/repositories/moment_repository.dart';
 import '../bloc/moment_feed/moment_feed_bloc.dart';
-import '../bloc/moment_feed/moment_feed_event.dart';
-import '../bloc/moment_feed/moment_feed_state.dart';
-import 'widgets/confirm_dialog.dart';
-import 'widgets/moment_card.dart';
-import 'widgets/moment_comments_sheet.dart';
-import 'widgets/moment_likes_sheet.dart';
-import 'widgets/report_moment_dialog.dart';
+import 'moment_feed_view.dart';
 
-/// Moments list. With no [userId] it shows the global feed using the ambient
+/// Moments page. With no [userId] it shows the global feed using the ambient
 /// [MomentFeedBloc]. With a [userId] it shows that single user's posts using a
 /// scoped bloc (and hides the "add" button).
+///
+/// The list body itself lives in [MomentFeedView] so it can be reused as-is by
+/// the server-driven `moment.feed` Stac widget.
 class MomentFeedPage extends StatelessWidget {
   final int? userId;
   final String? titleKey;
@@ -27,169 +23,25 @@ class MomentFeedPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (userId == null) {
-      return _MomentFeedView(titleKey: titleKey);
+      return _scaffold(context, showAdd: true);
     }
     return BlocProvider<MomentFeedBloc>(
       create: (ctx) =>
           MomentFeedBloc(ctx.read<MomentRepository>(), userId: userId),
-      child: _MomentFeedView(titleKey: titleKey, showAdd: false),
-    );
-  }
-}
-
-class _MomentFeedView extends StatefulWidget {
-  final String? titleKey;
-  final bool showAdd;
-
-  const _MomentFeedView({this.titleKey, this.showAdd = true});
-
-  @override
-  State<_MomentFeedView> createState() => _MomentFeedViewState();
-}
-
-class _MomentFeedViewState extends State<_MomentFeedView> {
-  final _scroll = ScrollController();
-
-  @override
-  void initState() {
-    super.initState();
-    final bloc = context.read<MomentFeedBloc>();
-    if (bloc.state.status == FeedStatus.initial) {
-      bloc.add(const FeedRefreshRequested());
-    }
-    _scroll.addListener(() {
-      if (_scroll.position.pixels >= _scroll.position.maxScrollExtent - 300) {
-        context.read<MomentFeedBloc>().add(const FeedLoadMoreRequested());
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _scroll.dispose();
-    super.dispose();
-  }
-
-  void _openImage(String url) {
-    showDialog(
-      context: context,
-      builder: (_) => GestureDetector(
-        onTap: () => Navigator.pop(context),
-        child: Dialog(
-          backgroundColor: Colors.black,
-          insetPadding: EdgeInsets.zero,
-          child: InteractiveViewer(
-            child: Center(child: Image.network(url, fit: BoxFit.contain)),
-          ),
-        ),
-      ),
+      child: _scaffold(context, showAdd: false),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _scaffold(BuildContext context, {required bool showAdd}) {
     return Scaffold(
-      appBar: AppBar(title: Text(context.tr(widget.titleKey ?? MomentStrings.title))),
-      floatingActionButton: widget.showAdd
+      appBar: AppBar(title: Text(context.tr(titleKey ?? MomentStrings.title))),
+      floatingActionButton: showAdd
           ? FloatingActionButton(
               onPressed: () => context.push('/moment/add'),
               child: const Icon(Icons.add),
             )
           : null,
-      body: BlocBuilder<MomentFeedBloc, MomentFeedState>(
-        builder: (context, state) {
-          if (state.status == FeedStatus.loading && state.moments.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (state.status == FeedStatus.failure && state.moments.isEmpty) {
-            return _ErrorView(
-              message: state.error ?? context.tr(MomentStrings.somethingWrong),
-              onRetry: () => context.read<MomentFeedBloc>().add(const FeedRefreshRequested()),
-            );
-          }
-          if (state.moments.isEmpty) {
-            return Center(child: Text(context.tr(MomentStrings.empty), style: const TextStyle(color: Colors.grey)));
-          }
-          return RefreshIndicator(
-            onRefresh: () async {
-              context.read<MomentFeedBloc>().add(const FeedRefreshRequested());
-              await context.read<MomentFeedBloc>().stream.firstWhere((s) => s.status != FeedStatus.loading);
-            },
-            child: ListView.builder(
-              controller: _scroll,
-              padding: const EdgeInsets.symmetric(vertical: 6),
-              itemCount: state.moments.length + (state.isLoadingMore ? 1 : 0),
-              itemBuilder: (context, i) {
-                if (i >= state.moments.length) {
-                  return const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: Center(child: CircularProgressIndicator()),
-                  );
-                }
-                final moment = state.moments[i];
-                return MomentCard(
-                  moment: moment,
-                  onLike: () => context.read<MomentFeedBloc>().add(MomentLikeToggled(moment)),
-                  onOpenLikes: () => showMomentLikes(context, moment.id),
-                  onOpenComments: () {
-                    final feedBloc = context.read<MomentFeedBloc>();
-                    showMomentComments(
-                      context,
-                      moment.id,
-                      onCommentAdded: () => feedBloc.add(MomentCommentAdded(moment.id)),
-                    );
-                  },
-                  onReport: () async {
-                    final ok = await showReportMomentDialog(context, moment.id);
-                    if (ok && context.mounted) {
-                      ToastManager.showToast(context, message: context.tr(MomentStrings.reportedThanks));
-                    }
-                  },
-                  onDelete: () async {
-                    final confirm = await showThemedConfirm(
-                      context,
-                      title: context.tr(MomentStrings.deleteConfirm),
-                      confirmText: context.tr(MomentStrings.delete),
-                      cancelText: context.tr(MomentStrings.cancel),
-                      destructive: true,
-                    );
-                    if (confirm && context.mounted) {
-                      context.read<MomentFeedBloc>().add(MomentDeleted(moment.id));
-                      ToastManager.showToast(context, message: context.tr(MomentStrings.deleted));
-                    }
-                  },
-                  onTapImage: _openImage,
-                );
-              },
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _ErrorView extends StatelessWidget {
-  final String message;
-  final VoidCallback onRetry;
-  const _ErrorView({required this.message, required this.onRetry});
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.cloud_off, size: 48, color: Colors.grey),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 32),
-            child: Text(message, textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)),
-          ),
-          const SizedBox(height: 12),
-          FilledButton(onPressed: onRetry, child: Text(context.tr(MomentStrings.retry))),
-        ],
-      ),
+      body: const MomentFeedView(),
     );
   }
 }
