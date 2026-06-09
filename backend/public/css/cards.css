@@ -1,0 +1,88 @@
+.cards-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.finance-card {
+    text-align: center;
+    padding: 20px 16px;
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+    transition: all 0.35s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.finance-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 18px 40px rgba(0,0,0,0.12);
+}
+
+.card-icon {
+    width: 52px;
+    height: 52px;
+    margin: 0 auto 12px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #1d4ed8, #2563eb);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 22px;
+    animation: pulse 2.5s infinite;
+}
+
+.finance-card h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+
+.finance-card .amount {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1d4ed8;
+    margin-bottom: 4px;
+}
+
+.finance-card small {
+    color: #6b7280;
+    font-size: 12px;
+}
+
+/* Pulse animation */
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
+    70% { box-shadow: 0 0 0 12px rgba(37, 99, 235, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .finance-card .amount {
+        font-size: 20px;
+    }
+}
+
+.main-chart-container {
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 4px 12px rgba(0,0,0,.1);
+    height: 300px;
+}
+
+.main-chart-container canvas {
+    width: 100% !important;
+    height: 230px !important;
+}
+
+.chart-title {
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.table td, .table th {
+    white-space: nowrap;
+}

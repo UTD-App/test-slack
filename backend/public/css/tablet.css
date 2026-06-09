@@ -1,0 +1,399 @@
+/* Tablet Responsive Styles for 500-768px devices */
+
+@media (max-width: 768px) and (min-width: 500px) {
+    /* General Layout */
+    body {
+        font-size: 15px;
+    }
+
+    .container, .container-fluid {
+        padding-left: 12px;
+        padding-right: 12px;
+    }
+
+    /* Typography */
+    h1 {
+        font-size: 1.5rem;
+    }
+
+    h2 {
+        font-size: 1.25rem;
+    }
+
+    h3 {
+        font-size: 1.1rem;
+    }
+
+    p {
+        font-size: 0.95rem;
+    }
+
+    /* Buttons */
+    .btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+        border-radius: 5px;
+    }
+
+    .btn-lg {
+        padding: 0.6rem 1.2rem;
+        font-size: 0.95rem;
+    }
+
+    /* Forms */
+    .form-control, 
+    .form-select {
+        font-size: 0.95rem;
+        padding: 0.5rem 0.8rem;
+        border-radius: 5px;
+    }
+
+    /* Tables */
+    .table {
+        font-size: 0.9rem;
+    }
+
+    .table th,
+    .table td {
+        padding: 0.75rem;
+    }
+
+    /* Cards */
+    .card {
+        border-radius: 10px;
+        margin-bottom: 15px;
+    }
+
+    .card-header {
+        padding: 14px 18px;
+        font-size: 1rem;
+    }
+
+    .card-body {
+        padding: 15px;
+    }
+
+    /* Grid adjustments */
+    .row {
+        margin-left: -10px;
+        margin-right: -10px;
+    }
+
+    .col, [class*="col-"] {
+        padding-left: 10px;
+        padding-right: 10px;
+        margin-bottom: 15px;
+    }
+
+    .col-md-6 {
+        width: 50% !important;
+        flex: 0 0 50%;
+    }
+
+    .col-md-4 {
+        width: 50% !important;
+        flex: 0 0 50%;
+    }
+
+    .col-lg-4, 
+    .col-lg-6,
+    .col-xl-3 {
+        width: 100% !important;
+        flex: 0 0 100%;
+    }
+
+    /* Navigation */
+    .navbar {
+        padding: 0.75rem 1rem;
+    }
+
+    .navbar-nav .nav-link {
+        padding: 0.5rem 1rem !important;
+        font-size: 0.95rem;
+    }
+
+    /* Images */
+    img {
+        max-width: 100%;
+        height: auto;
+    }
+
+    /* Modals */
+    .modal-dialog {
+        margin: 20px;
+        width: calc(100% - 40px);
+    }
+
+    .modal-content {
+        border-radius: 10px;
+    }
+
+    .modal-header {
+        padding: 15px;
+    }
+
+    .modal-body {
+        padding: 15px;
+    }
+
+    /* Pagination */
+    .pagination {
+        flex-wrap: wrap;
+        margin-top: 15px;
+    }
+
+    .page-link {
+        padding: 0.5rem 0.8rem;
+        font-size: 0.9rem;
+    }
+
+    /* Alerts */
+    .alert {
+        padding: 15px;
+        font-size: 0.95rem;
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
+
+    /* Badges */
+    .badge {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.6rem;
+    }
+
+    /* Code blocks */
+    code {
+        font-size: 0.9rem;
+    }
+
+    pre {
+        padding: 12px;
+        font-size: 0.85rem;
+    }
+
+    /* Dropdowns */
+    .dropdown-menu {
+        font-size: 0.95rem;
+        min-width: 150px;
+    }
+
+    .dropdown-item {
+        padding: 0.6rem 1.2rem;
+    }
+
+    /* Lists */
+    .list-group-item {
+        padding: 1rem;
+        font-size: 0.95rem;
+    }
+
+    /* Breadcrumbs */
+    .breadcrumb {
+        padding: 0.8rem 1rem;
+        font-size: 0.9rem;
+    }
+
+    /* Utilities */
+    .mt-lg-5, .my-lg-5 {
+        margin-top: 2rem !important;
+    }
+
+    .mb-lg-5, .my-lg-5 {
+        margin-bottom: 2rem !important;
+    }
+
+    .mt-lg-4, .my-lg-4 {
+        margin-top: 1.5rem !important;
+    }
+
+    .mb-lg-4, .my-lg-4 {
+        margin-bottom: 1.5rem !important;
+    }
+
+    /* Display utilities */
+    .d-lg-none {
+        display: block !important;
+    }
+
+    .d-lg-flex {
+        display: flex !important;
+    }
+
+    .d-lg-block {
+        display: block !important;
+    }
+
+    /* Flex utilities for tablets */
+    .flex-lg-row {
+        flex-direction: row !important;
+    }
+
+    .justify-content-lg-between {
+        justify-content: space-between !important;
+    }
+
+    /* Text alignment */
+    .text-lg-center {
+        text-align: center !important;
+    }
+
+    .text-lg-start {
+        text-align: left !important;
+    }
+
+    [dir="rtl"] .text-lg-start {
+        text-align: right !important;
+    }
+
+    /* Responsive images in tablets */
+    .img-fluid {
+        max-width: 100%;
+        height: auto;
+    }
+
+    /* Responsive videos */
+    .embed-responsive {
+        position: relative;
+        display: block;
+        width: 100%;
+        overflow: hidden;
+    }
+
+    .embed-responsive::before {
+        content: "";
+        display: block;
+        padding-bottom: 56.25%;
+    }
+
+    .embed-responsive > iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    /* Tooltip adjustments */
+    .tooltip {
+        font-size: 0.85rem;
+    }
+
+    /* Spinner adjustments */
+    .spinner-border {
+        width: 2rem;
+        height: 2rem;
+        border-width: 0.2em;
+    }
+
+    .spinner-grow {
+        width: 2rem;
+        height: 2rem;
+    }
+}
+
+/* Specific styles for devices exactly in the 500-600px range */
+@media (max-width: 600px) and (min-width: 500px) {
+    .dashboard-container {
+        padding: 10px;
+    }
+
+    .section-header {
+        font-size: 1.35rem;
+        margin: 18px 0 12px 0;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .col-md-6,
+    .col-md-4 {
+        width: 100% !important;
+        flex: 0 0 100%;
+    }
+
+    .card {
+        margin-bottom: 12px;
+    }
+
+    table {
+        font-size: 0.85rem;
+    }
+
+    canvas {
+        max-height: 300px;
+    }
+}
+
+/* Specific styles for larger tablets 600-768px */
+@media (max-width: 768px) and (min-width: 600px) {
+    .dashboard-container {
+        padding: 12px;
+    }
+
+    .section-header {
+        font-size: 1.5rem;
+        margin: 20px 0 15px 0;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+
+    .col-md-6 {
+        width: 50% !important;
+        flex: 0 0 50%;
+    }
+
+    .col-md-4 {
+        width: 100% !important;
+        flex: 0 0 100%;
+    }
+
+    .card {
+        margin-bottom: 15px;
+    }
+
+    table {
+        font-size: 0.9rem;
+    }
+
+    canvas {
+        max-height: 350px;
+    }
+}
+
+/* Landscape mode optimizations for tablets */
+@media (max-height: 600px) and (orientation: landscape) and (max-width: 768px) {
+    .dashboard-container {
+        padding: 8px;
+    }
+
+    .section-header {
+        margin: 8px 0 6px 0;
+        font-size: 1.2rem;
+    }
+
+    .card-header {
+        padding: 10px 12px;
+    }
+
+    .card-body {
+        padding: 10px;
+    }
+
+    .nav-tabs {
+        margin-bottom: 10px;
+    }
+
+    .nav-tabs .nav-link {
+        padding: 6px 10px;
+        font-size: 0.85rem;
+    }
+
+    canvas {
+        max-height: 280px;
+    }
+}

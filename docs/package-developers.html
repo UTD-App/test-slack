@@ -1,0 +1,1078 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>UTD Stack — دليل مطوّري الباكدجات</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0f17; --bg-2:#0e1320; --panel:#111827; --panel-2:#0f1626;
+    --border:#1f2937; --border-2:#273349;
+    --ink:#e6edf6; --muted:#9aa6b8; --faint:#6b7890;
+    --brand:#3b82f6; --brand-600:#2563eb; --brand-700:#1d4ed8;
+    --brand-soft:rgba(37,99,235,.14); --brand-line:rgba(59,130,246,.35);
+    --green:#22c55e; --amber:#f59e0b; --pink:#ec4899; --violet:#8b5cf6; --cyan:#38bdf8;
+    --code-bg:#0a0e18; --radius:14px;
+    --mono:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,monospace;
+    --sans:'Inter',-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    --sidebar:294px;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:
+      radial-gradient(1200px 600px at 85% -10%, rgba(37,99,235,.10), transparent 60%),
+      radial-gradient(900px 500px at -5% 0%, rgba(139,92,246,.07), transparent 55%),
+      var(--bg);
+    color:var(--ink);font-family:var(--sans);font-size:15.5px;line-height:1.75;-webkit-font-smoothing:antialiased}
+  a{color:var(--brand);text-decoration:none}
+  a:hover{text-decoration:underline}
+  code,pre,kbd,.mono{font-family:var(--mono)}
+  ::selection{background:rgba(37,99,235,.35)}
+
+  /* ---------- Layout ---------- */
+  .shell{display:grid;grid-template-columns:var(--sidebar) 1fr;min-height:100vh}
+  /* الـ scrim overlay للموبايل فقط — مخفي افتراضيًا عشان مايتعدّش كـ grid item على
+     الديسكتوب (وإلا بياخد عمود ويزحلق الـ main تحت القائمة). */
+  .scrim{display:none}
+  /* Sidebar */
+  aside.nav{position:sticky;top:0;height:100vh;overflow-y:auto;border-inline-start:1px solid var(--border);
+    background:linear-gradient(180deg,var(--bg-2),rgba(14,19,32,.4));padding:22px 16px 60px}
+  .brand{display:flex;align-items:center;gap:11px;padding:6px 8px 16px}
+  .brand .logo{width:38px;height:38px;border-radius:11px;flex:none;display:grid;place-items:center;
+    background:linear-gradient(140deg,var(--brand-600),#1e3a8a);box-shadow:0 8px 24px rgba(37,99,235,.35);
+    color:#fff;font-weight:800;font-size:17px;letter-spacing:.5px}
+  .brand b{font-weight:800;font-size:15px;display:block;line-height:1.2}
+  .brand span{color:var(--faint);font-size:11.5px}
+  .search{position:relative;margin:4px 4px 14px}
+  .search input{width:100%;background:var(--code-bg);border:1px solid var(--border-2);border-radius:10px;
+    color:var(--ink);padding:9px 34px 9px 12px;font-size:13px;font-family:var(--sans);outline:none}
+  .search input:focus{border-color:var(--brand-line);box-shadow:0 0 0 3px var(--brand-soft)}
+  .search svg{position:absolute;inset-inline-start:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--faint)}
+  nav.toc{font-size:13.5px}
+  nav.toc .grp{color:var(--faint);text-transform:uppercase;letter-spacing:.12em;font-size:10.5px;font-weight:700;
+    margin:18px 10px 7px}
+  nav.toc a{display:flex;align-items:center;gap:9px;color:var(--muted);padding:7px 11px;border-radius:9px;
+    margin:1px 0;border:1px solid transparent;transition:.16s}
+  nav.toc a:hover{color:var(--ink);background:rgba(255,255,255,.03);text-decoration:none}
+  nav.toc a.active{color:#fff;background:var(--brand-soft);border-color:var(--brand-line)}
+  nav.toc a .dot{width:6px;height:6px;border-radius:50%;background:var(--border-2);flex:none}
+  nav.toc a.active .dot{background:var(--brand)}
+
+  /* Main */
+  main{min-width:0;padding:0 0 120px}
+  .topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:14px;
+    padding:13px clamp(20px,4vw,56px);border-bottom:1px solid var(--border);
+    background:rgba(11,15,23,.78);backdrop-filter:blur(12px)}
+  .topbar .crumbs{color:var(--faint);font-size:13px}
+  .topbar .crumbs b{color:var(--muted);font-weight:600}
+  .topbar .spacer{flex:1}
+  .pill{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);
+    border:1px solid var(--border-2);background:var(--panel-2);padding:5px 11px;border-radius:999px}
+  .pill .ok{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green)}
+  .menu-btn{display:none;background:var(--panel-2);border:1px solid var(--border-2);color:var(--ink);
+    border-radius:9px;width:38px;height:38px;font-size:18px;cursor:pointer}
+  .wrap{padding:0 clamp(20px,4vw,56px)}
+  .maxw{max-width:920px}
+
+  /* Hero */
+  .hero{padding:48px 0 26px}
+  .hero .eyebrow{display:inline-flex;align-items:center;gap:8px;color:var(--brand);font-weight:600;font-size:13px;
+    background:var(--brand-soft);border:1px solid var(--brand-line);padding:5px 13px;border-radius:999px}
+  .hero h1{font-size:clamp(30px,5vw,50px);line-height:1.08;font-weight:800;margin:20px 0 12px;letter-spacing:-.02em}
+  .hero h1 .g{background:linear-gradient(100deg,#60a5fa,#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero p.lead{font-size:18px;color:var(--muted);max-width:680px;margin:0}
+  .hero-img{margin:30px 0 8px;border:1px solid var(--border-2);border-radius:18px;overflow:hidden;
+    box-shadow:0 30px 80px -30px rgba(0,0,0,.8)}
+  .hero-img img{display:block;width:100%}
+
+  h2.sec{font-size:clamp(22px,3vw,30px);font-weight:800;letter-spacing:-.01em;margin:0 0 6px;scroll-margin-top:80px}
+  .sec-wrap{padding:46px 0;border-top:1px solid var(--border)}
+  .sec-wrap:first-of-type{border-top:0}
+  .kicker{color:var(--brand);font-weight:700;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px}
+  h3{font-size:19px;font-weight:700;margin:30px 0 8px;scroll-margin-top:80px}
+  h4{font-size:15.5px;font-weight:700;margin:22px 0 6px;color:var(--ink)}
+  p{color:#cdd6e3}
+  .muted{color:var(--muted)}
+  ul,ol{color:#cdd6e3;padding-inline-start:22px}
+  li{margin:5px 0}
+  strong{color:#fff;font-weight:650}
+
+  /* Code */
+  .code{position:relative;margin:16px 0;border:1px solid var(--border-2);border-radius:12px;overflow:hidden;background:var(--code-bg)}
+  .code .cap{display:flex;align-items:center;gap:8px;padding:8px 13px;border-bottom:1px solid var(--border);
+    background:linear-gradient(180deg,#0d1422,#0a0e18);font-size:12px;color:var(--faint)}
+  .code .cap .lang{margin-inline-start:auto;color:var(--faint);font-family:var(--mono);font-size:11px}
+  .code .cap .d{width:10px;height:10px;border-radius:50%}
+  .code pre{margin:0;padding:15px 16px;overflow-x:auto;direction:ltr;text-align:left;font-size:13px;line-height:1.7;color:#d6deea}
+  .code .copy{position:absolute;inset-inline-end:9px;top:6px;z-index:2;background:var(--panel);border:1px solid var(--border-2);
+    color:var(--muted);border-radius:7px;font-size:11px;padding:4px 9px;cursor:pointer;font-family:var(--sans)}
+  .code .copy:hover{color:#fff;border-color:var(--brand-line)}
+  .tok-c{color:#5b6b85;font-style:italic}      /* comment */
+  .tok-k{color:#7dd3fc}                          /* keyword */
+  .tok-s{color:#86efac}                          /* string */
+  .tok-n{color:#c4b5fd}                          /* number/const */
+  .tok-t{color:#fcd34d}                          /* type/class */
+  .tok-p{color:#94a3b8}                          /* punctuation */
+  .tok-a{color:#f0abfc}                          /* attribute/key */
+  code.inl{background:var(--panel-2);border:1px solid var(--border);border-radius:6px;padding:1px 6px;font-size:.86em;color:#bfe0ff;direction:ltr;display:inline-block}
+
+  /* Cards / grid */
+  .grid{display:grid;gap:16px;margin:18px 0}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .card{background:linear-gradient(180deg,var(--panel),var(--panel-2));border:1px solid var(--border);border-radius:var(--radius);padding:18px}
+  .card h4{margin:2px 0 6px}
+  .card .ic{width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-size:18px;margin-bottom:10px;
+    background:var(--brand-soft);border:1px solid var(--brand-line)}
+  .card p{margin:0;font-size:14px;color:var(--muted)}
+
+  /* Callouts */
+  .note{display:flex;gap:12px;border:1px solid var(--border-2);border-radius:12px;padding:14px 16px;margin:16px 0;
+    background:var(--panel-2)}
+  .note .b{width:4px;border-radius:4px;flex:none}
+  .note.tip .b{background:var(--green)} .note.warn .b{background:var(--amber)} .note.info .b{background:var(--brand)}
+  .note h5{margin:0 0 3px;font-size:13.5px;font-weight:700}
+  .note p{margin:0;font-size:13.5px;color:var(--muted)}
+
+  /* Table */
+  .tbl{width:100%;border-collapse:collapse;margin:16px 0;font-size:13.5px;overflow:hidden;border-radius:12px;border:1px solid var(--border)}
+  .tbl th{background:var(--panel-2);text-align:start;font-weight:700;color:var(--ink);padding:11px 13px;border-bottom:1px solid var(--border-2);font-size:12.5px}
+  .tbl td{padding:10px 13px;border-bottom:1px solid var(--border);color:var(--muted);vertical-align:top}
+  .tbl tr:last-child td{border-bottom:0}
+  .tbl td code,.tbl th code{direction:ltr}
+  .tag{display:inline-block;font-size:11px;font-family:var(--mono);padding:2px 7px;border-radius:6px;background:var(--brand-soft);color:#bfdbfe;border:1px solid var(--brand-line)}
+  .tag.req{background:rgba(244,63,94,.12);color:#fda4af;border-color:rgba(244,63,94,.3)}
+  .tag.opt{background:rgba(148,163,184,.12);color:#cbd5e1;border-color:var(--border-2)}
+
+  /* Step list */
+  .steps{counter-reset:s;list-style:none;padding:0;margin:18px 0}
+  .steps>li{position:relative;padding:2px 52px 22px 0;border-inline-start:0}
+  .steps>li::before{counter-increment:s;content:counter(s);position:absolute;inset-inline-start:0;top:0;
+    width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-weight:800;font-family:var(--mono);
+    background:var(--brand-soft);border:1px solid var(--brand-line);color:#bfdbfe}
+  .steps>li{padding-inline-start:50px}
+
+  /* Diagram */
+  .diagram{margin:20px 0;border:1px solid var(--border-2);border-radius:14px;background:
+      radial-gradient(600px 200px at 50% 0,rgba(37,99,235,.08),transparent),var(--code-bg);padding:8px}
+  .diagram svg{display:block;width:100%;height:auto}
+  footer{padding:40px clamp(20px,4vw,56px);border-top:1px solid var(--border);color:var(--faint);font-size:13px}
+
+  @media (max-width:1000px){
+    :root{--sidebar:0px}
+    .shell{grid-template-columns:1fr}
+    aside.nav{position:fixed;z-index:60;width:300px;inset-inline-start:0;top:0;transform:translateX(105%);transition:.25s;border-inline-start:0;border-inline-end:1px solid var(--border)}
+    html[dir=rtl] aside.nav{transform:translateX(105%)}
+    aside.nav.open{transform:translateX(0)}
+    .menu-btn{display:grid;place-items:center}
+    .g2,.g3{grid-template-columns:1fr}
+    .scrim{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:55;display:none}
+    .scrim.open{display:block}
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="nav" id="sidebar">
+    <div class="brand">
+      <div class="logo">U</div>
+      <div><b>UTD&nbsp;Stack</b><span>دليل مطوّري الباكدجات</span></div>
+    </div>
+    <div class="search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      <input id="filter" placeholder="ابحث في الأقسام…" autocomplete="off">
+    </div>
+    <nav class="toc" id="toc">
+      <div class="grp">البداية</div>
+      <a href="#overview"><span class="dot"></span>نظرة عامة</a>
+      <a href="#architecture"><span class="dot"></span>المعمارية</a>
+      <a href="#channels"><span class="dot"></span>قنوات الاتصال الثلاث</a>
+      <a href="#anatomy"><span class="dot"></span>تشريح الباكدج</a>
+      <a href="#mental-model"><span class="dot"></span>متى تستخدم إيه؟</a>
+      <div class="grp">جانب الـ Backend</div>
+      <a href="#manifest"><span class="dot"></span>عقد الـ Manifest</a>
+      <a href="#widgets-ref"><span class="dot"></span>تعريف الـ Widgets</a>
+      <a href="#provider"><span class="dot"></span>التسجيل والـ APIs</a>
+      <div class="grp">جانب الـ Flutter</div>
+      <a href="#appfeature"><span class="dot"></span>واجهة AppFeature</a>
+      <a href="#data-registry"><span class="dot"></span>ربط البيانات (Registry)</a>
+      <a href="#binding"><span class="dot"></span>الـ Binding في Stac</a>
+      <a href="#parsers"><span class="dot"></span>Widgets مخصّصة</a>
+      <a href="#actions"><span class="dot"></span>Actions مخصّصة</a>
+      <a href="#variants"><span class="dot"></span>الـ Variants</a>
+      <div class="grp">التفكيك والإبداع</div>
+      <a href="#decompose"><span class="dot"></span>playbook التفكيك</a>
+      <a href="#recipes"><span class="dot"></span>وصفات واقعية</a>
+      <div class="grp">عملي</div>
+      <a href="#walkthrough"><span class="dot"></span>أول package خطوة بخطوة</a>
+      <a href="#api-ref"><span class="dot"></span>مرجع الاتصال (API)</a>
+      <a href="#checklist"><span class="dot"></span>قائمة التحقّق</a>
+    </nav>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <!-- ============ MAIN ============ -->
+  <main>
+    <div class="topbar">
+      <button class="menu-btn" id="menuBtn" aria-label="القائمة">☰</button>
+      <div class="crumbs"><b>UTD Stack</b> &nbsp;›&nbsp; Package Developer Guide</div>
+      <div class="spacer"></div>
+      <span class="pill"><span class="ok"></span> Contract v1</span>
+    </div>
+
+    <div class="wrap">
+
+      <!-- HERO -->
+      <header class="hero maxw" id="overview">
+        <span class="eyebrow">⚡ Server-Driven UI Platform</span>
+        <h1>ابنِ باكدج يُصمّم بصريًا<br><span class="g">ويُرسَم native</span> على الموبايل.</h1>
+        <p class="lead">UTD Stack منصّة SDUI: الباكدج بتاعك بيعرّف بياناته وعناصره مرّة واحدة، فالعميل
+        يصمّم شاشاته بصريًا في <b>UTD Studio</b>، والـ <b>Base App (Flutter)</b> يرسمها native وقت التشغيل —
+        من غير ما تكتب شاشة واحدة بإيدك.</p>
+      </header>
+      <div class="hero-img maxw"><img src="assets/hero-architecture.png" alt="UTD Stack architecture — modular packages flowing into a native app"></div>
+
+      <div class="maxw">
+      <div class="grid g3">
+        <div class="card"><div class="ic">🧩</div><h4>عرّف، ماترسمش</h4><p>تصرّح بعناصرك (elements / widgets / actions) في الـ manifest — الـ Studio يبنيها في الـ palette.</p></div>
+        <div class="card"><div class="ic">🔌</div><h4>معزول بالكامل</h4><p>كل كود الباكدج (backend + flutter) جوّاه. الـ Base يفضل صفر كود خاص بيك.</p></div>
+        <div class="card"><div class="ic">🎨</div><h4>WYSIWYG</h4><p>اللي العميل يصمّمه في الـ Studio = اللي يظهر على الجهاز، بنفس عقد الـ Stac.</p></div>
+      </div>
+      </div>
+
+      <!-- ARCHITECTURE -->
+      <section class="sec-wrap maxw" id="architecture">
+        <div class="kicker">الصورة الكبيرة</div>
+        <h2 class="sec">المعمارية: ٣ أطراف، باكدج من جزئين</h2>
+        <p>المنظومة فيها ٣ أطراف بتتكلّم مع بعض، والباكدج بتاعك بيعيش في طرفين منهم:</p>
+
+        <div class="diagram">
+          <svg viewBox="0 0 920 250" role="img" aria-label="Studio designs, Base serves, Flutter renders">
+            <defs>
+              <marker id="arr" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#3b82f6"/></marker>
+              <linearGradient id="cardg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#152033"/><stop offset="1" stop-color="#0e1626"/></linearGradient>
+            </defs>
+            <!-- Studio -->
+            <rect x="24" y="55" width="240" height="140" rx="14" fill="url(#cardg)" stroke="#273349"/>
+            <text x="144" y="46" fill="#9aa6b8" font-size="12" text-anchor="middle" font-family="Inter">design-time</text>
+            <text x="144" y="92" fill="#fff" font-size="17" font-weight="700" text-anchor="middle" font-family="Inter">UTD Studio</text>
+            <text x="144" y="118" fill="#9aa6b8" font-size="12.5" text-anchor="middle" font-family="Inter">المحرّر البصري (Craft.js)</text>
+            <text x="144" y="138" fill="#9aa6b8" font-size="12.5" text-anchor="middle" font-family="Inter">يقرأ الـ manifest ←</text>
+            <text x="144" y="158" fill="#9aa6b8" font-size="12.5" text-anchor="middle" font-family="Inter">يُخرِج Stac JSON</text>
+            <!-- Base -->
+            <rect x="340" y="55" width="240" height="140" rx="14" fill="url(#cardg)" stroke="#273349"/>
+            <text x="460" y="46" fill="#9aa6b8" font-size="12" text-anchor="middle" font-family="Inter">server</text>
+            <text x="460" y="92" fill="#fff" font-size="17" font-weight="700" text-anchor="middle" font-family="Inter">Base Project</text>
+            <text x="460" y="118" fill="#9aa6b8" font-size="12.5" text-anchor="middle" font-family="Inter">Laravel + باكدجاتك</text>
+            <text x="460" y="138" fill="#9aa6b8" font-size="12.5" text-anchor="middle" font-family="Inter">يجمّع الـ manifest</text>
+            <text x="460" y="158" fill="#9aa6b8" font-size="12.5" text-anchor="middle" font-family="Inter">يخزّن/يخدم الـ Stac + الـ data</text>
+            <!-- Flutter -->
+            <rect x="656" y="55" width="240" height="140" rx="14" fill="url(#cardg)" stroke="#273349"/>
+            <text x="776" y="46" fill="#9aa6b8" font-size="12" text-anchor="middle" font-family="Inter">runtime</text>
+            <text x="776" y="92" fill="#fff" font-size="17" font-weight="700" text-anchor="middle" font-family="Inter">Base App (Flutter)</text>
+            <text x="776" y="118" fill="#9aa6b8" font-size="12.5" text-anchor="middle" font-family="Inter">يرسم الـ Stac native</text>
+            <text x="776" y="138" fill="#9aa6b8" font-size="12.5" text-anchor="middle" font-family="Inter">parsers الباكدج +</text>
+            <text x="776" y="158" fill="#9aa6b8" font-size="12.5" text-anchor="middle" font-family="Inter">StacDataRegistry</text>
+            <!-- arrows (RTL visual but LTR flow shown L→R) -->
+            <line x1="264" y1="125" x2="338" y2="125" stroke="#3b82f6" stroke-width="2" marker-end="url(#arr)"/>
+            <line x1="580" y1="125" x2="654" y2="125" stroke="#3b82f6" stroke-width="2" marker-end="url(#arr)"/>
+            <text x="301" y="116" fill="#7dd3fc" font-size="10.5" text-anchor="middle" font-family="JetBrains Mono">manifest</text>
+            <text x="301" y="146" fill="#7dd3fc" font-size="10.5" text-anchor="middle" font-family="JetBrains Mono">+ push</text>
+            <text x="617" y="116" fill="#7dd3fc" font-size="10.5" text-anchor="middle" font-family="JetBrains Mono">Stac +</text>
+            <text x="617" y="146" fill="#7dd3fc" font-size="10.5" text-anchor="middle" font-family="JetBrains Mono">data</text>
+          </svg>
+        </div>
+
+        <div class="grid g2">
+          <div class="card"><div class="ic" style="background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.3)">🗄️</div>
+            <h4>الجزء الـ Backend (Laravel package)</h4>
+            <p>Service Provider + <code class="inl">config/utd_manifest.php</code> + routes + migrations + models. بيعرّف العقد للـ Studio وبيخدم الـ data للموبايل.</p></div>
+          <div class="card"><div class="ic" style="background:rgba(139,92,246,.12);border-color:rgba(139,92,246,.3)">📱</div>
+            <h4>الجزء الـ Flutter (AppFeature)</h4>
+            <p>class بيرث <code class="inl">AppFeature</code> ويساهم بـ parsers / actions / data sources / routes / providers / ترجمات.</p></div>
+        </div>
+
+        <div class="note info"><div class="b"></div><div>
+          <h5>المبدأ الذهبي</h5>
+          <p>الـ Base App عام ومايعرفش منطق باكدجك. كل اللي يعرفه: «هات الـ list/object لمفتاح المصدر ده» و«ارسم الـ type ده». باقي المنطق جوّه باكدجك — وده اللي يخلّي شاشاتك قابلة للتصميم في الـ Studio.</p>
+        </div></div>
+      </section>
+
+      <!-- CHANNELS -->
+      <section class="sec-wrap maxw" id="channels">
+        <div class="kicker">الاتصال</div>
+        <h2 class="sec">قنوات الاتصال الثلاث</h2>
+        <p>التواصل مع الـ Base بيتم عبر ٣ قنوات منفصلة، كل واحدة لها اتجاه ومفتاح:</p>
+
+        <table class="tbl">
+          <thead><tr><th>القناة</th><th>الاتجاه</th><th>المفتاح / Header</th><th>الغرض</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Manifest</strong></td><td>Studio ← Base</td><td><code>X-UTD-Secret</code></td><td>اكتشاف الباكدجات وعناصرها وقت التصميم (read)</td></tr>
+            <tr><td><strong>Push</strong></td><td>Studio → Base</td><td><code>X-Stac-Key</code></td><td>دفع شاشة Stac المصمّمة (deploy)</td></tr>
+            <tr><td><strong>Runtime</strong></td><td>Flutter ↔ Base</td><td>Sanctum token</td><td>جلب/إرسال الـ data الفعلية وقت التشغيل</td></tr>
+          </tbody>
+        </table>
+
+        <div class="note warn"><div class="b"></div><div>
+          <h5>مفتاحان مختلفان تمامًا</h5>
+          <p><code>X-UTD-Secret</code> (قراءة الـ manifest وقت التصميم) غير <code>X-Stac-Key</code> (نشر الشاشات). الاتنين بيتولّدوا من الـ Studio ويُسلَّموا للعميل يحطّهم في إعدادات الـ Base. أما الـ Runtime فبيستخدم توكن المستخدم العادي (Sanctum).</p>
+        </div></div>
+
+        <h3>إيه اللي يخص باكدجك في كل قناة؟</h3>
+        <ul>
+          <li><strong>Manifest:</strong> بتسجّل عقدك في <code class="inl">config/utd_manifest.php</code> — الـ Base بيجمّعه تلقائيًا ويخدمه على <code class="inl">GET /api/utd/manifest</code>.</li>
+          <li><strong>Push:</strong> مالكش دخل — الـ Studio بيدفع الـ Stac والـ Base بيخزّنه. باكدجك بس بيوفّر الـ parsers اللي ترسمه.</li>
+          <li><strong>Runtime:</strong> بتسجّل routes الـ API بتاعتك (في الـ ServiceProvider) وبتربط البيانات في الـ Flutter عبر <code class="inl">StacDataRegistry</code>.</li>
+        </ul>
+      </section>
+
+      <!-- ANATOMY -->
+      <section class="sec-wrap maxw" id="anatomy">
+        <div class="kicker">الهيكل</div>
+        <h2 class="sec">تشريح باكدج</h2>
+        <p>الباكدج مجلد واحد فيه الجزئين (نموذج باكدج الـ Chat):</p>
+        <div class="code"><div class="cap"><span class="d" style="background:#f59e0b"></span> structure<span class="lang">tree</span></div><button class="copy">نسخ</button><pre>
+my-package/
+├─ <span class="tok-t">backend/</span>                         <span class="tok-c"># Laravel package</span>
+│  ├─ composer.json               <span class="tok-c"># auto-discovery: extra.laravel.providers</span>
+│  ├─ config/utd_manifest.php      <span class="tok-c"># ★ عقد الـ Studio (مصدر الحقيقة)</span>
+│  ├─ routes/my.php                <span class="tok-c"># runtime API routes</span>
+│  ├─ database/migrations/         <span class="tok-c"># جداولك</span>
+│  └─ src/
+│     ├─ MyServiceProvider.php     <span class="tok-c"># boot(): routes + migrations + registerPackage()</span>
+│     ├─ Http/Controllers/         <span class="tok-c"># الـ APIs اللي الموبايل ينده عليها</span>
+│     └─ Models/
+└─ <span class="tok-t">flutter/</span>                        <span class="tok-c"># Flutter package (depends on utd_app)</span>
+   └─ lib/
+      ├─ my_package.dart           <span class="tok-c"># exports</span>
+      └─ src/
+         ├─ my_feature.dart        <span class="tok-c"># ★ extends AppFeature</span>
+         └─ stac/                  <span class="tok-c"># parsers / actions / data sources</span>
+</pre></div>
+      </section>
+
+      <!-- MENTAL MODEL -->
+      <section class="sec-wrap maxw" id="mental-model">
+        <div class="kicker">النموذج الذهني</div>
+        <h2 class="sec">متى تستخدم إيه؟ — الـ 5 لبنات</h2>
+        <p>قبل ما تكتب سطر واحد، اسأل نفسك سؤال واحد عن كل قطعة في شاشتك:
+        <strong>«القطعة دي بيانات بتتعرض، ولا فعل بيتنفّذ، ولا شكل بيرسمه باكدجي؟»</strong>
+        الإجابة بتحدّد اللبنة. كل المنظومة مبنية على <strong>5 لبنات</strong> بس — لو فهمت إمتى
+        تستخدم كل واحدة، تقدر تفكّك <em>أي</em> باكدج.</p>
+
+        <table class="tbl">
+          <thead><tr><th>اللبنة</th><th>بتجاوب على السؤال</th><th>استخدمها لمّا…</th><th>مثال</th></tr></thead>
+          <tbody>
+            <tr>
+              <td><strong>Element</strong><br><span class="tag">binding</span></td>
+              <td>«إيه الحقل اللي العميل يقدر يربطه؟»</td>
+              <td>عندك <strong>قيمة مفردة</strong> جوّه صف/كيان (نص، رقم، صورة، تاريخ) العميل عايز يحطها في تصميمه.</td>
+              <td><code class="inl">title</code>، <code class="inl">price</code>، <code class="inl">avatar</code>، <code class="inl">unread_count</code></td>
+            </tr>
+            <tr>
+              <td><strong>Object&nbsp;Source</strong><br><span class="tag">utdObject</span></td>
+              <td>«منين تيجي بيانات الكيان <em>الواحد</em> في الشاشة دي؟»</td>
+              <td>الشاشة عن <strong>كيان واحد</strong> (مش قائمة): محادثة مفتوحة، منتج، بروفايل، فاتورة. العميل بيلفّ منطقة ويربط بحقولها.</td>
+              <td><code class="inl">chat.conversation</code>، <code class="inl">shop.product</code>، <code class="inl">user.profile</code></td>
+            </tr>
+            <tr>
+              <td><strong>List&nbsp;Source</strong><br><span class="tag">utdList</span></td>
+              <td>«منين تيجي عناصر القائمة المتكرّرة؟»</td>
+              <td>عندك <strong>تكرار</strong>: قائمة محادثات، منتجات، إشعارات، تعليقات. كل صف بنفس القالب ببيانات مختلفة.</td>
+              <td><code class="inl">chat.conversations</code>، <code class="inl">shop.products</code></td>
+            </tr>
+            <tr>
+              <td><strong>Action&nbsp;Element</strong><br><span class="tag">actionType</span></td>
+              <td>«إيه اللي يحصل لمّا المستخدم يضغط؟»</td>
+              <td>فيه <strong>تفاعل</strong>: فتح شاشة، إرسال، إضافة للسلة، إعجاب، تعليم كمقروء، اتصال.</td>
+              <td><code class="inl">chat.openConversation</code>، <code class="inl">shop.addToCart</code></td>
+            </tr>
+            <tr>
+              <td><strong>Widget&nbsp;+&nbsp;Variants</strong><br><span class="tag">type</span></td>
+              <td>«إيه الشكل اللي باكدجي لازم يرسمه بنفسه؟»</td>
+              <td>المنطق/الشكل <strong>بيختلف حسب الحالة</strong> أو محتاج رندر خاص مايتعملش بعناصر الـ core.</td>
+              <td><code class="inl">chat.messages</code> (mine/other/image)، <code class="inl">chat.sendButton</code> (send/record)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="note tip"><div class="b"></div><div><h5>القاعدة الذهبية للتقسيم</h5>
+          <p>لو القطعة <strong>بيقدر العميل يبنيها بعناصر الـ core</strong> (Container/Text/Image/TextField + binding)
+          → خليها <strong>تصميم العميل</strong> (Element / Object Source بس). أمّا لو محتاجة <strong>منطق</strong>
+          (تختار شكل حسب البيانات، تجيب data بنفسها، تتفاعل مع controller) → دي شغل <strong>Widget</strong> بتاعك.
+          كل ما تدّي للعميل أكتر وتمسك أنت أقل = باكدج أمرن وأقوى.</p></div></div>
+
+        <h3>شجرة القرار</h3>
+        <div class="diagram">
+          <svg viewBox="0 0 920 300" role="img" aria-label="decision tree for choosing a primitive">
+            <defs><marker id="arr3" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#22c55e"/></marker></defs>
+            <rect x="330" y="14" width="260" height="48" rx="12" fill="#0e1626" stroke="#273349"/>
+            <text x="460" y="43" fill="#fff" font-size="13.5" font-weight="700" text-anchor="middle" font-family="Inter">القطعة دي إيه؟</text>
+
+            <rect x="24" y="110" width="250" height="64" rx="12" fill="#0e1626" stroke="#1f3a2a"/>
+            <text x="149" y="136" fill="#86efac" font-size="12.5" font-weight="700" text-anchor="middle" font-family="Inter">بيانات بتتعرض</text>
+            <text x="149" y="157" fill="#9aa6b8" font-size="11" text-anchor="middle" font-family="Inter">قائمة؟ utdList · كيان؟ utdObject</text>
+
+            <rect x="335" y="110" width="250" height="64" rx="12" fill="#0e1626" stroke="#3a2a1a"/>
+            <text x="460" y="136" fill="#fcd34d" font-size="12.5" font-weight="700" text-anchor="middle" font-family="Inter">فعل بيتنفّذ</text>
+            <text x="460" y="157" fill="#9aa6b8" font-size="11" text-anchor="middle" font-family="Inter">Action Element</text>
+
+            <rect x="646" y="110" width="250" height="64" rx="12" fill="#0e1626" stroke="#3b1d5e"/>
+            <text x="771" y="136" fill="#c4b5fd" font-size="12.5" font-weight="700" text-anchor="middle" font-family="Inter">شكل باكدجي يرسمه</text>
+            <text x="771" y="157" fill="#9aa6b8" font-size="11" text-anchor="middle" font-family="Inter">Widget (+ Variants لو الحالة بتختلف)</text>
+
+            <rect x="180" y="222" width="560" height="58" rx="12" fill="#0e1626" stroke="#273349"/>
+            <text x="460" y="248" fill="#fff" font-size="12.5" font-weight="700" text-anchor="middle" font-family="Inter">القيم المفردة جوّه أي قائمة/كيان/قالب = Elements</text>
+            <text x="460" y="268" fill="#9aa6b8" font-size="11" text-anchor="middle" font-family="Inter">المفاتيح دي هي اللي العميل بيربطها، ولازم تطابق الـ data وقت التشغيل</text>
+
+            <line x1="430" y1="62" x2="180" y2="108" stroke="#22c55e" stroke-width="1.6" marker-end="url(#arr3)"/>
+            <line x1="460" y1="62" x2="460" y2="108" stroke="#22c55e" stroke-width="1.6" marker-end="url(#arr3)"/>
+            <line x1="490" y1="62" x2="740" y2="108" stroke="#22c55e" stroke-width="1.6" marker-end="url(#arr3)"/>
+            <line x1="149" y1="174" x2="320" y2="220" stroke="#273349" stroke-width="1.4" stroke-dasharray="4 4" marker-end="url(#arr3)"/>
+            <line x1="771" y1="174" x2="600" y2="220" stroke="#273349" stroke-width="1.4" stroke-dasharray="4 4" marker-end="url(#arr3)"/>
+          </svg>
+        </div>
+      </section>
+
+      <!-- MANIFEST -->
+      <section class="sec-wrap maxw" id="manifest">
+        <div class="kicker">Backend</div>
+        <h2 class="sec">عقد الـ Manifest</h2>
+        <p>ملف <code class="inl">config/utd_manifest.php</code> هو <strong>مصدر الحقيقة الوحيد</strong> للـ Studio. بيرجّع array بالشكل ده:</p>
+
+        <div class="code"><div class="cap"><span class="d" style="background:#8b5cf6"></span> config/utd_manifest.php<span class="lang">php</span></div><button class="copy">نسخ</button><pre>
+<span class="tok-k">return</span> [
+  <span class="tok-a">'key'</span>     => <span class="tok-s">'chat'</span>,              <span class="tok-c">// مُعرّف الباكدج (namespace للمفاتيح)</span>
+  <span class="tok-a">'name'</span>    => <span class="tok-s">'Chat'</span>,
+  <span class="tok-a">'icon'</span>    => <span class="tok-s">'chat_bubble'</span>,
+  <span class="tok-a">'screens'</span> => [<span class="tok-s">'conversations'</span>, <span class="tok-s">'conversation'</span>], <span class="tok-c">// شاشات الباكدج المنطقية</span>
+
+  <span class="tok-a">'elements'</span>        => [ <span class="tok-c">/* حقول بيانات قابلة للربط (binding) */</span> ],
+  <span class="tok-a">'object_sources'</span>  => [ <span class="tok-c">/* مصادر «كيان واحد» (utdObject) */</span> ],
+  <span class="tok-a">'action_elements'</span> => [ <span class="tok-c">/* أكشنز (palette + drill-down) */</span> ],
+  <span class="tok-a">'widgets'</span>         => [ <span class="tok-c">/* عناصر مخصّصة يرسمها الـ Flutter parser */</span> ],
+];
+</pre></div>
+
+        <h3 id="elements"><code class="inl">elements</code> — الحقول القابلة للربط</h3>
+        <p>كل عنصر = حقل بيظهر في منتقي الـ binding داخل الـ Studio. <code class="inl">key</code> لازم يطابق المفتاح اللي بترجّعه في الـ data وقت التشغيل (راجع <a href="#data-registry">Registry</a>).</p>
+        <div class="code"><div class="cap"><span class="d" style="background:#8b5cf6"></span> elements<span class="lang">php</span></div><button class="copy">نسخ</button><pre>
+<span class="tok-a">'elements'</span> => [
+  [<span class="tok-a">'key'</span>=><span class="tok-s">'name'</span>,  <span class="tok-a">'label'</span>=><span class="tok-s">'اسم المحادثة'</span>, <span class="tok-a">'type'</span>=><span class="tok-s">'string'</span>,    <span class="tok-a">'screen'</span>=><span class="tok-s">'conversations'</span>],
+  [<span class="tok-a">'key'</span>=><span class="tok-s">'image'</span>, <span class="tok-a">'label'</span>=><span class="tok-s">'الصورة'</span>,      <span class="tok-a">'type'</span>=><span class="tok-s">'image_url'</span>, <span class="tok-a">'screen'</span>=><span class="tok-s">'conversations'</span>],
+  [<span class="tok-a">'key'</span>=><span class="tok-s">'unread_count'</span>, <span class="tok-a">'label'</span>=><span class="tok-s">'غير المقروء'</span>, <span class="tok-a">'type'</span>=><span class="tok-s">'int'</span>, <span class="tok-a">'screen'</span>=><span class="tok-s">'conversations'</span>],
+  <span class="tok-c">// hidden:true يمنع ظهوره في المنتقي لكن يفضل متاح للأكشنز/المنطق</span>
+  [<span class="tok-a">'key'</span>=><span class="tok-s">'type'</span>, <span class="tok-a">'label'</span>=><span class="tok-s">'نوع الرسالة'</span>, <span class="tok-a">'type'</span>=><span class="tok-s">'string'</span>, <span class="tok-a">'screen'</span>=><span class="tok-s">'conversation'</span>, <span class="tok-a">'hidden'</span>=><span class="tok-n">true</span>],
+],
+</pre></div>
+        <table class="tbl">
+          <thead><tr><th>الحقل</th><th></th><th>الوصف</th></tr></thead>
+          <tbody>
+            <tr><td><code>key</code></td><td><span class="tag req">required</span></td><td>مفتاح الحقل (= مفتاح الـ data وقت التشغيل).</td></tr>
+            <tr><td><code>label</code></td><td><span class="tag req">required</span></td><td>الاسم اللي يظهر للعميل.</td></tr>
+            <tr><td><code>type</code></td><td><span class="tag opt">optional</span></td><td><code>string · int · bool · datetime · image_url · id</code> — يحدّد شكل الربط.</td></tr>
+            <tr><td><code>screen</code></td><td><span class="tag opt">optional</span></td><td>أي شاشة منطقية ينتمي لها الحقل.</td></tr>
+            <tr><td><code>hidden</code></td><td><span class="tag opt">optional</span></td><td><code>true</code> = يُخفى من منتقي الـ binding (يفضل متاح للأكشنز).</td></tr>
+          </tbody>
+        </table>
+
+        <h3 id="object-sources"><code class="inl">object_sources</code> — مصادر الكيان الواحد</h3>
+        <p>للبيانات «المفردة» (مش قائمة) زي بيانات الطرف الآخر في محادثة. العميل بيلفّ منطقة بعنصر <code class="inl">Scope</code> (= <code class="inl">utdObject</code>) ويربط بحقولها.</p>
+        <div class="code"><div class="cap"><span class="d" style="background:#8b5cf6"></span> object_sources<span class="lang">php</span></div><button class="copy">نسخ</button><pre>
+<span class="tok-a">'object_sources'</span> => [
+  [
+    <span class="tok-a">'key'</span>   => <span class="tok-s">'chat.conversation'</span>,        <span class="tok-c">// اسم المصدر (package.key)</span>
+    <span class="tok-a">'label'</span> => <span class="tok-s">'المحادثة الحالية'</span>,
+    <span class="tok-a">'provides'</span> => [
+      [<span class="tok-a">'key'</span>=><span class="tok-s">'peer_name'</span>,   <span class="tok-a">'label'</span>=><span class="tok-s">'اسم الطرف الآخر'</span>,  <span class="tok-a">'type'</span>=><span class="tok-s">'string'</span>],
+      [<span class="tok-a">'key'</span>=><span class="tok-s">'peer_avatar'</span>, <span class="tok-a">'label'</span>=><span class="tok-s">'صورة الطرف الآخر'</span>, <span class="tok-a">'type'</span>=><span class="tok-s">'image_url'</span>],
+    ],
+  ],
+],
+</pre></div>
+
+        <h4>ليه الـ Object Source أصلًا؟ وإمتى تحتاجه؟</h4>
+        <p>الفكرة الجوهرية: <strong>تفصل «منين تيجي البيانات» عن «إزاي تتعرض».</strong> انت بتقول للـ Studio
+        «فيه كيان واحد اسمه كذا وبيقدّم الحقول دي»، وسيبه للعميل يصمّم بيها زي ما يحب — صورة فوق، أو اسم جنب
+        أيقونة، أو هيدر كامل. مالكش دخل بالشكل خالص؛ انت بس بتضمن إن البيانات هتوصل.</p>
+        <ul>
+          <li><strong>إمتى تستخدمه:</strong> الشاشة (أو منطقة منها) بتتكلّم عن <strong>كيان واحد</strong> معروف وقت الفتح
+              — مش تكرار. لو لقيت نفسك بتقول «بيانات الـ<em>ـ…</em> الحالي» فده Object Source.</li>
+          <li><strong>الفرق عن <code class="inl">utdList</code>:</strong> الـ List بيكرّر قالب لكل صف؛ الـ Object بيُرسَم
+              <strong>مرّة واحدة</strong> بقيم الكيان. القائمة = «اعرض كل المحادثات»، الكيان = «اعرض المحادثة اللي اتفتحت».</li>
+          <li><strong>إزاي بيوصل المعرّف:</strong> لمّا العميل يضغط صف في قائمة، أكشن <code class="inl">context:'item'</code>
+              بيخزّن بيانات الصف (الـ scope)، والشاشة الجديدة بتقرأ منه. فالـ Object Source بيتملأ من السياق المُمرّر —
+              من غير ما الشاشة تعرف الـ id من فين.</li>
+          <li><strong>الفايدة الكبرى:</strong> الهيدر، البروفايل، تفاصيل المنتج… كلها بقت <strong>تصميم عميل بالكامل</strong>
+              بدل ما تبقى widget جامد بتاعك. ده اللي خلّى هيدر المحادثة (SPEC-07) يطلع من الـ monolith ويبقى
+              <code class="inl">Image</code> + <code class="inl">Text</code> عاديين مربوطين بـ <code class="inl">chat.conversation</code>.</li>
+        </ul>
+
+        <div class="grid g3">
+          <div class="card"><div class="ic" style="background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.3)">💬</div>
+            <h4>Chat — المحادثة الحالية</h4>
+            <p><code>chat.conversation</code> → <code>peer_name</code>, <code>peer_avatar</code>, <code>peer_online</code>. العميل يصمّم الهيدر بيها.</p></div>
+          <div class="card"><div class="ic" style="background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.3)">🛍️</div>
+            <h4>Shop — المنتج المفتوح</h4>
+            <p><code>shop.product</code> → <code>name</code>, <code>price</code>, <code>gallery</code>, <code>rating</code>, <code>in_stock</code>. صفحة تفاصيل المنتج = تصميم حر.</p></div>
+          <div class="card"><div class="ic" style="background:rgba(139,92,246,.12);border-color:rgba(139,92,246,.3)">👤</div>
+            <h4>Profile — بيانات المستخدم</h4>
+            <p><code>user.profile</code> → <code>name</code>, <code>avatar</code>, <code>bio</code>, <code>followers</code>. شاشة بروفايل يصمّمها العميل.</p></div>
+        </div>
+
+        <h3 id="action-elements"><code class="inl">action_elements</code> — الأكشنز</h3>
+        <p>الأكشنز اللي تظهر في palette الـ Studio. الـ <code class="inl">produces</code> المُسمّى بـ namespace (فيه نقطة) = actionType حقيقي بيتربط بـ <a href="#actions">StacActionParser</a> في الـ Flutter.</p>
+        <div class="code"><div class="cap"><span class="d" style="background:#8b5cf6"></span> action_elements<span class="lang">php</span></div><button class="copy">نسخ</button><pre>
+<span class="tok-a">'action_elements'</span> => [
+  <span class="tok-c">// إدخال أولي (text/audio/image) — مش actionType، بس shape للـ palette</span>
+  [<span class="tok-a">'key'</span>=><span class="tok-s">'text_message'</span>, <span class="tok-a">'label'</span>=><span class="tok-s">'رسالة نصية'</span>, <span class="tok-a">'produces'</span>=><span class="tok-s">'text'</span>, <span class="tok-a">'default_shape'</span>=><span class="tok-s">'input'</span>, <span class="tok-a">'screen'</span>=><span class="tok-s">'conversation'</span>],
+
+  <span class="tok-c">// Drill-down: ضغط صف بالقائمة → فتح شاشة. context:item يمرّر صف البيانات كامل.</span>
+  [<span class="tok-a">'key'</span>=><span class="tok-s">'open_conversation'</span>, <span class="tok-a">'label'</span>=><span class="tok-s">'فتح المحادثة'</span>,
+   <span class="tok-a">'produces'</span>=><span class="tok-s">'chat.openConversation'</span>, <span class="tok-a">'default_shape'</span>=><span class="tok-s">'list_item'</span>,
+   <span class="tok-a">'screen'</span>=><span class="tok-s">'conversations'</span>, <span class="tok-a">'context'</span>=><span class="tok-s">'item'</span>, <span class="tok-a">'opens'</span>=><span class="tok-s">'conversation'</span>],
+],
+</pre></div>
+        <div class="note tip"><div class="b"></div><div><h5>context: 'item'</h5>
+          <p>الأكشن اللي عليه <code>context:'item'</code> بياخد بيانات الصف المضغوط كامل (فيها مثلًا <code>user_id</code>) ويمرّرها للشاشة المفتوحة — ده اللي يخلّي الـ widget في الشاشة الجديدة يعرف أي عنصر اتفتح.</p></div></div>
+
+        <h4>ليه الـ Action Element؟ وإمتى تحتاجه؟</h4>
+        <p>الـ binding بيعرض بيانات — لكنه <strong>مايعملش حاجة</strong>. أي لحظة المستخدم بيضغط فيها وبيحصل
+        تفاعل (فتح شاشة، إرسال، إضافة، إعجاب، اتصال) محتاجة <strong>أكشن</strong>. وبتعرّفه في الـ manifest عشان
+        <strong>يظهر في الـ palette</strong> فيقدر العميل يربطه بزرار/صف من غير ما يكتب كود — والـ Flutter بتاعك
+        بيوصّله بالمنطق الفعلي عبر <a href="#actions"><code class="inl">StacActionParser</code></a>.</p>
+        <p>الـ <code class="inl">produces</code> هو المفتاح اللي بيربط الاتنين: لو فيه <strong>نقطة</strong> (namespace
+        زي <code class="inl">shop.addToCart</code>) فهو <strong>actionType حقيقي</strong> لازم يقابله parser في الـ Flutter.
+        لو من غير نقطة (زي <code class="inl">text</code>) فهو بس <strong>shape</strong> للـ palette (إدخال) من غير handler.</p>
+
+        <table class="tbl">
+          <thead><tr><th>نمط الأكشن</th><th>إمتى</th><th>المفاتيح المهمّة</th><th>مثال</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Drill-down</strong> (فتح تفاصيل)</td><td>ضغط صف في قائمة يفتح شاشة كيان.</td>
+              <td><code>context:'item'</code> + <code>opens</code> + <code>default_shape:'list_item'</code></td>
+              <td><code class="inl">chat.openConversation</code></td></tr>
+            <tr><td><strong>Submit</strong> (إرسال/حفظ)</td><td>إرسال رسالة، حفظ فورم، إضافة تعليق.</td>
+              <td>يقرأ قيمة من حقل (<code>field</code>) ويبعتها للـ API بتاعك.</td>
+              <td><code class="inl">chat.sendMessage</code>، <code class="inl">core.login</code></td></tr>
+            <tr><td><strong>Mutate</strong> (تغيير حالة)</td><td>إعجاب، تعليم كمقروء، إضافة للسلة، متابعة.</td>
+              <td><code>context:'item'</code> غالبًا (بيعرف على أنهي عنصر).</td>
+              <td><code class="inl">shop.addToCart</code>، <code class="inl">feed.toggleLike</code></td></tr>
+            <tr><td><strong>Navigate</strong> (تنقّل عام)</td><td>روح لتاب/شاشة تانية من غير سياق عنصر.</td>
+              <td><code>core.navigate</code> عبر الفرع الافتراضي.</td>
+              <td>«شوف الكل» → شاشة القائمة</td></tr>
+          </tbody>
+        </table>
+        <div class="note info"><div class="b"></div><div><h5>الأكشن نقطة فصل المسؤولية</h5>
+          <p>العميل بيقول «اعمل الأكشن ده هنا» في الـ Studio. <strong>إزاي</strong> الأكشن يتنفّذ (أي API، أي state)
+          ده شغلك جوّه الـ <code class="inl">StacActionParser</code>. فتقدر تغيّر التنفيذ من غير ما العميل يلمس تصميمه.</p></div></div>
+      </section>
+
+      <!-- WIDGETS REF -->
+      <section class="sec-wrap maxw" id="widgets-ref">
+        <div class="kicker">Backend</div>
+        <h2 class="sec">تعريف الـ Widgets المخصّصة</h2>
+        <p>الـ <code class="inl">widgets</code> هي العناصر اللي باكدجك بيرسمها بنفسه (الـ Flutter parser المسجّل بنفس الـ <code class="inl">type</code>). كل widget ممكن يقدّم: خصائص، slots، أو <strong>variants</strong>.</p>
+        <div class="code"><div class="cap"><span class="d" style="background:#8b5cf6"></span> widgets[]<span class="lang">php</span></div><button class="copy">نسخ</button><pre>
+[
+  <span class="tok-a">'key'</span>     => <span class="tok-s">'messages'</span>,
+  <span class="tok-a">'label'</span>   => <span class="tok-s">'الرسائل (Messages List)'</span>,
+  <span class="tok-a">'type'</span>    => <span class="tok-s">'chat.messages'</span>,   <span class="tok-c">// = نوع عقدة Stac + parser الـ Flutter</span>
+  <span class="tok-a">'icon'</span>    => <span class="tok-s">'forum'</span>,
+  <span class="tok-a">'screen'</span>  => <span class="tok-s">'conversation'</span>,
+  <span class="tok-a">'scope'</span>   => <span class="tok-s">'item'</span>,             <span class="tok-c">// يقرأ المعرّف من سياق العنصر المُمرّر</span>
+  <span class="tok-a">'context'</span> => [<span class="tok-s">'conversation_id'</span>], <span class="tok-c">// مفاتيح السياق اللي الشاشة بتمرّرها للـ widget</span>
+
+  <span class="tok-c">// خصائص قابلة للضبط لكل instance (تظهر في لوحة الإعدادات)</span>
+  <span class="tok-a">'properties'</span> => [
+    [<span class="tok-a">'key'</span>=><span class="tok-s">'bubbleRadius'</span>, <span class="tok-a">'label'</span>=><span class="tok-s">'استدارة الفقاعة'</span>, <span class="tok-a">'type'</span>=><span class="tok-s">'int'</span>, <span class="tok-a">'default'</span>=><span class="tok-n">14</span>],
+  ],
+
+  <span class="tok-c">// variants: العميل يصمّم شكل كل حالة؛ الـ parser يختار حسب variantField + match</span>
+  <span class="tok-a">'variantField'</span> => <span class="tok-s">'is_mine'</span>,
+  <span class="tok-a">'variants'</span> => [
+    [<span class="tok-a">'key'</span>=><span class="tok-s">'mine'</span>,  <span class="tok-a">'label'</span>=><span class="tok-s">'رسالتي'</span>,       <span class="tok-a">'match'</span>=>[<span class="tok-a">'is_mine'</span>=><span class="tok-n">true</span>]],
+    [<span class="tok-a">'key'</span>=><span class="tok-s">'other'</span>, <span class="tok-a">'label'</span>=><span class="tok-s">'الطرف التاني'</span>, <span class="tok-a">'match'</span>=>[<span class="tok-a">'is_mine'</span>=><span class="tok-n">false</span>]],
+    [<span class="tok-a">'key'</span>=><span class="tok-s">'image'</span>, <span class="tok-a">'label'</span>=><span class="tok-s">'صورة'</span>,        <span class="tok-a">'match'</span>=>[<span class="tok-a">'type'</span>=><span class="tok-s">'image'</span>]],
+  ],
+
+  <span class="tok-c">// الحقول النسبية القابلة للربط جوّه قوالب الـ variants</span>
+  <span class="tok-a">'bindings'</span> => [<span class="tok-s">'text'</span>, <span class="tok-s">'time'</span>, <span class="tok-s">'status'</span>, <span class="tok-s">'sender_avatar'</span>],
+],
+</pre></div>
+
+        <table class="tbl">
+          <thead><tr><th>الحقل</th><th>الوصف</th></tr></thead>
+          <tbody>
+            <tr><td><code>type</code> <span class="tag req">req</span></td><td>نوع عقدة الـ Stac. لازم يطابق <code>StacParser.type</code> في الـ Flutter.</td></tr>
+            <tr><td><code>provides</code></td><td>حقول الـ widget بيوفّرها للربط بالداخل (مثل هيدر مدمج).</td></tr>
+            <tr><td><code>properties</code></td><td>خصائص لكل instance: <code>color · int · bool · enum · string · icon · binding · field_ref</code>.</td></tr>
+            <tr><td><code>slots</code></td><td>مناطق تصميم حرّة جوّه الـ widget (يصمّمها العميل، تُمرَّر للـ parser).</td></tr>
+            <tr><td><code>variantField</code> + <code>variants</code></td><td>قوالب فرعية: العميل يصمّم كل واحدة، والـ parser يختار لكل عنصر حسب <code>match</code>. <a href="#variants">تفاصيل ↓</a></td></tr>
+            <tr><td><code>context</code></td><td>مفاتيح سياق الشاشة بتمرّرها (مثل <code>conversation_id</code>) — يقرأها الـ parser.</td></tr>
+            <tr><td><code>bindings</code></td><td>الحقول النسبية المتاحة للربط داخل قوالب الـ variants.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- PROVIDER -->
+      <section class="sec-wrap maxw" id="provider">
+        <div class="kicker">Backend</div>
+        <h2 class="sec">التسجيل والـ APIs</h2>
+        <p>الباكدج بيُكتشَف تلقائيًا عبر <code class="inl">composer.json</code>، والـ <code class="inl">ServiceProvider.boot()</code> بيسجّل: routes + migrations + الـ manifest.</p>
+        <div class="code"><div class="cap"><span class="d" style="background:#8b5cf6"></span> src/MyServiceProvider.php<span class="lang">php</span></div><button class="copy">نسخ</button><pre>
+<span class="tok-k">public function</span> <span class="tok-t">boot</span>(): <span class="tok-k">void</span>
+{
+    <span class="tok-c">// 1) runtime API routes (نفس برِفِكس /api اللي الموبايل بيستخدمه)</span>
+    <span class="tok-t">Route</span>::middleware(<span class="tok-s">'api'</span>)->prefix(<span class="tok-s">'api'</span>)
+        ->group(__DIR__ . <span class="tok-s">'/../routes/my.php'</span>);
+
+    <span class="tok-c">// 2) migrations (idempotent بالاسم)</span>
+    <span class="tok-k">$this</span>->loadMigrationsFrom(__DIR__ . <span class="tok-s">'/../database/migrations'</span>);
+
+    <span class="tok-c">// 3) عقد الـ Studio — guarded عشان الباكدج يفضل يشتغل على base من غير الـ infra ده</span>
+    <span class="tok-k">if</span> (class_exists(\App\Support\<span class="tok-t">UtdManifest</span>::class)) {
+        \App\Support\<span class="tok-t">UtdManifest</span>::registerPackage(
+            <span class="tok-k">require</span> __DIR__ . <span class="tok-s">'/../config/utd_manifest.php'</span>
+        );
+    }
+}
+</pre></div>
+        <div class="code"><div class="cap"><span class="d" style="background:#8b5cf6"></span> composer.json<span class="lang">json</span></div><button class="copy">نسخ</button><pre>
+{
+  <span class="tok-a">"extra"</span>: {
+    <span class="tok-a">"laravel"</span>: { <span class="tok-a">"providers"</span>: [<span class="tok-s">"Utd\\Chat\\ChatServiceProvider"</span>] }
+  }
+}
+</pre></div>
+        <div class="note info"><div class="b"></div><div><h5>الـ Runtime APIs</h5>
+          <p>الـ endpoints اللي بتجيب/تبعت الـ data (قوائم، تفاصيل، إرسال، رفع) <strong>تنفيذ داخلي عندك</strong> — الموبايل بيناديها مباشرة بتوكن المستخدم. الـ Studio مايعرفهاش ومايحتاجهاش.</p></div></div>
+      </section>
+
+      <!-- APPFEATURE -->
+      <section class="sec-wrap maxw" id="appfeature">
+        <div class="kicker">Flutter</div>
+        <h2 class="sec">واجهة AppFeature</h2>
+        <p>قلب باكدجك على الموبايل: class بيرث <code class="inl">AppFeature</code> ويساهم بكل حاجة. كله اختياري ماعدا <code class="inl">id</code> و<code class="inl">displayName</code>.</p>
+        <div class="code"><div class="cap"><span class="d" style="background:#06b6d4"></span> lib/src/my_feature.dart<span class="lang">dart</span></div><button class="copy">نسخ</button><pre>
+<span class="tok-k">class</span> <span class="tok-t">MyFeature</span> <span class="tok-k">extends</span> <span class="tok-t">AppFeature</span> {
+  <span class="tok-a">@override</span> <span class="tok-t">String</span> <span class="tok-k">get</span> id =&gt; <span class="tok-s">'com.acme.reactions'</span>;
+  <span class="tok-a">@override</span> <span class="tok-t">String</span> <span class="tok-k">get</span> displayName =&gt; <span class="tok-s">'Reactions'</span>;
+
+  <span class="tok-a">@override</span>
+  <span class="tok-t">Future</span>&lt;<span class="tok-k">void</span>&gt; initialize() <span class="tok-k">async</span> {
+    registerMyStacSources(_repo);     <span class="tok-c">// اربط الـ data sources</span>
+  }
+
+  <span class="tok-a">@override</span>
+  <span class="tok-t">List</span>&lt;<span class="tok-t">StacParser</span>&gt; getStacParsers() =&gt; <span class="tok-k">const</span> [<span class="tok-t">MyWidgetParser</span>()];
+
+  <span class="tok-a">@override</span>
+  <span class="tok-t">List</span>&lt;<span class="tok-t">StacActionParser</span>&gt; getStacActionParsers() =&gt; <span class="tok-k">const</span> [<span class="tok-t">MyActionParser</span>()];
+
+  <span class="tok-a">@override</span>
+  <span class="tok-t">List</span>&lt;<span class="tok-t">SingleChildWidget</span>&gt; getProviders() =&gt; [<span class="tok-c">/* BLoCs/repos */</span>];
+}
+</pre></div>
+        <table class="tbl">
+          <thead><tr><th>الميثود</th><th>المساهمة</th></tr></thead>
+          <tbody>
+            <tr><td><code>id</code> / <code>displayName</code> <span class="tag req">req</span></td><td>مُعرّف عكسي للنطاق + اسم معروض.</td></tr>
+            <tr><td><code>initialize()</code></td><td>تهيئة + تسجيل الـ data sources في <code>StacDataRegistry</code>.</td></tr>
+            <tr><td><code>getStacParsers()</code></td><td>widgets مخصّصة (type → widget). <strong>لازم stateless</strong> وتجيب deps من الـ <code>BuildContext</code>.</td></tr>
+            <tr><td><code>getStacActionParsers()</code></td><td>أكشنز مخصّصة (actionType → handler).</td></tr>
+            <tr><td><code>getProviders()</code></td><td>BLoCs/repositories على مستوى الـ app.</td></tr>
+            <tr><td><code>getRoutes()</code></td><td>مسارات native (GoRoute) — استخدم prefix بالـ id.</td></tr>
+            <tr><td><code>getUiContributions()</code></td><td>عناصر في slots جاهزة (مثل تاب bottom-nav).</td></tr>
+            <tr><td><code>getTranslations()</code></td><td>ترجمات <code>locale → key → نص</code> (مفاتيح بـ namespace).</td></tr>
+            <tr><td><code>getUserDataExtensions()</code> · <code>getRoleDefinitions()</code> · <code>getSettingDefinitions()</code></td><td>توسيع بيانات المستخدم/الأدوار/الإعدادات.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- DATA REGISTRY -->
+      <section class="sec-wrap maxw" id="data-registry">
+        <div class="kicker">Flutter</div>
+        <h2 class="sec">ربط البيانات — StacDataRegistry</h2>
+        <p>الجسر اللي بيوصّل عناصر الـ Stac المربوطة (<code class="inl">utdList</code> / <code class="inl">utdObject</code>) ببياناتك الحقيقية. الـ Base يسأل «هات المصدر ده» وانت بترجّع الـ data — من BLoC أو repo أو API.</p>
+        <div class="code"><div class="cap"><span class="d" style="background:#06b6d4"></span> lib/src/stac/my_sources.dart<span class="lang">dart</span></div><button class="copy">نسخ</button><pre>
+<span class="tok-k">void</span> registerMyStacSources(<span class="tok-t">MyRepo</span> repo) {
+  <span class="tok-c">// قائمة → utdList بمفتاح المصدر ده</span>
+  <span class="tok-t">StacDataRegistry</span>.instance.registerList(<span class="tok-s">'chat.conversations'</span>, () <span class="tok-k">async</span> {
+    <span class="tok-k">final</span> rooms = <span class="tok-k">await</span> repo.getRooms();
+    <span class="tok-k">return</span> rooms.map((r) =&gt; {
+      <span class="tok-s">'name'</span>: r.name, <span class="tok-s">'image'</span>: r.image,   <span class="tok-c">// المفاتيح = elements في الـ manifest</span>
+      <span class="tok-s">'unread_count'</span>: r.unread, <span class="tok-s">'user_id'</span>: r.userId,
+    }).toList();
+  });
+
+  <span class="tok-c">// كيان واحد → utdObject</span>
+  <span class="tok-t">StacDataRegistry</span>.instance.registerObject(<span class="tok-s">'chat.conversation'</span>, () <span class="tok-k">async</span> =&gt; {
+    <span class="tok-s">'peer_name'</span>: scope.name, <span class="tok-s">'peer_avatar'</span>: scope.image,
+  });
+}
+</pre></div>
+        <div class="note tip"><div class="b"></div><div><h5>المفاتيح لازم تطابق</h5>
+          <p>المفاتيح اللي بترجّعها هنا (<code>name</code>, <code>image</code>…) لازم تطابق <code>key</code> بتاع الـ <code>elements</code>/<code>provides</code> في الـ manifest — عشان الـ binding يتحل بدون أي mapping إضافي.</p></div></div>
+        <p class="muted">لو المصدر مش متسجّل أو رمى استثناء، الـ Base يرجّع قائمة/كائن فاضي — الواجهة تتدهور بهدوء بدل ما تكسر.</p>
+      </section>
+
+      <!-- BINDING -->
+      <section class="sec-wrap maxw" id="binding">
+        <div class="kicker">Flutter</div>
+        <h2 class="sec">الـ Binding داخل Stac</h2>
+        <p>الـ Studio بيُخرِج عُقَد فيها <code class="inl">binding</code>، والـ Base يحلّها من الـ data وقت التشغيل عبر <code class="inl">StacBinding.resolve()</code>.</p>
+        <div class="code"><div class="cap"><span class="d" style="background:#22c55e"></span> binding (Stac)<span class="lang">json</span></div><button class="copy">نسخ</button><pre>
+<span class="tok-c">// قبل الحل (من الـ Studio)</span>
+{ <span class="tok-a">"type"</span>:<span class="tok-s">"text"</span>,  <span class="tok-a">"binding"</span>:<span class="tok-s">"name"</span> }
+{ <span class="tok-a">"type"</span>:<span class="tok-s">"image"</span>, <span class="tok-a">"binding"</span>:<span class="tok-s">"peer_avatar"</span> }
+
+<span class="tok-c">// بعد الحل (اللي الـ renderer يفهمه)</span>
+{ <span class="tok-a">"type"</span>:<span class="tok-s">"text"</span>,  <span class="tok-a">"data"</span>:<span class="tok-s">"أحمد"</span> }
+{ <span class="tok-a">"type"</span>:<span class="tok-s">"image"</span>, <span class="tok-a">"src"</span>:<span class="tok-s">"https://…"</span>, <span class="tok-a">"imageType"</span>:<span class="tok-s">"network"</span> }
+</pre></div>
+        <ul>
+          <li><strong>مفاتيح نسبية أو كاملة:</strong> <code class="inl">name</code> أو <code class="inl">chat.conversations.name</code> — بيتاخد آخر segment للبحث.</li>
+          <li><strong>القوائم:</strong> <code class="inl">utdList</code> له <code class="inl">source</code> و<code class="inl">itemTemplate</code> بداخله bindings نسبية لكل صف.</li>
+          <li><strong>الكيان الواحد:</strong> <code class="inl">utdObject</code> له <code class="inl">source</code> + <code class="inl">child</code> يُرسَم مرّة بقيم المصدر.</li>
+          <li><strong>الإخفاء الشرطي:</strong> <code class="inl">visibleBinding</code> يشيل العنصر لو القيمة falsy (نقطة أونلاين، عدّاد = 0…).</li>
+          <li><strong>التواريخ:</strong> قيمة ISO تتحوّل تلقائيًا لـ <code class="inl">HH:mm</code> النهارده أو <code class="inl">yyyy/MM/dd</code>.</li>
+        </ul>
+      </section>
+
+      <!-- PARSERS -->
+      <section class="sec-wrap maxw" id="parsers">
+        <div class="kicker">Flutter</div>
+        <h2 class="sec">Widgets مخصّصة (StacParser)</h2>
+        <p>لكل <code class="inl">widget</code> في الـ manifest، اكتب parser بنفس الـ <code class="inl">type</code>. لازم يكون <strong>stateless</strong> ويجيب الـ dependencies من الـ <code class="inl">BuildContext</code> وقت الرسم.</p>
+        <div class="code"><div class="cap"><span class="d" style="background:#06b6d4"></span> my_widget_parser.dart<span class="lang">dart</span></div><button class="copy">نسخ</button><pre>
+<span class="tok-k">class</span> <span class="tok-t">MyWidgetParser</span> <span class="tok-k">extends</span> <span class="tok-t">StacParser</span>&lt;<span class="tok-t">Map</span>&lt;<span class="tok-t">String</span>, <span class="tok-k">dynamic</span>&gt;&gt; {
+  <span class="tok-k">const</span> <span class="tok-t">MyWidgetParser</span>();
+
+  <span class="tok-a">@override</span> <span class="tok-t">String</span> <span class="tok-k">get</span> type =&gt; <span class="tok-s">'chat.messages'</span>;       <span class="tok-c">// = widget.type</span>
+  <span class="tok-a">@override</span> <span class="tok-t">Map</span>&lt;<span class="tok-t">String</span>,<span class="tok-k">dynamic</span>&gt; getModel(<span class="tok-t">Map</span>&lt;<span class="tok-t">String</span>,<span class="tok-k">dynamic</span>&gt; j) =&gt; j;
+
+  <span class="tok-a">@override</span>
+  <span class="tok-t">Widget</span> parse(<span class="tok-t">BuildContext</span> ctx, <span class="tok-t">Map</span>&lt;<span class="tok-t">String</span>,<span class="tok-k">dynamic</span>&gt; model) {
+    <span class="tok-k">final</span> variants = (model[<span class="tok-s">'variants'</span>] <span class="tok-k">as</span> <span class="tok-t">Map</span>?)?.cast&lt;<span class="tok-t">String</span>,<span class="tok-k">dynamic</span>&gt;();
+    <span class="tok-c">// اقرأ context/properties، هات الـ data من BLoC عبر ctx، وارسم.</span>
+    <span class="tok-k">return</span> <span class="tok-t">MyListView</span>(variants: variants);
+  }
+}
+</pre></div>
+        <p>لرسم شجرة Stac جوّه parserك (مثل قالب variant بعد حلّ الـ binding):</p>
+        <div class="code"><div class="cap"><span class="d" style="background:#06b6d4"></span> render a subtree<span class="lang">dart</span></div><button class="copy">نسخ</button><pre>
+<span class="tok-k">final</span> resolved = <span class="tok-t">StacBinding</span>.resolve(template, rowData);  <span class="tok-c">// حلّ الـ bindings</span>
+<span class="tok-k">return</span> <span class="tok-t">Stac</span>.fromJson(resolved, context) ?? <span class="tok-k">const</span> <span class="tok-t">SizedBox</span>.shrink();
+</pre></div>
+      </section>
+
+      <!-- ACTIONS -->
+      <section class="sec-wrap maxw" id="actions">
+        <div class="kicker">Flutter</div>
+        <h2 class="sec">Actions مخصّصة (StacActionParser)</h2>
+        <p>لكل <code class="inl">produces</code> بـ namespace في الـ manifest، اكتب action parser. الـ Base يمرّر صف القائمة المضغوط تحت <code class="inl">item</code> (للأكشنز اللي <code class="inl">context:'item'</code>).</p>
+        <div class="code"><div class="cap"><span class="d" style="background:#06b6d4"></span> my_action.dart<span class="lang">dart</span></div><button class="copy">نسخ</button><pre>
+<span class="tok-k">class</span> <span class="tok-t">OpenConversationAction</span> <span class="tok-k">extends</span> <span class="tok-t">StacActionParser</span>&lt;<span class="tok-t">OpenConvModel</span>&gt; {
+  <span class="tok-a">@override</span> <span class="tok-t">String</span> <span class="tok-k">get</span> actionType =&gt; <span class="tok-s">'chat.openConversation'</span>;
+
+  <span class="tok-a">@override</span>
+  <span class="tok-t">FutureOr</span> onCall(<span class="tok-t">BuildContext</span> ctx, <span class="tok-t">OpenConvModel</span> m) {
+    <span class="tok-c">// خزّن سياق العنصر (peer) ثم انتقل للشاشة المصمّمة</span>
+    <span class="tok-t">ChatConversationScope</span>.set(userId: m.item[<span class="tok-s">'user_id'</span>], name: m.item[<span class="tok-s">'name'</span>]);
+    ctx.go(m.route ?? <span class="tok-s">'/s/conversation'</span>);
+  }
+}
+</pre></div>
+      </section>
+
+      <!-- VARIANTS -->
+      <section class="sec-wrap maxw" id="variants">
+        <div class="kicker">القدرة المميزة</div>
+        <h2 class="sec">الـ Variants (قوالب فرعية)</h2>
+        <p>أي widget منطقه بيختلف حسب الحالة (رسالتي/الطرف الآخر، صورة/ملف/صوت، إرسال/تسجيل) يقدّم <strong>variants</strong>: العميل يصمّم شكل كل حالة بصريًا، والـ parser يختار القالب المناسب لكل عنصر وقت التشغيل.</p>
+
+        <div class="diagram">
+          <svg viewBox="0 0 920 210" role="img" aria-label="variant selection flow">
+            <defs><marker id="arr2" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#8b5cf6"/></marker></defs>
+            <rect x="24" y="70" width="200" height="70" rx="12" fill="#0e1626" stroke="#273349"/>
+            <text x="124" y="100" fill="#fff" font-size="13.5" font-weight="700" text-anchor="middle" font-family="Inter">رسالة (data)</text>
+            <text x="124" y="121" fill="#9aa6b8" font-size="11.5" text-anchor="middle" font-family="JetBrains Mono">{is_mine, type, text}</text>
+
+            <rect x="300" y="70" width="220" height="70" rx="12" fill="#0e1626" stroke="#3b1d5e"/>
+            <text x="410" y="98" fill="#c4b5fd" font-size="13.5" font-weight="700" text-anchor="middle" font-family="Inter">pickVariant()</text>
+            <text x="410" y="120" fill="#9aa6b8" font-size="11" text-anchor="middle" font-family="JetBrains Mono">variantField + match</text>
+
+            <rect x="596" y="34" width="300" height="46" rx="10" fill="#0e1626" stroke="#273349"/>
+            <text x="746" y="62" fill="#86efac" font-size="12.5" text-anchor="middle" font-family="Inter">قالب «mine» (Stac) → StacBinding.resolve</text>
+            <rect x="596" y="92" width="300" height="46" rx="10" fill="#0e1626" stroke="#273349"/>
+            <text x="746" y="120" fill="#fcd34d" font-size="12.5" text-anchor="middle" font-family="Inter">قالب «other» (Stac) → Stac.fromJson</text>
+            <rect x="596" y="150" width="300" height="40" rx="10" fill="#0e1626" stroke="#273349"/>
+            <text x="746" y="174" fill="#9aa6b8" font-size="12" text-anchor="middle" font-family="Inter">مفيش قالب → native default</text>
+
+            <line x1="224" y1="105" x2="298" y2="105" stroke="#8b5cf6" stroke-width="2" marker-end="url(#arr2)"/>
+            <line x1="520" y1="105" x2="594" y2="57" stroke="#8b5cf6" stroke-width="2" marker-end="url(#arr2)"/>
+            <line x1="520" y1="105" x2="594" y2="115" stroke="#8b5cf6" stroke-width="2" marker-end="url(#arr2)"/>
+          </svg>
+        </div>
+
+        <h3>إزاي تختار القالب في الـ parser</h3>
+        <div class="code"><div class="cap"><span class="d" style="background:#06b6d4"></span> variant pick<span class="lang">dart</span></div><button class="copy">نسخ</button><pre>
+<span class="tok-t">Map</span>&lt;<span class="tok-t">String</span>,<span class="tok-k">dynamic</span>&gt;? pickVariant(msg, variants) {
+  <span class="tok-k">if</span> (msg.type == <span class="tok-s">'image'</span> &amp;&amp; variants[<span class="tok-s">'image'</span>] != <span class="tok-k">null</span>) <span class="tok-k">return</span> variants[<span class="tok-s">'image'</span>];
+  <span class="tok-k">return</span> msg.isMine ? variants[<span class="tok-s">'mine'</span>] : variants[<span class="tok-s">'other'</span>];
+}
+</pre></div>
+
+        <div class="note tip"><div class="b"></div><div><h5>مثال حقيقي: زرار واحد بيتقلب</h5>
+          <p>زرار الإرسال/التسجيل (<code>chat.sendButton</code>) = widget واحد بـ variants <code>{send, record}</code>. لو مربع الكتابة فاضي يعرض قالب <code>record</code>، وفيه نص يعرض <code>send</code> — نفس آلية الرسائل بالظبط. لو الحالة ملهاش قالب مصمّم، يرجع لأيقونة Material افتراضية.</p></div></div>
+
+        <h3>إمتى تحتاج Variant؟ (الاختبار البسيط)</h3>
+        <p>اسأل: <strong>«نفس النوع من العنصر بيتعرض بأكتر من شكل حسب بياناته؟»</strong> لو الإجابة آه — ده variant.
+        لو العنصر شكله ثابت دايمًا → مايحتاجش variant، بس binding. الـ variant بيدّي العميل يصمّم <strong>كل
+        حالة على حدة</strong>، وانت في الـ parser بتختار الحالة المناسبة لكل عنصر وقت التشغيل عبر
+        <code class="inl">variantField</code> + <code class="inl">match</code>.</p>
+
+        <table class="tbl">
+          <thead><tr><th>المحور اللي بيختلف</th><th>الـ <code>variantField</code></th><th>الـ variants</th></tr></thead>
+          <tbody>
+            <tr><td>صاحب الرسالة (شات)</td><td><code>is_mine</code></td><td><code>mine</code> / <code>other</code></td></tr>
+            <tr><td>نوع المحتوى (شات)</td><td><code>type</code></td><td><code>text</code> / <code>image</code> / <code>file</code> / <code>audio</code></td></tr>
+            <tr><td>حالة الزرار (شات)</td><td><code>mode</code></td><td><code>send</code> / <code>record</code></td></tr>
+            <tr><td>نوع الإشعار</td><td><code>kind</code></td><td><code>like</code> / <code>comment</code> / <code>follow</code> / <code>system</code></td></tr>
+            <tr><td>حالة الطلب (متجر)</td><td><code>status</code></td><td><code>pending</code> / <code>shipped</code> / <code>delivered</code> / <code>cancelled</code></td></tr>
+            <tr><td>نوع منشور الـ feed</td><td><code>post_type</code></td><td><code>text</code> / <code>photo</code> / <code>video</code> / <code>poll</code></td></tr>
+          </tbody>
+        </table>
+
+        <div class="note warn"><div class="b"></div><div><h5>variant مش property</h5>
+          <p>لو الفرق مجرّد <strong>قيمة</strong> (لون، استدارة، حجم) → خليه <code class="inl">property</code> على
+          العنصر، مش variant. الـ variant للحالات اللي <strong>التخطيط/التركيب</strong> نفسه بيختلف فيها (فقاعة نص
+          مقابل صورة بكابشن مقابل مشغّل صوت بـ waveform). قاعدة سريعة: لو ينفع تعمله بـ binding + property → اعمله كده؛
+          سيب الـ variants للاختلاف الحقيقي في الشكل.</p></div></div>
+      </section>
+
+      <!-- DECOMPOSE -->
+      <section class="sec-wrap maxw" id="decompose">
+        <div class="kicker">التفكيك</div>
+        <h2 class="sec">playbook: تفكيك باكدج جاهز بـ UI ثابت</h2>
+        <p>عندك باكدج شغّال بشاشاته المرسومة بإيدك (Flutter ثابت)؟ تحويله لـ SDUI <strong>مش إعادة كتابة</strong> —
+        ده إعادة <strong>تقسيم</strong>. بتفصل اللي <em>ثابت ومنطقي</em> (شغلك) عن اللي <em>المفروض العميل يصمّمه</em>.
+        النتيجة: نفس الفيتشر، بس العميل يقدر يطلّعها بأي شكل من غير ما يلمس كودك.</p>
+
+        <div class="note info"><div class="b"></div><div><h5>نقلة التفكير</h5>
+          <p>بدل ما تسأل «إزاي أرسم الشاشة دي؟»، اسأل <strong>«إيه البيانات اللي الشاشة دي محتاجاها، وإيه
+          التفاعلات، وإيه الأجزاء اللي شكلها لازم يتغيّر؟»</strong> الإجابات هي بالظبط الـ manifest بتاعك.</p></div></div>
+
+        <h3>الوصفة في 6 خطوات</h3>
+        <ol class="steps">
+          <li><h4>افرز الشاشات لقوايم وكيانات</h4>
+            <p>كل شاشة فيها <strong>تكرار</strong>؟ دي <code class="inl">utdList</code> + <code class="inl">elements</code>.
+            فيها <strong>كيان واحد</strong> (تفاصيل/بروفايل)؟ دي <code class="inl">object_source</code>. اكتب كل مصدر
+            بمفتاح <code class="inl">package.key</code>.</p></li>
+          <li><h4>استخرج الحقول (Elements)</h4>
+            <p>بُص لكل قيمة في الـ UI (نص/رقم/صورة/تاريخ) واسأل «العميل هيعرضها؟». لو آه → <code class="inl">element</code>
+            بـ <code class="inl">key</code> يطابق الـ JSON اللي بترجّعه من الـ API. اللي بيستخدمه المنطق بس (زي
+            <code class="inl">user_id</code>) خليه <code class="inl">hidden:true</code>.</p></li>
+          <li><h4>حدّد التفاعلات (Actions)</h4>
+            <p>كل ضغطة بتعمل حاجة = <code class="inl">action_element</code>. اللي بيفتح تفاصيل عنصر حطّ عليه
+            <code class="inl">context:'item'</code> + <code class="inl">opens</code>. اللي بيبعت/يغيّر حالة سمّيه بـ namespace
+            (<code class="inl">produces:'pkg.doX'</code>) عشان تربطه بـ parser.</p></li>
+          <li><h4>اعزل اللي شكله بيتغيّر (Variants)</h4>
+            <p>أي عنصر بيتعرض بأكتر من تخطيط حسب بياناته → <code class="inl">widget</code> بـ
+            <code class="inl">variantField</code> + <code class="inl">variants</code>. سيب كل حالة للعميل يصمّمها،
+            وانت تختار في الـ parser.</p></li>
+          <li><h4>سلّم الباقي للعميل</h4>
+            <p>أي جزء يتبني بـ Container/Text/Image/TextField + binding (هيدر، بطاقة، فورم بسيط) —
+            <strong>متعملوش widget</strong>. سيبه تصميم عميل فوق Object Source. ده اللي يخلّي الباكدج مرن.</p></li>
+          <li><h4>وصّل الـ Flutter</h4>
+            <p><code class="inl">registerList/Object</code> لكل مصدر (مفاتيح تطابق الـ elements)، <code class="inl">StacParser</code>
+            لكل widget بـ variants، <code class="inl">StacActionParser</code> لكل actionType. شيل الشاشات المرسومة القديمة.</p></li>
+        </ol>
+
+        <h3>مثال مُفكَّك: من «شاشة متجر ثابتة» لباكدج SDUI</h3>
+        <p>باكدج متجر قديم فيه شاشتين مرسومتين: <em>قائمة منتجات</em> و<em>تفاصيل منتج</em>. كده بيتفكّك:</p>
+        <table class="tbl">
+          <thead><tr><th>في الـ UI الثابت</th><th>بيتحوّل لـ</th><th>في الـ manifest</th></tr></thead>
+          <tbody>
+            <tr><td><code>GridView</code> بمنتجات</td><td>List Source</td><td><code class="inl">shop.products</code> (utdList)</td></tr>
+            <tr><td>اسم/سعر/صورة المنتج في الكارت</td><td>Elements</td><td><code>name</code>, <code>price</code>, <code>thumb</code>, <code>discount</code></td></tr>
+            <tr><td>كارت المنتج (عادي / عليه خصم / نافد)</td><td>Widget + Variants</td><td><code class="inl">shop.productCard</code> · <code>variantField:'state'</code> → <code>normal</code>/<code>sale</code>/<code>sold_out</code></td></tr>
+            <tr><td>ضغط الكارت → تفاصيل</td><td>Action (drill-down)</td><td><code class="inl">shop.openProduct</code> · <code>context:'item'</code> · <code>opens:'product'</code></td></tr>
+            <tr><td>شاشة تفاصيل المنتج</td><td>Object Source + تصميم عميل</td><td><code class="inl">shop.product</code> → <code>name</code>, <code>gallery</code>, <code>desc</code>, <code>price</code>, <code>rating</code></td></tr>
+            <tr><td>زرار «أضف للسلة»</td><td>Action (mutate)</td><td><code class="inl">shop.addToCart</code> · <code>context:'item'</code></td></tr>
+            <tr><td>ترويسة بصورة + اسم المتجر</td><td>تصميم عميل بالكامل</td><td>— (Container/Image/Text + binding)</td></tr>
+          </tbody>
+        </table>
+        <div class="note tip"><div class="b"></div><div><h5>قبل/بعد</h5>
+          <p><strong>قبل:</strong> 2 شاشة Flutter جامدة، أي تغيير شكل = نسخة جديدة من الباكدج. <br>
+          <strong>بعد:</strong> 2 مصدر + 1 widget بـ 3 variants + 2 أكشن. كل عميل يطلّع متجره بشكله، وانت
+          بتصون <strong>المنطق</strong> بس (الجلب، السلة) في مكان واحد.</p></div></div>
+      </section>
+
+      <!-- RECIPES -->
+      <section class="sec-wrap maxw" id="recipes">
+        <div class="kicker">إلهام</div>
+        <h2 class="sec">وصفات واقعية — افتح مخيّلتك</h2>
+        <p>نفس الـ 5 لبنات بتبني أي فيتشر. دي باكدجات شائعة وإزاي تتقسّم — استخدمها كنقطة بداية وبعدها
+        ابتكر بتقسيمتك أنت:</p>
+
+        <div class="grid g2">
+          <div class="card"><div class="ic">📰</div><h4>Social Feed</h4>
+            <p style="color:#cdd6e3"><strong>List:</strong> <code>feed.posts</code> · <strong>Object:</strong> <code>feed.post</code> (تفاصيل) ·
+            <strong>Widget+Variants:</strong> <code>feed.postCard</code> (<code>text</code>/<code>photo</code>/<code>video</code>/<code>poll</code>) ·
+            <strong>Actions:</strong> <code>feed.toggleLike</code>, <code>feed.openComments</code>, <code>feed.share</code>.</p></div>
+
+          <div class="card"><div class="ic">🔔</div><h4>Notifications</h4>
+            <p style="color:#cdd6e3"><strong>List:</strong> <code>notif.items</code> ·
+            <strong>Widget+Variants:</strong> <code>notif.row</code> (<code>like</code>/<code>comment</code>/<code>follow</code>/<code>system</code>) ·
+            <strong>Actions:</strong> <code>notif.markRead</code> (mutate), <code>notif.open</code> (drill-down حسب النوع).</p></div>
+
+          <div class="card"><div class="ic">📅</div><h4>Bookings / Appointments</h4>
+            <p style="color:#cdd6e3"><strong>List:</strong> <code>book.slots</code> · <strong>Object:</strong> <code>book.appointment</code> ·
+            <strong>Widget+Variants:</strong> <code>book.slot</code> (<code>available</code>/<code>booked</code>/<code>mine</code>) ·
+            <strong>Actions:</strong> <code>book.reserve</code>, <code>book.cancel</code>.</p></div>
+
+          <div class="card"><div class="ic">📦</div><h4>Orders Tracking</h4>
+            <p style="color:#cdd6e3"><strong>List:</strong> <code>orders.list</code> · <strong>Object:</strong> <code>orders.order</code> ·
+            <strong>Widget+Variants:</strong> <code>orders.statusBadge</code> (<code>pending</code>/<code>shipped</code>/<code>delivered</code>/<code>cancelled</code>) ·
+            <strong>Action:</strong> <code>orders.track</code>.</p></div>
+
+          <div class="card"><div class="ic">🎵</div><h4>Media / Stories</h4>
+            <p style="color:#cdd6e3"><strong>List:</strong> <code>stories.ring</code> · <strong>Object:</strong> <code>stories.viewer</code> ·
+            <strong>Widget+Variants:</strong> <code>stories.bubble</code> (<code>unseen</code>/<code>seen</code>/<code>mine</code>) ·
+            <strong>Action:</strong> <code>stories.open</code> (context:item).</p></div>
+
+          <div class="card"><div class="ic">⭐</div><h4>Reviews / Ratings</h4>
+            <p style="color:#cdd6e3"><strong>List:</strong> <code>reviews.list</code> · <strong>Elements:</strong> <code>author</code>, <code>stars</code>, <code>text</code>, <code>date</code> ·
+            <strong>Widget+Variants:</strong> <code>reviews.card</code> (<code>verified</code>/<code>normal</code>) ·
+            <strong>Action:</strong> <code>reviews.helpful</code> (mutate).</p></div>
+        </div>
+
+        <div class="note tip"><div class="b"></div><div><h5>ابدأ صغير، فكّك أكتر بعدين</h5>
+          <p>مش لازم تطلّع كل حاجة widget من اليوم الأول. ابدأ بـ <code class="inl">utdList</code> + elements (شغّال من
+          غير parser)، وبعدين فكّك العناصر اللي شكلها بيختلف لـ widgets بـ variants لمّا تحتاج. ده بالظبط مسار
+          الشات: monolith ضخم → <code class="inl">chat.messages</code> + <code class="inl">chat.sendButton</code> +
+          object_source للهيدر + TextField عام للكتابة.</p></div></div>
+      </section>
+
+      <!-- WALKTHROUGH -->
+      <section class="sec-wrap maxw" id="walkthrough">
+        <div class="kicker">عملي</div>
+        <h2 class="sec">أول package — خطوة بخطوة</h2>
+        <p>هنبني باكدج بسيط «Announcements» (قائمة إعلانات) من الصفر:</p>
+        <ol class="steps">
+          <li><h4>عرّف العقد (backend)</h4>
+            <p>في <code class="inl">config/utd_manifest.php</code>: <code>key=announcements</code>, screen <code>list</code>, و<code>elements</code>: <code>title</code>, <code>body</code>, <code>image</code>, <code>created_at</code>.</p>
+          </li>
+          <li><h4>سجّل الباكدج (backend)</h4>
+            <p>في <code class="inl">ServiceProvider.boot()</code> نادِ <code>UtdManifest::registerPackage(require .../utd_manifest.php)</code> + سجّل routes الـ API بتاعتك + migrations. وأضف الـ provider في <code class="inl">composer.json</code>.</p>
+          </li>
+          <li><h4>اربط الـ data (flutter)</h4>
+            <p>في <code class="inl">initialize()</code> داخل الـ AppFeature: <code>StacDataRegistry.instance.registerList('announcements.list', () async =&gt; repo.getAll())</code> — بمفاتيح تطابق الـ elements.</p>
+          </li>
+          <li><h4>سجّل الـ Feature (flutter)</h4>
+            <p>أضِف <code>MyFeature()</code> لقائمة الـ features في الـ Base App (<code class="inl">feature_registry</code>). من غير parsers مخصّصة هتستخدم <code>utdList</code> الجاهز.</p>
+          </li>
+          <li><h4>صمّم في الـ Studio</h4>
+            <p>العميل يفتح الـ Studio → يلاقي باكدج «Announcements» في الـ palette → يحط <code>List</code> مصدره <code>announcements.list</code> ويربط <code>title</code>/<code>image</code> → ينشر.</p>
+          </li>
+          <li><h4>اتأكد على الجهاز</h4>
+            <p><code class="inl">flutter build apk</code> + تثبيت → الشاشة بتظهر ببياناتك الحقيقية بالشكل اللي العميل صمّمه. لو محتاج عنصر بمنطق خاص، أضِف <a href="#parsers">StacParser</a>.</p>
+          </li>
+        </ol>
+      </section>
+
+      <!-- API REF -->
+      <section class="sec-wrap maxw" id="api-ref">
+        <div class="kicker">مرجع</div>
+        <h2 class="sec">مرجع الاتصال (API)</h2>
+        <h4>GET /api/utd/manifest <span class="tag">X-UTD-Secret</span></h4>
+        <p>الـ Studio بيناديه وقت التصميم. بيرجّع كل الباكدجات المسجّلة (المجمّعة من ServiceProviders).</p>
+        <div class="code"><div class="cap"><span class="d" style="background:#22c55e"></span> response 200<span class="lang">json</span></div><button class="copy">نسخ</button><pre>
+{
+  <span class="tok-a">"version"</span>: <span class="tok-s">"1"</span>,
+  <span class="tok-a">"app"</span>: { <span class="tok-a">"name"</span>:<span class="tok-s">"Project X"</span>, <span class="tok-a">"default_locale"</span>:<span class="tok-s">"ar"</span>, <span class="tok-a">"locales"</span>:[<span class="tok-s">"ar"</span>,<span class="tok-s">"en"</span>] },
+  <span class="tok-a">"packages"</span>: [ { <span class="tok-a">"key"</span>:<span class="tok-s">"chat"</span>, <span class="tok-a">"elements"</span>:[…], <span class="tok-a">"widgets"</span>:[…], <span class="tok-a">"action_elements"</span>:[…] } ]
+}
+</pre></div>
+        <h4>POST /api/stac/push <span class="tag">X-Stac-Key</span></h4>
+        <p>الـ Studio بيدفع الشاشات المصمّمة. باكدجك مش بيتعامل معاه مباشرة — بس بيوفّر الـ parsers اللي ترسم النتيجة.</p>
+        <div class="code"><div class="cap"><span class="d" style="background:#22c55e"></span> request / response<span class="lang">json</span></div><button class="copy">نسخ</button><pre>
+<span class="tok-c">// body</span>
+{ <span class="tok-a">"screens"</span>: [ { <span class="tok-a">"name"</span>:<span class="tok-s">"conversation"</span>, <span class="tok-a">"package"</span>:<span class="tok-s">"core"</span>, <span class="tok-a">"version"</span>:<span class="tok-s">"…"</span>, <span class="tok-a">"content"</span>:{…}, <span class="tok-a">"is_active"</span>:<span class="tok-n">true</span> } ] }
+<span class="tok-c">// 200</span>
+{ <span class="tok-a">"status"</span>:<span class="tok-n">true</span>, <span class="tok-a">"message"</span>:<span class="tok-s">"1 screens pushed successfully."</span>, <span class="tok-a">"data"</span>:{ <span class="tok-a">"pushed"</span>:<span class="tok-n">1</span> } }
+</pre></div>
+        <h4>GET /api/utd/packages/{key}/sample <span class="tag opt">optional</span></h4>
+        <p>بيانات عيّنة لتحسين الـ Preview في الـ Studio. ترجّع <code class="inl">{ "items": [...] }</code> بنفس شكل الـ elements.</p>
+      </section>
+
+      <!-- CHECKLIST -->
+      <section class="sec-wrap maxw" id="checklist">
+        <div class="kicker">قبل التسليم</div>
+        <h2 class="sec">قائمة تحقّق الباكدج</h2>
+        <div class="grid g2">
+          <div class="card"><h4>Backend</h4><ul style="margin:0">
+            <li><code class="inl">utd_manifest.php</code> فيه key/screens + elements/widgets/actions</li>
+            <li>المفاتيح تطابق data الـ runtime</li>
+            <li>ServiceProvider يسجّل manifest + routes + migrations</li>
+            <li>auto-discovery في <code class="inl">composer.json</code></li>
+          </ul></div>
+          <div class="card"><h4>Flutter</h4><ul style="margin:0">
+            <li><code class="inl">AppFeature</code> مسجّل في الـ Base App</li>
+            <li><code class="inl">registerList/Object</code> لكل مصدر</li>
+            <li><code class="inl">StacParser</code> لكل widget (stateless)</li>
+            <li><code class="inl">StacActionParser</code> لكل actionType</li>
+            <li><code class="inl">flutter analyze</code> نضيف + اختبار على جهاز</li>
+          </ul></div>
+        </div>
+        <div class="note tip"><div class="b"></div><div><h5>المبدأ النهائي</h5>
+          <p>لو الـ Base محتاج يعرف أي حاجة عن منطق باكدجك — يبقى في حاجة مكانها غلط. كل المنطق جوّه الباكدج؛ الـ Base بس بيجمّع، يخدم، ويرسم.</p></div></div>
+      </section>
+
+    </div><!-- /wrap -->
+    <footer>
+      UTD Stack — Package Developer Guide · Contract v1 · للأسئلة راجع <code class="inl">docs/INTEGRATION.md</code> و <code class="inl">backend/docs/widget-variants/</code>.
+    </footer>
+  </main>
+</div>
+
+<script>
+  // mobile sidebar
+  const sb=document.getElementById('sidebar'),scrim=document.getElementById('scrim'),mb=document.getElementById('menuBtn');
+  function toggle(o){sb.classList.toggle('open',o);scrim.classList.toggle('open',o)}
+  mb.onclick=()=>toggle(!sb.classList.contains('open'));
+  scrim.onclick=()=>toggle(false);
+  // close on nav click (mobile)
+  document.querySelectorAll('#toc a').forEach(a=>a.addEventListener('click',()=>{if(window.innerWidth<=1000)toggle(false)}));
+
+  // scrollspy
+  const links=[...document.querySelectorAll('#toc a')];
+  const map=new Map(links.map(a=>[a.getAttribute('href').slice(1),a]));
+  const obs=new IntersectionObserver((es)=>{
+    es.forEach(e=>{if(e.isIntersecting){links.forEach(l=>l.classList.remove('active'));const a=map.get(e.target.id);if(a)a.classList.add('active');}});
+  },{rootMargin:'-45% 0px -50% 0px'});
+  document.querySelectorAll('section[id],header[id]').forEach(s=>obs.observe(s));
+
+  // nav filter
+  const f=document.getElementById('filter');
+  f.addEventListener('input',()=>{const q=f.value.trim().toLowerCase();
+    links.forEach(a=>{const m=a.textContent.toLowerCase().includes(q);a.style.display=m?'':'none';});
+    document.querySelectorAll('#toc .grp').forEach(g=>{let n=g.nextElementSibling,any=false;
+      while(n&&!n.classList.contains('grp')){if(n.tagName==='A'&&n.style.display!=='none')any=true;n=n.nextElementSibling;}
+      g.style.display=any?'':'none';});
+  });
+
+  // copy buttons
+  document.querySelectorAll('.code .copy').forEach(b=>b.addEventListener('click',()=>{
+    const pre=b.parentElement.querySelector('pre');
+    navigator.clipboard.writeText(pre.innerText).then(()=>{const t=b.textContent;b.textContent='تم ✓';setTimeout(()=>b.textContent=t,1200);});
+  }));
+</script>
+</body>
+</html>

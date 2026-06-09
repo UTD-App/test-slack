@@ -1,0 +1,36 @@
+name: authentication
+description: "authentication feature for the add-on platform. Depends on core app feature contract."
+publish_to: "none"
+version: 0.1.0
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  go_router: ^13.0.0
+  # Depends on core app feature contract
+  utd_app:
+    path: ../../
+  shared_preferences: ^2.2.0
+  provider: ^6.0.0
+  flutter_bloc: ^8.1.6
+  bloc: ^8.1.4
+  equatable: ^2.0.8
+  flutter_screenutil: ^5.9.3
+  smooth_page_indicator: ^1.2.0+3
+  file_picker: ^8.0.0+1
+  image_picker: ^1.0.7
+  intl: any
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/icons/

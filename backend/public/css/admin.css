@@ -1,0 +1,131 @@
+:root {
+    --bs-breadcrumb-font-size: 14px;
+    --ot-bg-secondary: #fff
+}
+
+.pagination > .active > a, .pagination > .active > a:focus, .pagination > .active > a:hover, .pagination > .active > span, .pagination > .active > span:focus, .pagination > .active > span:hover {
+    z-index: 2;
+    color: #fff;
+    cursor: default;
+    background: linear-gradient(90deg, #2d7dffb8 0%, #21c6fba8 100%);
+    border-color: #337ab7
+}
+
+
+.bootstrap-switch .bootstrap-switch-handle-off.bootstrap-switch-primary, .bootstrap-switch .bootstrap-switch-handle-on.bootstrap-switch-primary {
+    background: linear-gradient(90deg, #2d7dffb8 0%, #21c6fba8 100%) !important;
+}
+.bootstrap-switch .bootstrap-switch-handle-off.bootstrap-switch-success, .bootstrap-switch .bootstrap-switch-handle-on.bootstrap-switch-success {
+    color: #fff;
+    background: linear-gradient(90deg, #28eb92 0%, #06864b 100%) !important;
+}
+
+input:checked+.slider {
+    background: linear-gradient(90deg, #2d7dffb8 0%, #21c6fba8 100%) !important;
+}
+
+.breadcrumb>li {
+    display: inline-block;
+    font-size: var(--bs-breadcrumb-font-size) - 2;
+
+}
+.content-header>.breadcrumb>li>a {
+    color: #468dff !important;
+    text-decoration: none;
+    font-size: var(--bs-breadcrumb-font-size);
+    display: inline-block;
+}
+
+.content-header>.breadcrumb>li+li:before {
+    content: '/\00a0' !important;
+}
+
+
+.content-header{
+    padding: 15px 20px !important;
+    margin: 24px 16px !important;
+    background-color: var(--ot-bg-secondary) !important;
+    filter: drop-shadow(0px 2px 8px rgba(0, 0, 0, 0.05)) !important;
+    border-radius: 5px !important;
+    /*padding: 28px;*/
+    border: none !important;
+
+}
+
+.box {
+    border-radius: 20px!important;
+    padding: 15px;
+    border-color: #eaeaea;
+}
+
+.skin-black-light .main-header>.logo{color:#222!important;}
+
+.content-header>.breadcrumb{
+    background: #edfbff!important;
+}
+
+* {
+    scrollbar-color: #dceaed #e6f4f7;
+    scrollbar-width: thin;
+    scrollbar-width: thin;
+}
+
+.btn-success {
+    /* background: linear-gradient(90deg, #28eb92 0%, #06864b 100%); */
+    background: #FF9428!important;
+    /* background: linear-gradient(90deg, #2d7dffb8 0%, #21c6fba8 100%)!important; */
+}
+
+/* ===== Form: Labels above inputs (stacked layout) ===== */
+.form-horizontal .form-group .control-label {
+    text-align: left !important;
+    width: 100% !important;
+    float: none !important;
+    padding-bottom: 5px;
+    font-weight: 600;
+}
+
+.form-horizontal .form-group > .col-sm-8,
+.form-horizontal .form-group > .col-sm-6,
+.form-horizontal .form-group > .col-sm-4,
+.form-horizontal .form-group > .col-sm-10,
+.form-horizontal .form-group > .col-sm-12 {
+    width: 100% !important;
+    float: none !important;
+}
+
+.form-horizontal .form-group > .col-sm-2,
+.form-horizontal .form-group > .col-sm-3,
+.form-horizontal .form-group > .col-sm-4.control-label {
+    width: 100% !important;
+    float: none !important;
+}
+
+/* RTL support */
+.rtl .form-horizontal .form-group .control-label {
+    text-align: right !important;
+}
+
+/* ===== Fix: Widget form layout in menu page ===== */
+.fields-group > .form-group {
+    display: flex !important;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 0 !important;
+}
+
+/* Label takes full row, input takes full row (stacked) */
+.fields-group > .form-group > .control-label {
+    flex: 0 0 100%;
+    max-width: 100%;
+    float: none !important;
+    padding-bottom: 4px;
+}
+
+.fields-group > .form-group > div[class*="col-sm-"] {
+    flex: 0 0 100%;
+    max-width: 100%;
+    float: none !important;
+    width: 100% !important;
+}

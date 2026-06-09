@@ -1,0 +1,20 @@
+vendor/
+node_modules/
+.env
+.env.backup
+storage/logs/
+storage/framework/cache/
+storage/framework/sessions/
+storage/framework/views/
+bootstrap/cache/
+.phpunit.result.cache
+.dart_tool/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+pubspec.lock
+.packages
+*.log
+
+# Debug screenshots (لقطات أجهزة الاختبار)
+redmi_*.png

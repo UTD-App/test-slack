@@ -1,0 +1,175 @@
+/* Mobile Responsive Styles for 400-500px phones */
+
+@media (max-width: 500px) and (min-width: 400px) {
+    /* General Layout */
+    html {
+        width: 100%;
+        overflow-x: hidden;
+    }
+
+    body {
+        font-size: 14px;
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        overflow-x: hidden;
+    }
+
+    .container, .container-fluid {
+        padding-left: 8px !important;  /* Changed: symmetric */
+        padding-right: 8px !important;  /* Changed: symmetric */
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    /* Grid adjustments - THIS IS KEY */
+    .row {
+        margin-left: 0 !important;  /* Changed: was -8px */
+        margin-right: 0 !important;  /* Changed: was -8px */
+    }
+
+    .col, [class*="col-"] {
+        padding-left: 0 !important;  /* Changed: was 8px */
+        padding-right: 0 !important;  /* Changed: was 8px */
+        margin-bottom: 12px;
+    }
+
+    .col-md-6,
+    .col-lg-4,
+    .col-lg-6,
+    .col-xl-3,
+    .col-md-12,
+    .col-12 {
+        width: 100% !important;
+        flex: 0 0 100%;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    /* Rest of your styles... */
+}
+
+/* Additional optimizations for phones smaller than 400px */
+@media (max-width: 399px) {
+    /* General Layout */
+    html {
+        width: 100%;
+        overflow-x: hidden;
+    }
+
+    body {
+        font-size: 14px;
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        overflow-x: hidden;
+    }
+
+    .container, .container-fluid {
+        padding-left: 4px !important;  /* Smaller symmetric padding */
+        padding-right: 4px !important;  /* Smaller symmetric padding */
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    /* Grid adjustments - similar to 400-500px but smaller */
+    .row {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    .col, [class*="col-"] {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        margin-bottom: 8px;  /* Smaller margin */
+    }
+
+    .col-md-6,
+    .col-lg-4,
+    .col-lg-6,
+    .col-xl-3,
+    .col-md-12,
+    .col-12 {
+        width: 100% !important;
+        flex: 0 0 100%;
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    .dashboard-container {
+        padding: 4px;
+    }
+
+    .card {
+        margin-bottom: 8px;  /* Smaller margin */
+    }
+
+    .card-header {
+        padding: 6px 8px;  /* Smaller padding */
+        font-size: 0.85rem;
+    }
+
+    .card-body {
+        padding: 6px;  /* Smaller padding */
+    }
+
+    .btn {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.8rem;
+    }
+
+    .form-control {
+        font-size: 0.85rem;
+        padding: 0.3rem 0.4rem;
+    }
+
+    .table {
+        font-size: 0.75rem;
+    }
+
+    .table th,
+    .table td {
+        padding: 0.3rem;
+    }
+}
+
+/* Landscape mode optimizations */
+@media (max-height: 500px) and (orientation: landscape) {
+    .dashboard-container {
+        padding: 10px;
+    }
+
+    .section-header {
+        margin: 10px 0 8px 0;
+        font-size: 1.1rem;
+    }
+
+    .card-header {
+        padding: 8px 10px;
+    }
+
+    .card-body {
+        padding: 8px;
+    }
+
+    .nav-tabs {
+        margin-bottom: 10px;
+    }
+
+    .nav-tabs .nav-link {
+        padding: 5px 8px;
+        font-size: 0.75rem;
+    }
+}

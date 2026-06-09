@@ -1,0 +1,11 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.eagle.chat.app",
+      "sha256_cert_fingerprints":
+        ["BB:73:2B:6A:31:5B:24:E3:95:EA:B4:73:2A:CF:C3:AA:B3:14:0F:82:CA:CC:94:E8:A7:33:C9:9D:5C:CA:0B:D6", "F6:0C:D4:43:91:20:82:06:B4:3B:A5:99:84:22:1C:AF:0F:D2:5D:6D:78:68:02:0A:8A:EE:53:82:A3:CC:55:58"]
+    }
+  }
+]

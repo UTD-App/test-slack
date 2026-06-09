@@ -1,0 +1,33 @@
+/node_modules
+/public/hot
+/public/storage
+/storage/*.key
+/vendor
+.env
+.env.backup
+.env.production
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+auth.json
+npm-debug.log
+yarn-error.log
+/.fleet
+/.idea
+/.vscode
+gcp.json
+service-account.json
+*.p8
+
+# Local SQLite database
+/database/*.sqlite
+/database/*.sqlite-journal
+
+# Local dev-server artifacts
+/.serve_port
+/serve.local.err
+/serve.local.out
+
+# Local diagnostic / secret tokens
+/storage/diag_token.txt
+/storage/*.txt

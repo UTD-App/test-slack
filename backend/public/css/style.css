@@ -1,0 +1,54 @@
+*{
+    margin: 0;
+    padding: 0;
+}
+img{
+    display: block;
+    width: 100%;
+}
+.container{
+    padding: 0 90px;
+    margin: 0 30px;
+}
+.about-section{
+    background-color: #ADD8E6;
+    padding: 50px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.about-section p{
+    font-size: 20px;
+    margin-top: 9px;
+}
+
+.mid-text{
+    color: red;
+    font-size: 30px;
+    margin-bottom: 30px;
+}
+.delete{
+    font-size: 30px;
+    margin-bottom: 30px;
+}
+
+.w-50{
+    width: 50%;
+}
+
+.w-25{
+    width: 25%;
+}
+.w-75{
+    width: 75%;
+}
+.section-step{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 50px;
+}
+.section-text{
+    font-size: 40px;
+    margin-left: 40px;
+}

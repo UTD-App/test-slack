@@ -1,0 +1,63 @@
+* {
+    font-family: 'Cairo', sans-serif;
+}
+.login-box .box-title {
+    font-weight: 700;
+    font-size: 22px;
+    margin-top: 20px;
+}
+
+.login-box-body {
+    background: none;
+    padding: 0;
+}
+
+.login-box-body .submit {
+    margin-top: 20px;
+}
+
+.login-box-body input[type=text], .login-box-body input[type=password] {
+    padding: 0;
+    border-radius: 20px;
+}
+.login-box-body input[type=text]:focus, .login-box-body input[type=password]:focus {
+    border-color: #fe6210;
+}
+.login-logo a {
+    color: #711424;
+}
+
+.login-page {
+    background: #eee;
+}
+
+.rounded {
+    border-radius: 50px !important;
+}
+
+.btn-primary {
+    background: #fe6210;
+    border-color: #fe6210;
+}
+.btn-primary:hover {
+    background: #ff4b15;
+    border-color: #ff4b15;
+}
+
+.language-switch a {
+    font-size: 12px;
+}
+
+.login-box-body form {
+    margin-bottom: 20px;
+}
+
+.language-switch a{
+    display: block; font-weight: 300; color: #fe6210;  font-size: 12px;
+}
+
+.rights {
+    color: #888;
+}
+
+

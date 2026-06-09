@@ -1,0 +1,106 @@
+/* Desktop / Laptop header */
+@media (min-width: 992px) {
+    .main-header {
+        /*background: linear-gradient(90deg, var(--secondary-color) 0%, var(--gray-50) 100%);*/
+        box-shadow: none;
+        height: var(--header-height);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        position: relative;
+        z-index: 1000;
+    }
+
+    .rtl .main-header {
+        padding-left: 1%;
+    }
+
+    .ltr .main-header {
+        padding-right: 1%;
+    }
+
+    .main-header .logo {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        text-decoration: none;
+    }
+
+    .main-header .logo-img {
+        height: 32px;
+        width: 32px;
+        border-radius: 50%;
+        object-fit: contain;
+        margin: auto;
+    }
+
+    .main-header .logo-placeholder {
+        height: 32px;
+        width: 32px;
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: var(--primary-color);
+        color: #fff;
+        font-weight: bold;
+    }
+
+    .main-header .navbar {
+        /*flex: 1;*/
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+    }
+
+    .main-header .sidebar-toggle {
+        display: inline-block;
+        padding: 10px;
+        cursor: pointer;
+    }
+
+    .select-country-wrapper {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+    }
+
+    .select-country-wrapper select {
+        height: 32px;
+        padding: 5px 8px;
+        border-radius: 6px;
+    }
+
+    .navbar-custom-menu ul.nav > li > a {
+        padding: 10px;
+    }
+}
+
+
+
+
+
+
+@media (min-width: 768px) and (max-width: 1199px) {
+    .main-header {
+        padding: 10px 15px !important;
+    }
+        .menu-link{
+          display: none !important;
+    }
+
+    .select-country-wrapper{
+         display: none !important;
+    }
+
+}
+
+@media (min-width: 1200px) {
+    .rtl .main-header {
+        padding-left: 1%;
+    }
+
+    .ltr .main-header {
+        padding-right: 1%;
+    }
+}

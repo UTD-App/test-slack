@@ -1,0 +1,22 @@
+{
+    "name": "utd/moment",
+    "description": "UTD Moment package — moments feed (posts, likes, comments, reports). Gifting auto-enables when the Gifts package is installed.",
+    "type": "library",
+    "license": "proprietary",
+    "version": "1.0.0",
+    "require": {
+        "php": "^8.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Utd\\Moment\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Utd\\Moment\\Providers\\MomentServiceProvider"
+            ]
+        }
+    }
+}
