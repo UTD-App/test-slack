@@ -1,0 +1,60 @@
+name: Deploy to project-x
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy Backend
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Deploy
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            set -e
+            cd /var/www/project-x/backend
+
+            echo "=== Pulling latest code ==="
+            git pull origin main
+
+            echo "=== Installing dependencies ==="
+            composer install --no-interaction --optimize-autoloader --no-dev
+
+            echo "=== Running migrations ==="
+            php artisan migrate --force
+
+            echo "=== Clearing caches ==="
+            php artisan config:clear
+            php artisan cache:clear
+            php artisan view:clear
+            php artisan route:clear
+
+            echo "=== Optimizing ==="
+            php artisan config:cache
+            php artisan route:cache
+
+            echo "=== Fixing permissions ==="
+            sudo chown -R www-data:www-data storage bootstrap/cache
+            chmod -R 775 storage bootstrap/cache
+
+            echo "=== Publishing assets ==="
+            php artisan filament:assets 2>/dev/null || true
+
+            echo "=== Reloading services ==="
+            sudo service php8.2-fpm reload
+            sudo service nginx reload
+
+            echo "=== Deploy complete ==="
+          EOF
