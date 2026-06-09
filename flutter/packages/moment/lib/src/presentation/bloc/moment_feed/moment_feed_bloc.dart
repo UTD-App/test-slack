@@ -17,12 +17,20 @@ class MomentFeedBloc extends Bloc<MomentFeedEvent, MomentFeedState> {
     on<MomentLikeToggled>(_onLike);
     on<MomentDeleted>(_onDelete);
     on<MomentCommentAdded>(_onCommentAdded);
+    on<MomentGiftSent>(_onGiftSent);
     on<MomentCreated>(_onCreate);
   }
 
   void _onCommentAdded(MomentCommentAdded event, Emitter<MomentFeedState> emit) {
     final updated = state.moments
         .map((m) => m.id == event.momentId ? m.copyWith(commentNum: m.commentNum + 1) : m)
+        .toList();
+    emit(state.copyWith(moments: updated));
+  }
+
+  void _onGiftSent(MomentGiftSent event, Emitter<MomentFeedState> emit) {
+    final updated = state.moments
+        .map((m) => m.id == event.momentId ? m.copyWith(giftsCount: m.giftsCount + 1) : m)
         .toList();
     emit(state.copyWith(moments: updated));
   }

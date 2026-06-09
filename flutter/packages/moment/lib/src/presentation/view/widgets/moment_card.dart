@@ -19,6 +19,10 @@ class MomentCard extends StatelessWidget {
   final VoidCallback onDelete;
   final void Function(String url) onTapImage;
 
+  /// Called after a gift is successfully sent on this moment, so the parent can
+  /// bump the gift count without reloading the feed. Optional (e.g. Stac).
+  final VoidCallback? onGiftSent;
+
   const MomentCard({
     super.key,
     required this.moment,
@@ -28,6 +32,7 @@ class MomentCard extends StatelessWidget {
     required this.onReport,
     required this.onDelete,
     required this.onTapImage,
+    this.onGiftSent,
   });
 
   @override
@@ -137,6 +142,7 @@ class MomentCard extends StatelessWidget {
                       contextType: 'moment',
                       contextId: moment.id,
                       receiverName: moment.userName,
+                      onSent: onGiftSent,
                     ),
                     icon: const Icon(Icons.card_giftcard, color: Colors.grey, size: 20),
                     label: Text('${moment.giftsCount}', style: const TextStyle(color: Colors.grey)),

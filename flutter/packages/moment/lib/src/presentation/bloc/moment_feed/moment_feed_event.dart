@@ -43,6 +43,15 @@ class MomentCommentAdded extends MomentFeedEvent {
   List<Object?> get props => [momentId];
 }
 
+/// A gift was sent (from the gift picker) — bump the card's gift count so it
+/// updates immediately without a full feed refresh.
+class MomentGiftSent extends MomentFeedEvent {
+  final int momentId;
+  const MomentGiftSent(this.momentId);
+  @override
+  List<Object?> get props => [momentId];
+}
+
 /// Create a new moment, then refresh the feed.
 class MomentCreated extends MomentFeedEvent {
   final String text;

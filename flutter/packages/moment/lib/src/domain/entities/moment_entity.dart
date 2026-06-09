@@ -46,7 +46,7 @@ class MomentEntity extends Equatable {
     required this.age,
   });
 
-  MomentEntity copyWith({int? likeNum, int? commentNum, bool? isLike}) {
+  MomentEntity copyWith({int? likeNum, int? commentNum, bool? isLike, int? giftsCount}) {
     return MomentEntity(
       id: id,
       userId: userId,
@@ -55,7 +55,7 @@ class MomentEntity extends Equatable {
       images: images,
       commentNum: commentNum ?? this.commentNum,
       likeNum: likeNum ?? this.likeNum,
-      giftsCount: giftsCount,
+      giftsCount: giftsCount ?? this.giftsCount,
       isLike: isLike ?? this.isLike,
       createdAt: createdAt,
       isOwner: isOwner,

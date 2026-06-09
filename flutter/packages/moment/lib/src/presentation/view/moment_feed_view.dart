@@ -112,6 +112,7 @@ class _MomentFeedViewState extends State<MomentFeedView> {
                     onCommentAdded: () => feedBloc.add(MomentCommentAdded(moment.id)),
                   );
                 },
+                onGiftSent: () => context.read<MomentFeedBloc>().add(MomentGiftSent(moment.id)),
                 onReport: () async {
                   final ok = await showReportMomentDialog(context, moment.id);
                   if (ok && context.mounted) {

@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:stac/stac.dart' hide StacService;
 
@@ -45,6 +44,27 @@ class StacUtdList {
       padding: (json['padding'] as num?)?.toDouble(),
       onItemTap: (json['onItemTap'] as Map?)?.cast<String, dynamic>(),
     );
+  }
+}
+
+/// Injects the row's raw data under `item` into every Stac action node found in
+/// a resolved item template — so per-row buttons (like / comment / menu) get the
+/// same row context a whole-row `onItemTap` receives. An action node is any map
+/// carrying an `actionType`; the row map is shared by reference (read-only use).
+void _injectItemIntoActions(dynamic node, Map<String, dynamic> row) {
+  if (node is Map) {
+    // Recurse over a snapshot first (we may add the `item` key below, and
+    // mutating a map while iterating its values throws).
+    for (final value in List<dynamic>.of(node.values)) {
+      _injectItemIntoActions(value, row);
+    }
+    if (node['actionType'] is String && !node.containsKey('item')) {
+      node['item'] = row;
+    }
+  } else if (node is List) {
+    for (final child in node) {
+      _injectItemIntoActions(child, row);
+    }
   }
 }
 
@@ -107,14 +127,21 @@ class StacUtdListParser extends StacParser<StacUtdList> {
               : EdgeInsets.zero,
           itemCount: items.length,
           itemBuilder: (context, index) {
-            final resolved = StacBinding.resolve(template, items[index]);
+            final row = items[index];
+            final resolved = StacBinding.resolve(template, row);
+            // Per-row buttons designed INSIDE the item template (like / comment /
+            // menu) need the row's data just like a whole-row tap does. Inject
+            // the raw row under `item` into every action node in the resolved
+            // template, so a package action can read the row's id without the
+            // designer wiring anything. Mirrors the `onItemTap` merge below.
+            _injectItemIntoActions(resolved, row);
             // Row tap → dispatch the action with the raw row merged in as
             // `item`, so the (package-owned) action can read the row's id.
             final tap = model.onItemTap;
             if (tap != null) {
               final wrapped = <String, dynamic>{
                 'type': 'gestureDetector',
-                'onTap': {...tap, 'item': items[index]},
+                'onTap': {...tap, 'item': row},
                 'child': resolved,
               };
               return Stac.fromJson(wrapped, context) ?? const SizedBox.shrink();

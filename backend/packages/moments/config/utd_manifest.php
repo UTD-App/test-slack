@@ -1,34 +1,26 @@
 <?php
 
 /**
- * UTD Studio manifest for the MOMENT package (server-driven feed).
+ * UTD Studio manifest for the MOMENTS package (server-driven, fully editable).
  *
- * Exposes the moments feed as a design-time contract so UTD Studio can lay out
- * the feed screen visually — exactly like the Core/Chat manifests. The editor
+ * Exposes the moments feature as a design-time contract so UTD Studio can lay
+ * out its screens visually — exactly like the Core/Chat manifests. The editor
  * reads this via GET /api/utd/manifest (X-UTD-Secret); it has NO hardcoded
  * knowledge of "moment". Adding/removing a field or action = editing THIS file.
  *
- * Runtime data is provided on the Flutter side by `registerMomentStacSources()`
- * (flutter/lib/src/stac/moment_stac_sources.dart). The keys below MUST match the
- * map that source returns for each row, so bindings resolve without any mapping:
- *   list source `moment.feed` → [{ description, image, user_name, user_avatar,
- *                                  like_num, comment_num, gifts_count, is_like,
- *                                  created_at, moment_id, user_id }]
+ * Authoring rules (docs/PACKAGE-AUTHORING-RULES.md): every visible piece is an
+ * explicit Craft node the client can move/restyle/hide/delete — NO opaque
+ * PackageWidget "black box". So both screens are built from
+ * List/Container/Row/Text/Image/Icon, each dynamic value is a `binding`, and the
+ * post-details page is its OWN default screen reached via `moment.open`.
  *
- * `action_elements` are the source of truth for actions:
- *   - `produces`      → the Stac `actionType` emitted on the client (moment.*)
- *   - `default_shape` → suggested editor widget (button | list_item | input | switch)
- *   - `context:'item'`→ the action runs inside a repeated row; the base injects the
- *                       pressed row under `item`, so the (package-owned) parser can
- *                       read its id. See flutter/lib/src/stac/moment_actions.dart.
- *
- * `default_screens` ships a ready-to-edit `feed` screen seeded by UTD Studio on
- * first Sync. It hosts the package's own `moment.feed` widget — a PackageWidget
- * that renders the REAL interactive feed in Flutter (see
- * flutter/lib/src/stac/moment_feed_parser.dart → MomentFeedView): like,
- * comments, likes, report, delete, image preview, gifts, pull-to-refresh and
- * infinite scroll all work natively. Plus a floating "add" button (route
- * /moment/add). Shape mirrors the Core manifest (utd_manifest_core.php).
+ * Runtime data + behaviour live on the Flutter side (flutter/lib/src/stac/):
+ *   • registerMomentStacSources()  → moment.feed (list), moment.detail (object),
+ *                                     moment.comments (list)
+ *   • momentStacActionParsers()    → moment.toggleLike / open / postMenu /
+ *                                     sendGift / addComment
+ * The map keys returned by each source MUST match the binding keys below so the
+ * designer's bindings resolve without any mapping.
  */
 
 // ── Craft node helper (mirrors utd_manifest_core.php / the Studio scripts) ──
@@ -48,111 +40,234 @@ $node = function (string $name, bool $canvas, array $props, array $kids = [], ?s
     return $n;
 };
 
-// feed — the package draws its own feed (moment.feed PackageWidget, fills the
-// screen) + a floating add button. No standard-widget card here: the base
-// runtime only injects the row data (`item`) on a whole-row tap, so inner
-// per-row buttons (like/comment) wouldn't resolve their id. Drawing the feed in
-// Flutter keeps EVERY button working.
+// ── Screen A: feed — a List of explicit post cards (every part editable) ──
+// Whole-row tap and the comment icon open the post detail (moment.open →
+// /s/moment). The like / menu / gift buttons act on the pressed row (the base
+// injects the row under `item` into per-row actions).
 $feedWidgets = [
-    'ROOT' => $node('Container', true, [
-        'background' => '#ffffff', 'padding' => 0, 'gap' => 0, 'align' => 'stretch', 'flex' => 0,
-    ], ['feed', 'fab'], null),
-    'feed' => $node('PackageWidget', false, [
-        'widgetType' => 'moment.feed',
-        'label'      => 'موجز اللحظات',
-        'props'      => new stdClass(),
-        'flex'       => 1,
-        'context'    => [],
-        'variants'   => [],
-    ], [], 'ROOT'),
-    'fab'  => $node('Fab', false, [
-        'glyph' => 'add', 'bg' => '#2563eb', 'route' => '/moment/add',
-    ], [], 'ROOT'),
+    'ROOT' => $node('Container', true, ['background' => '#f1f5f9', 'padding' => 0, 'gap' => 0, 'align' => 'stretch', 'flex' => 0], ['flist', 'fab'], null),
+
+    'flist' => $node('List', true, ['source' => 'moment.feed', 'onItemTapAction' => 'moment.open', 'shrinkWrap' => false], ['card'], 'ROOT'),
+
+    'card' => $node('Container', true, ['background' => '#ffffff', 'padding' => 12, 'gap' => 8, 'radius' => 12, 'align' => 'stretch'], ['hdr', 'body', 'media', 'acts'], 'flist'),
+
+    // header: avatar + (name / time) + menu
+    'hdr'  => $node('Row', true, ['gap' => 8, 'align' => 'center'], ['av', 'meta', 'menu'], 'card'),
+    'av'   => $node('Image', false, ['binding' => 'moment.feed.user_avatar', 'src' => '', 'shape' => 'circle', 'width' => 44, 'height' => 44, 'fit' => 'cover'], [], 'hdr'),
+    'meta' => $node('Container', true, ['flex' => 1, 'gap' => 2, 'align' => 'flex-start'], ['nm', 'tm'], 'hdr'),
+    'nm'   => $node('Text', false, ['binding' => 'moment.feed.user_name', 'text' => '', 'fontSize' => 14, 'fontWeight' => 600, 'color' => '#0F172A', 'maxLines' => 1], [], 'meta'),
+    'tm'   => $node('Text', false, ['binding' => 'moment.feed.created_at', 'text' => '', 'fontSize' => 12, 'fontWeight' => 400, 'color' => '#94A3B8', 'maxLines' => 1], [], 'meta'),
+    'menu' => $node('Icon', false, ['name' => 'more_horiz', 'size' => 20, 'color' => '#94A3B8', 'onTapAction' => 'moment.postMenu'], [], 'hdr'),
+
+    // body + media (media hides itself when the row has no image)
+    'body'  => $node('Text', false, ['binding' => 'moment.feed.description', 'text' => '', 'fontSize' => 14, 'fontWeight' => 400, 'color' => '#0F172A', 'maxLines' => 0], [], 'card'),
+    'media' => $node('Image', false, ['binding' => 'moment.feed.image', 'visibleBinding' => 'moment.feed.image', 'src' => '', 'height' => 220, 'fit' => 'cover', 'radius' => 8], [], 'card'),
+
+    // actions: like / comment / gift, each with its count
+    'acts' => $node('Row', true, ['gap' => 6, 'align' => 'center'], ['like', 'lc', 'cmt', 'cc', 'gift', 'gc'], 'card'),
+    'like' => $node('Icon', false, ['name' => 'favorite_border', 'size' => 20, 'color' => '#EF4444', 'onTapAction' => 'moment.toggleLike'], [], 'acts'),
+    'lc'   => $node('Text', false, ['binding' => 'moment.feed.like_num', 'text' => '0', 'fontSize' => 13, 'fontWeight' => 400, 'color' => '#64748B'], [], 'acts'),
+    'cmt'  => $node('Icon', false, ['name' => 'chat_bubble_outline', 'size' => 20, 'color' => '#64748B', 'onTapAction' => 'moment.open'], [], 'acts'),
+    'cc'   => $node('Text', false, ['binding' => 'moment.feed.comment_num', 'text' => '0', 'fontSize' => 13, 'fontWeight' => 400, 'color' => '#64748B'], [], 'acts'),
+    'gift' => $node('Icon', false, ['name' => 'card_giftcard', 'size' => 20, 'color' => '#F59E0B', 'onTapAction' => 'moment.sendGift'], [], 'acts'),
+    'gc'   => $node('Text', false, ['binding' => 'moment.feed.gifts_count', 'text' => '0', 'fontSize' => 13, 'fontWeight' => 400, 'color' => '#64748B'], [], 'acts'),
+
+    // floating "add moment" button (lifts to the scaffold)
+    'fab' => $node('Fab', false, ['glyph' => 'add', 'bg' => '#2563eb', 'route' => '/moment/add'], [], 'ROOT'),
+];
+
+// ── Screen B: moment — post detail (Scope) + comments (List) + composer ──
+$momentWidgets = [
+    'ROOT' => $node('Container', true, ['background' => '#ffffff', 'padding' => 0, 'gap' => 0, 'align' => 'stretch', 'flex' => 0], ['scope', 'div', 'clist', 'composer'], null),
+
+    // the opened post (bound to the single-object source moment.detail)
+    'scope'  => $node('Scope', true, ['source' => 'moment.detail'], ['dcard'], 'ROOT'),
+    'dcard'  => $node('Container', true, ['padding' => 12, 'gap' => 8, 'align' => 'stretch'], ['dhdr', 'dbody', 'dmedia'], 'scope'),
+    'dhdr'   => $node('Row', true, ['gap' => 8, 'align' => 'center'], ['dav', 'dmeta'], 'dcard'),
+    'dav'    => $node('Image', false, ['binding' => 'moment.detail.user_avatar', 'src' => '', 'shape' => 'circle', 'width' => 44, 'height' => 44, 'fit' => 'cover'], [], 'dhdr'),
+    'dmeta'  => $node('Container', true, ['flex' => 1, 'gap' => 2, 'align' => 'flex-start'], ['dnm', 'dtm'], 'dhdr'),
+    'dnm'    => $node('Text', false, ['binding' => 'moment.detail.user_name', 'text' => '', 'fontSize' => 15, 'fontWeight' => 600, 'color' => '#0F172A', 'maxLines' => 1], [], 'dmeta'),
+    'dtm'    => $node('Text', false, ['binding' => 'moment.detail.created_at', 'text' => '', 'fontSize' => 12, 'fontWeight' => 400, 'color' => '#94A3B8', 'maxLines' => 1], [], 'dmeta'),
+    'dbody'  => $node('Text', false, ['binding' => 'moment.detail.description', 'text' => '', 'fontSize' => 15, 'fontWeight' => 400, 'color' => '#0F172A', 'maxLines' => 0], [], 'dcard'),
+    'dmedia' => $node('Image', false, ['binding' => 'moment.detail.image', 'visibleBinding' => 'moment.detail.image', 'src' => '', 'height' => 240, 'fit' => 'cover', 'radius' => 8], [], 'dcard'),
+
+    'div' => $node('Divider', false, ['color' => '#e5e7eb', 'thickness' => 1], [], 'ROOT'),
+
+    // comments list (fills the space between the post and the composer)
+    'clist' => $node('List', true, ['source' => 'moment.comments', 'shrinkWrap' => false], ['crow'], 'ROOT'),
+    'crow'  => $node('Row', true, ['gap' => 8, 'align' => 'flex-start', 'padding' => 8], ['cav', 'cmeta'], 'clist'),
+    'cav'   => $node('Image', false, ['binding' => 'moment.comments.author_avatar', 'src' => '', 'shape' => 'circle', 'width' => 36, 'height' => 36, 'fit' => 'cover'], [], 'crow'),
+    'cmeta' => $node('Container', true, ['flex' => 1, 'gap' => 2, 'align' => 'flex-start'], ['cnm', 'cbody', 'ctm'], 'crow'),
+    'cnm'   => $node('Text', false, ['binding' => 'moment.comments.author_name', 'text' => '', 'fontSize' => 13, 'fontWeight' => 600, 'color' => '#0F172A', 'maxLines' => 1], [], 'cmeta'),
+    'cbody' => $node('Text', false, ['binding' => 'moment.comments.body', 'text' => '', 'fontSize' => 14, 'fontWeight' => 400, 'color' => '#334155', 'maxLines' => 0], [], 'cmeta'),
+    'ctm'   => $node('Text', false, ['binding' => 'moment.comments.created_at', 'text' => '', 'fontSize' => 11, 'fontWeight' => 400, 'color' => '#94A3B8', 'maxLines' => 1], [], 'cmeta'),
+
+    // composer: live text field + send (reads the field by id, posts on the open moment)
+    'composer' => $node('Row', true, ['gap' => 8, 'align' => 'center', 'padding' => 8, 'background' => '#f8fafc'], ['cfield', 'csend'], 'ROOT'),
+    'cfield'   => $node('TextField', false, ['fieldId' => 'commentField', 'placeholder' => 'اكتب تعليقًا…', 'live' => true, 'flex' => 1, 'fillColor' => '#f1f5f9', 'radius' => 20], [], 'composer'),
+    'csend'    => $node('Icon', false, ['name' => 'send', 'size' => 24, 'color' => '#2563eb', 'onTapAction' => 'moment.addComment', 'onTapParams' => ['commentField' => 'commentField']], [], 'composer'),
 ];
 
 return [
     'key'     => 'moment',
     'name'    => 'Moments',
     'icon'    => 'dynamic_feed',
-    'screens' => ['feed'],
+    'screens' => ['feed', 'moment'],
 
-    // Per-row display bindings available on the feed screen.
+    // Bindable fields the designer sees in the Studio palette, per screen. Every
+    // `binding` used in the trees above MUST be declared here (else it won't show
+    // as a bindable attribute) AND have a matching Flutter source key.
     'elements' => [
-        ['key' => 'description', 'label' => 'النص',            'type' => 'string',    'screen' => 'feed'],
-        ['key' => 'image',       'label' => 'صورة المنشور',     'type' => 'image_url', 'screen' => 'feed'],
-        ['key' => 'user_name',   'label' => 'اسم صاحب المنشور', 'type' => 'string',    'screen' => 'feed'],
-        ['key' => 'user_avatar', 'label' => 'صورة صاحب المنشور','type' => 'image_url', 'screen' => 'feed'],
-        ['key' => 'like_num',    'label' => 'عدد الإعجابات',     'type' => 'int',       'screen' => 'feed'],
-        ['key' => 'comment_num', 'label' => 'عدد التعليقات',     'type' => 'int',       'screen' => 'feed'],
-        ['key' => 'gifts_count', 'label' => 'عدد الهدايا',       'type' => 'int',       'screen' => 'feed'],
-        ['key' => 'created_at',  'label' => 'التاريخ',           'type' => 'datetime',  'screen' => 'feed'],
-        // hidden: used by logic/actions, not shown directly in the binding palette.
-        ['key' => 'is_like',     'label' => 'معجب؟',            'type' => 'bool', 'screen' => 'feed', 'hidden' => true],
-        ['key' => 'moment_id',   'label' => 'معرّف المنشور',     'type' => 'id',   'screen' => 'feed', 'hidden' => true],
-        ['key' => 'user_id',     'label' => 'معرّف المستخدم',    'type' => 'id',   'screen' => 'feed', 'hidden' => true],
+        // feed (post card)
+        ['key' => 'user_name',   'label' => 'اسم صاحب المنشور',  'type' => 'string',    'screen' => 'feed'],
+        ['key' => 'user_avatar', 'label' => 'صورة صاحب المنشور', 'type' => 'image_url', 'screen' => 'feed'],
+        ['key' => 'description', 'label' => 'نص المنشور',         'type' => 'string',    'screen' => 'feed'],
+        ['key' => 'image',       'label' => 'صورة المنشور',       'type' => 'image_url', 'screen' => 'feed'],
+        ['key' => 'like_num',    'label' => 'عدد الإعجابات',       'type' => 'int',       'screen' => 'feed'],
+        ['key' => 'comment_num', 'label' => 'عدد التعليقات',       'type' => 'int',       'screen' => 'feed'],
+        ['key' => 'gifts_count', 'label' => 'عدد الهدايا',         'type' => 'int',       'screen' => 'feed'],
+        ['key' => 'created_at',  'label' => 'التاريخ',             'type' => 'datetime',  'screen' => 'feed'],
+        ['key' => 'is_like',     'label' => 'معجب؟',              'type' => 'bool', 'screen' => 'feed', 'hidden' => true],
+        ['key' => 'is_owner',    'label' => 'مالك المنشور؟',       'type' => 'bool', 'screen' => 'feed', 'hidden' => true],
+        ['key' => 'moment_id',   'label' => 'معرّف المنشور',       'type' => 'id',   'screen' => 'feed', 'hidden' => true],
+        ['key' => 'user_id',     'label' => 'معرّف المستخدم',      'type' => 'id',   'screen' => 'feed', 'hidden' => true],
+
+        // moment (detail post)
+        ['key' => 'user_name',   'label' => 'اسم صاحب المنشور',  'type' => 'string',    'screen' => 'moment'],
+        ['key' => 'user_avatar', 'label' => 'صورة صاحب المنشور', 'type' => 'image_url', 'screen' => 'moment'],
+        ['key' => 'description', 'label' => 'نص المنشور',         'type' => 'string',    'screen' => 'moment'],
+        ['key' => 'image',       'label' => 'صورة المنشور',       'type' => 'image_url', 'screen' => 'moment'],
+        ['key' => 'created_at',  'label' => 'التاريخ',             'type' => 'datetime',  'screen' => 'moment'],
+        // moment (a comment row)
+        ['key' => 'author_name',   'label' => 'اسم المُعلّق',     'type' => 'string',    'screen' => 'moment'],
+        ['key' => 'author_avatar', 'label' => 'صورة المُعلّق',    'type' => 'image_url', 'screen' => 'moment'],
+        ['key' => 'body',          'label' => 'نص التعليق',       'type' => 'string',    'screen' => 'moment'],
+        ['key' => 'comment_id',    'label' => 'معرّف التعليق',    'type' => 'id', 'screen' => 'moment', 'hidden' => true],
     ],
 
-    // Repeating list source: a `utdList` bound to `moment.feed` renders one row
-    // per moment, each row's children binding to the element keys above. Resolved
-    // on the client by `registerMomentStacSources()`.
+    // Single-object source: the opened post (Scope → utdObject). Resolved on the
+    // client by registerMomentStacSources() from MomentStacBridge.currentMoment.
+    'object_sources' => [
+        [
+            'key'      => 'moment.detail',
+            'label'    => 'المنشور المفتوح',
+            'screen'   => 'moment',
+            'provides' => [
+                ['key' => 'user_name',   'label' => 'اسم صاحب المنشور',  'type' => 'string'],
+                ['key' => 'user_avatar', 'label' => 'صورة صاحب المنشور', 'type' => 'image_url'],
+                ['key' => 'description', 'label' => 'نص المنشور',         'type' => 'string'],
+                ['key' => 'image',       'label' => 'صورة المنشور',       'type' => 'image_url'],
+                ['key' => 'created_at',  'label' => 'التاريخ',             'type' => 'datetime'],
+                ['key' => 'like_num',    'label' => 'عدد الإعجابات',       'type' => 'int'],
+                ['key' => 'comment_num', 'label' => 'عدد التعليقات',       'type' => 'int'],
+                ['key' => 'gifts_count', 'label' => 'عدد الهدايا',         'type' => 'int'],
+            ],
+        ],
+    ],
+
+    // Repeating list sources: a `List` bound to one of these renders one row per
+    // record, each row's children binding to the keys it provides.
     'list_sources' => [
         [
             'key'      => 'moment.feed',
             'label'    => 'منشورات اللحظات',
             'screen'   => 'feed',
             'provides' => [
-                ['key' => 'description', 'label' => 'النص',            'type' => 'string'],
-                ['key' => 'image',       'label' => 'صورة المنشور',     'type' => 'image_url'],
-                ['key' => 'user_name',   'label' => 'اسم صاحب المنشور', 'type' => 'string'],
-                ['key' => 'user_avatar', 'label' => 'صورة صاحب المنشور','type' => 'image_url'],
-                ['key' => 'like_num',    'label' => 'عدد الإعجابات',     'type' => 'int'],
-                ['key' => 'comment_num', 'label' => 'عدد التعليقات',     'type' => 'int'],
-                ['key' => 'gifts_count', 'label' => 'عدد الهدايا',       'type' => 'int'],
-                ['key' => 'created_at',  'label' => 'التاريخ',           'type' => 'datetime'],
-                ['key' => 'is_like',     'label' => 'معجب؟',            'type' => 'bool'],
-                ['key' => 'moment_id',   'label' => 'معرّف المنشور',     'type' => 'id'],
-                ['key' => 'user_id',     'label' => 'معرّف المستخدم',    'type' => 'id'],
+                ['key' => 'user_name',   'label' => 'اسم صاحب المنشور',  'type' => 'string'],
+                ['key' => 'user_avatar', 'label' => 'صورة صاحب المنشور', 'type' => 'image_url'],
+                ['key' => 'description', 'label' => 'نص المنشور',         'type' => 'string'],
+                ['key' => 'image',       'label' => 'صورة المنشور',       'type' => 'image_url'],
+                ['key' => 'like_num',    'label' => 'عدد الإعجابات',       'type' => 'int'],
+                ['key' => 'comment_num', 'label' => 'عدد التعليقات',       'type' => 'int'],
+                ['key' => 'gifts_count', 'label' => 'عدد الهدايا',         'type' => 'int'],
+                ['key' => 'created_at',  'label' => 'التاريخ',             'type' => 'datetime'],
+                ['key' => 'is_like',     'label' => 'معجب؟',              'type' => 'bool'],
+                ['key' => 'is_owner',    'label' => 'مالك المنشور؟',       'type' => 'bool'],
+                ['key' => 'moment_id',   'label' => 'معرّف المنشور',       'type' => 'id'],
+                ['key' => 'user_id',     'label' => 'معرّف المستخدم',      'type' => 'id'],
+            ],
+        ],
+        [
+            'key'      => 'moment.comments',
+            'label'    => 'تعليقات المنشور',
+            'screen'   => 'moment',
+            'provides' => [
+                ['key' => 'author_name',   'label' => 'اسم المُعلّق',  'type' => 'string'],
+                ['key' => 'author_avatar', 'label' => 'صورة المُعلّق', 'type' => 'image_url'],
+                ['key' => 'body',          'label' => 'نص التعليق',    'type' => 'string'],
+                ['key' => 'created_at',    'label' => 'التاريخ',        'type' => 'datetime'],
+                ['key' => 'comment_id',    'label' => 'معرّف التعليق', 'type' => 'id'],
+                ['key' => 'user_id',       'label' => 'معرّف المستخدم','type' => 'id'],
             ],
         ],
     ],
 
+    // `action_elements` are the source of truth for actions:
+    //   produces      → the Stac actionType emitted on the client (moment.*)
+    //   default_shape → suggested editor widget
+    //   context:'item'→ runs inside a repeated row; the base injects the pressed
+    //                   row under `item` so the (package) parser reads its id.
     'action_elements' => [
-        // Like / unlike the pressed moment (mutate). Reads the row id from `item`.
         [
             'key' => 'toggle_like', 'label' => 'إعجاب',
             'produces' => 'moment.toggleLike', 'default_shape' => 'button',
             'screen' => 'feed', 'context' => 'item',
         ],
-        // Drill-down: open the author's moments page.
         [
-            'key' => 'open_moment', 'label' => 'فتح منشورات صاحب اللحظة',
+            'key' => 'open_moment', 'label' => 'فتح المنشور',
             'produces' => 'moment.open', 'default_shape' => 'list_item',
-            'screen' => 'feed', 'context' => 'item', 'opens' => 'feed',
+            'screen' => 'feed', 'context' => 'item', 'opens' => 'moment',
+        ],
+        [
+            'key' => 'post_menu', 'label' => 'قائمة المنشور (إبلاغ/حذف)',
+            'produces' => 'moment.postMenu', 'default_shape' => 'button',
+            'screen' => 'feed', 'context' => 'item',
+        ],
+        [
+            'key' => 'send_gift', 'label' => 'إرسال هدية',
+            'produces' => 'moment.sendGift', 'default_shape' => 'button',
+            'screen' => 'feed', 'context' => 'item',
+        ],
+        [
+            'key' => 'add_comment', 'label' => 'إضافة تعليق',
+            'produces' => 'moment.addComment', 'default_shape' => 'button', 'screen' => 'moment',
+            'params' => [
+                ['key' => 'commentField', 'label' => 'حقل التعليق', 'type' => 'field_ref'],
+            ],
         ],
     ],
 
-    // Package-drawn widgets (Studio palette). Each MUST have a matching Flutter
-    // StacParser of the same `type` — here `moment.feed` (moment_feed_parser.dart).
-    'widgets' => [
-        ['type' => 'moment.feed', 'label' => 'موجز اللحظات', 'screen' => 'feed', 'icon' => 'dynamic_feed'],
-    ],
-
-    // ── Ready-to-edit default screen (seeded by UTD Studio on Sync) ──
+    // ── Ready-to-edit default screens (seeded by UTD Studio on Sync) ──
     'default_screens' => [
         [
             'name'         => 'feed',
             'label'        => 'اللحظات',
             'icon'         => '📸',
-            'version'      => '1.0.0',
+            'version'      => '2.0.0',
             'nav'          => true,
             'navIcon'      => 'dynamic_feed',
             'order'        => 10,
             'role'         => null,
             'requiresAuth' => true,
             'showOnce'     => false,
-            'opens'        => null,
+            'opens'        => 'moment',
             'chrome'       => ['appBar' => ['enabled' => true, 'title' => 'اللحظات', 'bg' => '#ffffff', 'actions' => []]],
             'widgets'      => $feedWidgets,
+        ],
+        [
+            'name'         => 'moment',
+            'label'        => 'تفاصيل المنشور',
+            'icon'         => '📝',
+            'version'      => '2.0.0',
+            'nav'          => false,
+            'navIcon'      => 'dynamic_feed',
+            'order'        => 11,
+            'role'         => null,
+            'requiresAuth' => true,
+            'showOnce'     => false,
+            'opens'        => null,
+            'chrome'       => ['appBar' => ['enabled' => true, 'title' => 'المنشور', 'bg' => '#ffffff', 'actions' => []]],
+            'widgets'      => $momentWidgets,
         ],
     ],
 ];

@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
-import 'package:stac/stac.dart' show StacActionParser, StacParser;
+import 'package:stac/stac.dart' show StacActionParser;
 import 'package:utd_app/addons/addons.dart';
 
 import '../src/data/datasources/moment_api_service.dart';
@@ -13,7 +13,6 @@ import '../src/presentation/bloc/moment_feed/moment_feed_bloc.dart';
 import '../src/presentation/view/moment_feed_page.dart';
 import '../src/presentation/view/moment_profile_section.dart';
 import '../src/stac/moment_actions.dart';
-import '../src/stac/moment_feed_parser.dart';
 import '../src/stac/moment_stac_sources.dart';
 import 'moment_routes.dart';
 import 'moment_strings.dart';
@@ -61,11 +60,6 @@ class MomentFeature extends AppFeature {
 
   @override
   List<StacActionParser> getStacActionParsers() => momentStacActionParsers();
-
-  /// Server-Driven UI: the `moment.feed` widget renders the real interactive
-  /// feed inside a UTD-Studio screen (see [MomentFeedStacParser]).
-  @override
-  List<StacParser> getStacParsers() => momentStacParsers();
 
   @override
   List<UiContribution> getUiContributions() => [
