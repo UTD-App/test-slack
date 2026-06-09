@@ -51,12 +51,11 @@ class AppConfig {
   factory AppConfig.production() {
     return AppConfig(
       appName: 'Tempo',
-      // Local test-stack backend served to the Android emulator via 10.0.2.2:8001.
-      // Revert to 'https://base-app.utdsoftware.com/api' for production builds.
-      baseUrl: 'http://10.0.2.2:8001/api',
+      // Server backend at project-x.utdsoftware.com.
+      baseUrl: 'https://project-x.utdsoftware.com/api',
       storageBucketUrl: 'https://storage.googleapis.com/base-app-utd',
-      domainUrl: 'http://10.0.2.2:8001',
-      privacyPolicyUrl: 'http://10.0.2.2:8001/api/privacy-policy',
+      domainUrl: 'https://project-x.utdsoftware.com',
+      privacyPolicyUrl: 'https://project-x.utdsoftware.com/api/privacy-policy',
       environment: Environment.production,
       enableDebugFeatures: false,
     );
