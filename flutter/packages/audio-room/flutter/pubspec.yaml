@@ -1,0 +1,45 @@
+name: audio_room
+description: Audio Room feature — create, manage, and join voice chat rooms with seat management powered by UTD Stream UIKit.
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: ^3.9.2
+  flutter: ">=3.29.2"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  utd_app:
+    path: ../../../
+  utd_audio_room_kit:
+    path: C:/Users/CONNECT/StudioProjects/utd_audio_room_kit
+  flutter_bloc: ^8.1.6
+  bloc: ^8.1.4
+  equatable: ^2.0.8
+  provider: ^6.0.0
+  flutter_screenutil: ^5.9.3
+  cached_network_image: ^3.3.1
+  go_router: ^13.0.0
+  image_picker: ^1.0.0
+  dio: ^5.3.0
+  shared_preferences: ^2.2.0
+
+dependency_overrides:
+  archive: ^4.0.0
+  http: ^1.0.0
+  audioplayers: ^6.6.0
+  flutter_bloc: ^8.1.6
+  bloc: ^8.1.4
+  connectivity_plus: ^6.0.0
+  protobuf: ^6.0.0
+
+flutter:
+  assets:
+    - assets/icons/
+    - assets/images/
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0

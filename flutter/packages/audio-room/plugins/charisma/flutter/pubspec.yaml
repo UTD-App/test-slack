@@ -1,0 +1,32 @@
+name: audio_room_charisma
+description: Charisma plugin for Audio Room — tracks user charisma points and levels in rooms.
+version: 1.0.0
+publish_to: none
+
+environment:
+  sdk: ^3.9.2
+  flutter: ">=3.29.2"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  audio_room:
+    path: ../../../flutter
+  utd_app:
+    path: ../../../../base-project/flutter
+  flutter_bloc: ^8.1.6
+  equatable: ^2.0.8
+
+dependency_overrides:
+  archive: ^4.0.0
+  http: ^1.0.0
+  audioplayers: ^6.6.0
+  flutter_bloc: ^8.1.6
+  bloc: ^8.1.4
+  connectivity_plus: ^6.0.0
+  protobuf: ^6.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0

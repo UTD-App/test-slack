@@ -1,4 +1,5 @@
 import 'package:authentication/authentication.dart';
+import 'package:audio_room/audio_room.dart';
 import 'package:moment/moment.dart';
 import 'package:flutter/material.dart';
 import 'package:stac/stac.dart' hide StacService;
@@ -46,6 +47,7 @@ void main() async {
     return [
       AuthFeature(),
       MomentFeature(),
+      AudioRoomFeature(),
     ];
   }
 

@@ -1,0 +1,417 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Helpers\Common;
+use App\Models\Room;
+use App\Models\RoomBlacklist;
+use App\Models\RoomCategory;
+use App\Models\RoomVisitor;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+
+class RoomController extends Controller
+{
+    public function index(Request $request): JsonResponse
+    {
+        $query = Room::with(['owner.profile', 'owner.country', 'categoryType'])
+            ->withCount('visitors')
+            ->where('room_status', 1);
+
+        if ($request->filled('category_id')) {
+            $query->where('room_type', $request->category_id);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('room_name', 'like', "%{$search}%")
+                  ->orWhere('num_id', $search);
+            });
+        }
+
+        $query->orderByDesc('visitors_count')->orderByDesc('created_at');
+        $rooms = $query->paginate(20);
+
+        $data = $rooms->getCollection()->map(fn ($room) => $this->formatRoom($room));
+
+        return Common::apiResponse(true, '', $data, 200, $rooms);
+    }
+
+    public function store(Request $request): JsonResponse
+    {
+        $request->validate([
+            'room_name' => 'required|string|max:50',
+            'mode' => 'required|integer',
+            'room_cover' => 'nullable|image|max:5120',
+            'room_intro' => 'nullable|string|max:500',
+            'room_type' => 'nullable|integer|exists:room_categories,id',
+            'room_class' => 'nullable|integer|exists:room_categories,id',
+            'room_pass' => 'nullable|string|max:20',
+        ]);
+
+        $existing = Room::where('user_id', Auth::id())->where('type', 'audio')->first();
+        if ($existing) {
+            return Common::apiResponse(false, 'You already have a room', null, 422);
+        }
+
+        $coverPath = null;
+        if ($request->hasFile('room_cover')) {
+            $coverPath = $request->file('room_cover')->store('rooms/covers', 'public');
+        }
+
+        $room = Room::create([
+            'user_id' => Auth::id(),
+            'num_id' => rand(111111, 999999),
+            'room_name' => $request->room_name,
+            'room_cover' => $coverPath,
+            'room_intro' => $request->room_intro,
+            'room_type' => $request->room_type,
+            'room_class' => $request->room_class,
+            'room_pass' => $request->room_pass,
+            'mode' => $request->mode,
+            'free_mic' => $request->boolean('free_mic', false),
+        ]);
+
+        $room->load(['owner.profile', 'owner.country', 'categoryType']);
+
+        return Common::apiResponse(true, 'Room created', $this->formatRoom($room), 201);
+    }
+
+    public function show(int $id): JsonResponse
+    {
+        $room = Room::with(['owner.profile', 'owner.country', 'categoryType'])
+            ->withCount('visitors')
+            ->findOrFail($id);
+
+        return Common::apiResponse(true, '', $this->formatRoom($room));
+    }
+
+    public function update(Request $request, int $id): JsonResponse
+    {
+        $room = Room::findOrFail($id);
+
+        if (!$room->isOwner(Auth::id())) {
+            return Common::apiResponse(false, 'Unauthorized', null, 403);
+        }
+
+        $request->validate([
+            'room_name' => 'nullable|string|max:50',
+            'room_intro' => 'nullable|string|max:500',
+            'room_rule' => 'nullable|string|max:500',
+            'room_cover' => 'nullable|image|max:5120',
+            'room_background' => 'nullable|string',
+            'room_pass' => 'nullable|string|max:20',
+            'mode' => 'nullable|integer',
+            'room_type' => 'nullable|integer|exists:room_categories,id',
+            'room_class' => 'nullable|integer|exists:room_categories,id',
+            'is_comment_closed' => 'nullable|boolean',
+            'free_mic' => 'nullable|boolean',
+        ]);
+
+        $data = $request->only([
+            'room_name', 'room_intro', 'room_rule', 'room_background',
+            'room_pass', 'mode', 'room_type', 'room_class',
+            'is_comment_closed', 'free_mic',
+        ]);
+
+        if ($request->hasFile('room_cover')) {
+            if ($room->room_cover) {
+                Storage::disk('public')->delete($room->room_cover);
+            }
+            $data['room_cover'] = $request->file('room_cover')->store('rooms/covers', 'public');
+        }
+
+        $room->update(array_filter($data, fn ($v) => $v !== null));
+        $room->load(['owner.profile', 'owner.country', 'categoryType']);
+        $room->loadCount('visitors');
+
+        return Common::apiResponse(true, 'Room updated', $this->formatRoom($room));
+    }
+
+    public function destroy(int $id): JsonResponse
+    {
+        $room = Room::findOrFail($id);
+
+        if (!$room->isOwner(Auth::id())) {
+            return Common::apiResponse(false, 'Unauthorized', null, 403);
+        }
+
+        if ($room->room_cover) {
+            Storage::disk('public')->delete($room->room_cover);
+        }
+
+        $room->delete();
+
+        return Common::apiResponse(true, 'Room deleted');
+    }
+
+    public function enter(Request $request, int $id): JsonResponse
+    {
+        $room = Room::with(['owner.profile', 'owner.country', 'categoryType'])
+            ->withCount('visitors')
+            ->findOrFail($id);
+
+        if ($room->room_status !== 1) {
+            return Common::apiResponse(false, 'Room is closed', null, 403);
+        }
+
+        $ban = RoomBlacklist::where('room_id', $id)
+            ->where('user_id', Auth::id())
+            ->valid()
+            ->first();
+
+        if ($ban) {
+            $remaining = $ban->getTimeRemaining();
+            return Common::apiResponse(false, 'You are banned from this room', [
+                'expires_at' => $ban->expires_at,
+                'remaining_seconds' => $remaining,
+                'reason' => $ban->reason,
+            ], 423);
+        }
+
+        if ($room->hasPassword() && !$room->isOwner(Auth::id())) {
+            $request->validate(['room_pass' => 'required|string']);
+            if ($request->room_pass !== $room->room_pass) {
+                return Common::apiResponse(false, 'Wrong password', null, 403);
+            }
+        }
+
+        RoomVisitor::updateOrCreate(
+            ['room_id' => $id, 'user_id' => Auth::id()],
+            ['updated_at' => now()]
+        );
+
+        $room->loadCount('visitors');
+
+        $streamConfig = [
+            'app_id' => config('services.utd_stream.app_id', ''),
+            'server_secret' => config('services.utd_stream.server_secret', ''),
+        ];
+
+        $roomData = $this->formatRoom($room);
+        $roomData['stream_config'] = $streamConfig;
+        $roomData['is_owner'] = $room->isOwner(Auth::id());
+        $roomData['is_admin'] = $room->isAdmin(Auth::id());
+
+        return Common::apiResponse(true, '', $roomData);
+    }
+
+    public function exit(int $id): JsonResponse
+    {
+        RoomVisitor::where('room_id', $id)
+            ->where('user_id', Auth::id())
+            ->delete();
+
+        return Common::apiResponse(true, 'Exited room');
+    }
+
+    public function mine(): JsonResponse
+    {
+        $room = Room::with(['owner.profile', 'owner.country', 'categoryType'])
+            ->withCount('visitors')
+            ->where('user_id', Auth::id())
+            ->where('type', 'audio')
+            ->first();
+
+        if (!$room) {
+            return Common::apiResponse(true, '', null);
+        }
+
+        return Common::apiResponse(true, '', $this->formatRoom($room));
+    }
+
+    public function users(int $id): JsonResponse
+    {
+        $visitors = RoomVisitor::with(['user.profile', 'user.country'])
+            ->where('room_id', $id)
+            ->paginate(50);
+
+        $data = $visitors->getCollection()->map(function ($visitor) {
+            $user = $visitor->user;
+            return [
+                'id' => $user->id,
+                'name' => $user->profile->name ?? $user->name ?? '',
+                'avatar' => $user->profile->avatar ?? null,
+                'country_flag' => $user->country->flag ?? null,
+                'joined_at' => $visitor->created_at,
+            ];
+        });
+
+        return Common::apiResponse(true, '', $data, 200, $visitors);
+    }
+
+    public function toggleFavorite(int $id): JsonResponse
+    {
+        $user = Auth::user();
+        $favorites = json_decode($user->room_favorites ?? '[]', true);
+
+        if (in_array($id, $favorites)) {
+            $favorites = array_values(array_diff($favorites, [$id]));
+            $message = 'Removed from favorites';
+        } else {
+            $favorites[] = $id;
+            $message = 'Added to favorites';
+        }
+
+        $user->update(['room_favorites' => json_encode($favorites)]);
+
+        return Common::apiResponse(true, $message);
+    }
+
+    public function toggleComments(Request $request, int $id): JsonResponse
+    {
+        $room = Room::findOrFail($id);
+
+        if (!$room->isOwnerOrAdmin(Auth::id())) {
+            return Common::apiResponse(false, 'Unauthorized', null, 403);
+        }
+
+        $room->update(['is_comment_closed' => $request->boolean('closed', false)]);
+
+        return Common::apiResponse(true, $room->is_comment_closed ? 'Comments closed' : 'Comments opened');
+    }
+
+    public function changeMode(Request $request, int $id): JsonResponse
+    {
+        $room = Room::findOrFail($id);
+
+        if (!$room->isOwner(Auth::id())) {
+            return Common::apiResponse(false, 'Unauthorized', null, 403);
+        }
+
+        $request->validate(['mode' => 'required|integer']);
+        $room->update(['mode' => $request->mode]);
+
+        return Common::apiResponse(true, 'Mode changed', ['mode' => $room->mode]);
+    }
+
+    public function categories(): JsonResponse
+    {
+        $categories = RoomCategory::where('enable', true)
+            ->whereNull('parent_id')
+            ->with('children')
+            ->orderBy('sort')
+            ->get();
+
+        return Common::apiResponse(true, '', $categories);
+    }
+
+    public function categoryTypes(int $id): JsonResponse
+    {
+        $children = RoomCategory::where('parent_id', $id)
+            ->where('enable', true)
+            ->orderBy('sort')
+            ->get();
+
+        return Common::apiResponse(true, '', $children);
+    }
+
+    public function removePassword(int $id): JsonResponse
+    {
+        $room = Room::findOrFail($id);
+
+        if (!$room->isOwner(Auth::id())) {
+            return Common::apiResponse(false, 'Unauthorized', null, 403);
+        }
+
+        $room->update(['room_pass' => null]);
+
+        return Common::apiResponse(true, 'Password removed');
+    }
+
+    public function muteWriting(Request $request, int $id): JsonResponse
+    {
+        $room = Room::findOrFail($id);
+
+        if (!$room->isOwnerOrAdmin(Auth::id())) {
+            return Common::apiResponse(false, 'Unauthorized', null, 403);
+        }
+
+        $request->validate(['user_id' => 'required|integer|exists:users,id']);
+
+        return Common::apiResponse(true, 'User muted from writing');
+    }
+
+    public function unmuteWriting(Request $request, int $id): JsonResponse
+    {
+        $room = Room::findOrFail($id);
+
+        if (!$room->isOwnerOrAdmin(Auth::id())) {
+            return Common::apiResponse(false, 'Unauthorized', null, 403);
+        }
+
+        $request->validate(['user_id' => 'required|integer|exists:users,id']);
+
+        return Common::apiResponse(true, 'User unmuted');
+    }
+
+    public function sendBanner(Request $request, int $id): JsonResponse
+    {
+        $room = Room::findOrFail($id);
+
+        if (!$room->isOwnerOrAdmin(Auth::id())) {
+            return Common::apiResponse(false, 'Unauthorized', null, 403);
+        }
+
+        $request->validate(['message' => 'required|string|max:200']);
+
+        return Common::apiResponse(true, 'Banner sent');
+    }
+
+    public function ranking(int $id): JsonResponse
+    {
+        return Common::apiResponse(true, '', []);
+    }
+
+    public function config(): JsonResponse
+    {
+        return Common::apiResponse(true, '', [
+            'app_id' => config('services.utd_stream.app_id', ''),
+            'server_secret' => config('services.utd_stream.server_secret', ''),
+            'max_admin' => 4,
+        ]);
+    }
+
+    private function formatRoom(Room $room): array
+    {
+        $owner = $room->owner;
+        $visitorImages = $room->visitors()
+            ->with('user.profile')
+            ->limit(5)
+            ->get()
+            ->map(fn ($v) => $v->user->profile->avatar ?? null)
+            ->filter()
+            ->values()
+            ->toArray();
+
+        return [
+            'id' => $room->id,
+            'num_id' => $room->num_id,
+            'owner_id' => $room->user_id,
+            'room_name' => $room->room_name,
+            'room_cover' => $room->room_cover,
+            'room_intro' => $room->room_intro,
+            'room_rule' => $room->room_rule,
+            'room_background' => $room->room_background,
+            'has_password' => $room->hasPassword(),
+            'mode' => $room->mode,
+            'room_status' => $room->room_status,
+            'is_afk' => $room->is_afk,
+            'is_comment_closed' => $room->is_comment_closed,
+            'free_mic' => $room->free_mic,
+            'max_admin' => $room->max_admin,
+            'visitor_count' => $room->visitors_count ?? $room->visitors()->count(),
+            'visitor_images' => $visitorImages,
+            'room_type' => $room->room_type,
+            'room_class' => $room->room_class,
+            'category_name' => $room->categoryType->name ?? null,
+            'owner_name' => $owner?->profile?->name ?? $owner?->name ?? '',
+            'owner_avatar' => $owner?->profile?->avatar ?? null,
+            'owner_country_flag' => $owner?->country?->flag ?? null,
+            'created_at' => $room->created_at,
+        ];
+    }
+}
