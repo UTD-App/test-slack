@@ -77,7 +77,7 @@ void main() async {
   // Initialize Translation service
   await TranslationService.instance.init();
 
-  final config = AppConfig.production();
+  final config = AppConfig.development();
   AppConfigProvider.initialize(config);
 
   final localeNotifier = LocaleNotifier();

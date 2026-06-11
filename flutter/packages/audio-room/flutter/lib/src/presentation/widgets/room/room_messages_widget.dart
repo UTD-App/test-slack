@@ -126,10 +126,7 @@ class _MessageBubble extends StatelessWidget {
               ),
               TextSpan(
                 text: message.text,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 13,
-                ),
+                style: const TextStyle(color: Colors.white, fontSize: 13),
               ),
             ],
           ),

@@ -41,6 +41,7 @@ class _AudioRoomPageState extends State<AudioRoomPage> {
   UTDRoomController? _controller;
   StreamSubscription? _joinSub;
   StreamSubscription? _leaveSub;
+  bool _isExiting = false;
 
   @override
   void initState() {
@@ -82,14 +83,19 @@ class _AudioRoomPageState extends State<AudioRoomPage> {
   }
 
   Future<void> _exitRoom() async {
+    if (_isExiting) return;
+    _isExiting = true;
     if (_controller != null) {
       final userId = CacheManager.getUserData()?['id']?.toString() ?? '';
-      final seatIndex =
-          _controller!.seatController.getSeatIndexByUserId(userId);
+      final seatIndex = _controller!.seatController.getSeatIndexByUserId(
+        userId,
+      );
       if (seatIndex >= 0) {
         await _controller!.seatController.leaveSeat(userId);
       }
+      await _controller!.leave();
     }
+    if (!mounted) return;
     final repository = context.read<AudioRoomRepository>();
     final result = await repository.exitRoom(widget.roomId);
     if (result is Failure) {
@@ -175,9 +181,7 @@ class _AudioRoomPageState extends State<AudioRoomPage> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (_error != null || _room == null) {
@@ -217,101 +221,105 @@ class _AudioRoomPageState extends State<AudioRoomPage> {
     final userName = userData?['name']?.toString() ?? '';
     final userAvatar = userData?['avatar']?.toString() ?? '';
 
-    return UTDAudioRoom(
-      appId: appId,
-      serverSecret: serverSecret,
-      userId: userId,
-      userName: userName,
-      roomId: room.id.toString(),
-      roomOwnerId: room.ownerId.toString(),
-      layoutMode: room.mode.toString(),
-      config: UTDAudioRoomConfig(
-        userInRoomAttributes: {
-          'avatar': userAvatar,
-          'name': userName,
-        },
-        backgroundWidget: RoomBackgroundWidget(
-          backgroundUrl: room.roomBackground,
-        ),
-        headerWidget: _controller != null
-            ? RoomHeaderWidget(
-                room: room,
-                controller: _controller!,
-                onExit: _exitRoom,
-                onVisitorsTap: _showVisitors,
-                onAdminsTap: _showAdmins,
-                onBlacklistTap: _showBlacklist,
-                onSettingsTap: () =>
-                    context.push('/rooms/${room.id}/settings'),
-              )
-            : const SizedBox.shrink(),
-        controlsBarWidget: _controller != null
-            ? RoomControlsBar(controller: _controller!)
-            : const SizedBox.shrink(),
-        messagesWidget: _controller != null
-            ? RoomMessagesWidget(controller: _controller!)
-            : const SizedBox.shrink(),
-        avatarBuilder: _controller != null
-            ? (userId, size, attributes, isMuted, seatIndex, userName) =>
-                SeatAvatarWidget(
-                  userId: userId,
-                  size: size,
-                  attributes: attributes,
-                  isMuted: isMuted,
-                  seatIndex: seatIndex,
-                  userName: userName,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (!didPop) {
+          await _exitRoom();
+        }
+      },
+      child: UTDAudioRoom(
+        appId: appId,
+        serverSecret: serverSecret,
+        userId: userId,
+        userName: userName,
+        roomId: room.id.toString(),
+        roomOwnerId: room.ownerId.toString(),
+        layoutMode: room.mode.toString(),
+        config: UTDAudioRoomConfig(
+          userInRoomAttributes: {'avatar': userAvatar, 'name': userName},
+          backgroundWidget: RoomBackgroundWidget(
+            backgroundUrl: room.roomBackground,
+          ),
+          headerWidget: _controller != null
+              ? RoomHeaderWidget(
+                  room: room,
                   controller: _controller!,
+                  onExit: _exitRoom,
+                  onVisitorsTap: _showVisitors,
+                  onAdminsTap: _showAdmins,
+                  onBlacklistTap: _showBlacklist,
+                  onSettingsTap: () =>
+                      context.push('/rooms/${room.id}/settings'),
                 )
-            : null,
-        emptySeatBuilder: (index, size) {
-          if (index == 0 && room.ownerId.toString() != userId) {
-            return LockedSeatWidget(index: index, size: size);
-          }
-          return EmptySeatWidget(index: index, size: size);
-        },
-        lockedSeatBuilder: (index, size) => LockedSeatWidget(
-          index: index,
-          size: size,
+              : const SizedBox.shrink(),
+          controlsBarWidget: _controller != null
+              ? RoomControlsBar(controller: _controller!)
+              : const SizedBox.shrink(),
+          messagesWidget: _controller != null
+              ? RoomMessagesWidget(controller: _controller!)
+              : const SizedBox.shrink(),
+          avatarBuilder: _controller != null
+              ? (userId, size, attributes, isMuted, seatIndex, userName) =>
+                    SeatAvatarWidget(
+                      userId: userId,
+                      size: size,
+                      attributes: attributes,
+                      isMuted: isMuted,
+                      seatIndex: seatIndex,
+                      userName: userName,
+                      controller: _controller!,
+                    )
+              : null,
+          emptySeatBuilder: (index, size) {
+            if (index == 0 && room.ownerId.toString() != userId) {
+              return LockedSeatWidget(index: index, size: size);
+            }
+            return EmptySeatWidget(index: index, size: size);
+          },
+          lockedSeatBuilder: (index, size) =>
+              LockedSeatWidget(index: index, size: size),
         ),
-      ),
-      onSeatTap: _controller != null
-          ? (index, seat) => handleSeatTap(
+        onSeatTap: _controller != null
+            ? (index, seat) => handleSeatTap(
                 context,
                 controller: _controller!,
                 seatIndex: index,
                 seat: seat,
                 localUserId: userId,
                 isOwner: room.ownerId.toString() == userId,
+                roomId: widget.roomId,
               )
-          : null,
-      onControllerReady: (controller) {
-        controller.onInvitationUI = (data) async {
-          if (!mounted) return false;
-          return showSpeakerInvitationDialog(context, data);
-        };
-        controller.onBanned = (notice) {
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                notice.reason ?? RoomStrings.of(context).bannedFromRoom,
+            : null,
+        onControllerReady: (controller) {
+          controller.onInvitationUI = (data) async {
+            if (!mounted) return false;
+            return showSpeakerInvitationDialog(context, data);
+          };
+          controller.onBanned = (notice) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  notice.reason ?? RoomStrings.of(context).bannedFromRoom,
+                ),
+                duration: const Duration(seconds: 3),
               ),
-              duration: const Duration(seconds: 3),
-            ),
-          );
-          _exitRoom();
-        };
-        _listenParticipantEvents(controller);
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) setState(() => _controller = controller);
-        });
-      },
-      onConnectionChanged: (isConnected) {
-        if (!isConnected && mounted) {
-          _exitRoom();
-        }
-      },
-      modes: _buildModes(),
+            );
+            _exitRoom();
+          };
+          _listenParticipantEvents(controller);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) setState(() => _controller = controller);
+          });
+        },
+        onConnectionChanged: (isConnected) {
+          if (!isConnected && mounted) {
+            _exitRoom();
+          }
+        },
+        modes: _buildModes(),
+      ),
     );
   }
 

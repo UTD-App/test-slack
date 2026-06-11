@@ -47,6 +47,19 @@ class AppConfig {
     this.maxRetryAttempts = 3,
   });
 
+  /// Development environment configuration (local backend)
+  factory AppConfig.development() {
+    return AppConfig(
+      appName: 'Tempo Dev',
+      baseUrl: 'http://192.168.1.7:8000/api',
+      storageBucketUrl: 'https://storage.googleapis.com/base-app-utd',
+      domainUrl: 'http://192.168.1.7:8000',
+      privacyPolicyUrl: 'http://192.168.1.7:8000/api/privacy-policy',
+      environment: Environment.development,
+      enableDebugFeatures: true,
+    );
+  }
+
   /// Production environment configuration
   factory AppConfig.production() {
     return AppConfig(

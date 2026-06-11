@@ -1,7 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:utd_audio_room_kit/utd_audio_room_kit.dart';
 
+import '../../bloc/room_management_bloc.dart';
 import 'ban_duration_dialog.dart';
 import 'room_strings.dart';
 
@@ -11,6 +13,8 @@ Future<void> showUserProfileSheet(
   required SeatState seat,
   required String localUserId,
   required bool isOwner,
+  required int roomId,
+  required RoomManagementBloc roomManagementBloc,
 }) {
   return showModalBottomSheet(
     context: context,
@@ -18,11 +22,15 @@ Future<void> showUserProfileSheet(
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
-    builder: (_) => _UserProfileBody(
-      controller: controller,
-      seat: seat,
-      localUserId: localUserId,
-      isOwner: isOwner,
+    builder: (_) => BlocProvider.value(
+      value: roomManagementBloc,
+      child: _UserProfileBody(
+        controller: controller,
+        seat: seat,
+        localUserId: localUserId,
+        isOwner: isOwner,
+        roomId: roomId,
+      ),
     ),
   );
 }
@@ -32,12 +40,14 @@ class _UserProfileBody extends StatelessWidget {
   final SeatState seat;
   final String localUserId;
   final bool isOwner;
+  final int roomId;
 
   const _UserProfileBody({
     required this.controller,
     required this.seat,
     required this.localUserId,
     required this.isOwner,
+    required this.roomId,
   });
 
   String get _userId => seat.occupantUserId ?? '';
@@ -207,11 +217,20 @@ class _UserProfileBody extends StatelessWidget {
   Future<void> _handleRoleChange(
       BuildContext context, bool isCurrentlyAdmin) async {
     final role = isCurrentlyAdmin ? 'audience' : 'admin';
+    final bloc = context.read<RoomManagementBloc>();
     try {
       await controller.changeRole(
         targetIdentity: _userId,
         role: role,
       );
+      final userId = int.tryParse(_userId);
+      if (userId != null) {
+        if (isCurrentlyAdmin) {
+          bloc.add(RemoveAdminEvent(roomId: roomId, userId: userId));
+        } else {
+          bloc.add(AddAdminEvent(roomId: roomId, userId: userId));
+        }
+      }
       if (context.mounted) {
         final s = RoomStrings.of(context);
         Navigator.of(context).pop();

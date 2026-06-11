@@ -27,6 +27,7 @@ const Map<String, IconData> _navIcons = {
   'wallet': Icons.account_balance_wallet_rounded,
   'menu': Icons.menu_rounded,
   'star': Icons.star_rounded,
+  'mic': Icons.mic_rounded,
 };
 
 /// Resolves a tab icon by its [name], falling back to a neutral icon for any
