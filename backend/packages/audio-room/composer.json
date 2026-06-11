@@ -1,0 +1,22 @@
+{
+    "name": "utd/audio-room",
+    "description": "UTD Audio Room package — voice chat rooms with admin, blacklist, and visitor management.",
+    "type": "library",
+    "license": "proprietary",
+    "version": "1.0.0",
+    "require": {
+        "php": "^8.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Utd\\AudioRoom\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Utd\\AudioRoom\\Providers\\AudioRoomServiceProvider"
+            ]
+        }
+    }
+}
