@@ -33,6 +33,7 @@ void restartApp() {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+
   await FirebaseService.initialize();
   await CacheManager.init();
   AppCacheManager.instance.init();
