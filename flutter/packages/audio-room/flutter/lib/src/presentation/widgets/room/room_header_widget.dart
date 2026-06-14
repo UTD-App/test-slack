@@ -6,13 +6,12 @@ import '../../../domain/room_model.dart';
 import 'room_assets.dart';
 import 'room_strings.dart';
 
+
 class RoomHeaderWidget extends StatelessWidget {
   final RoomModel room;
   final UTDRoomController controller;
   final VoidCallback onExit;
-  final VoidCallback? onVisitorsTap;
   final VoidCallback? onAdminsTap;
-  final VoidCallback? onBlacklistTap;
   final VoidCallback? onSettingsTap;
 
   const RoomHeaderWidget({
@@ -20,9 +19,7 @@ class RoomHeaderWidget extends StatelessWidget {
     required this.room,
     required this.controller,
     required this.onExit,
-    this.onVisitorsTap,
     this.onAdminsTap,
-    this.onBlacklistTap,
     this.onSettingsTap,
   });
 
@@ -39,12 +36,15 @@ class RoomHeaderWidget extends StatelessWidget {
               children: [
                 _RoomInfo(room: room),
                 const Spacer(),
-                _VisitorCount(controller: controller, onTap: onVisitorsTap),
+                _VisitorCount(
+                  controller: controller,
+                  onTap: () => UTDMemberListSheet.show(context, controller: controller),
+                ),
                 const SizedBox(width: 4),
                 if (room.isOwner == true || room.isAdmin == true)
                   _AdminMenu(
                     onAdminsTap: onAdminsTap,
-                    onBlacklistTap: onBlacklistTap,
+                    onBlacklistTap: () => UTDBanManagementSheet.show(context, controller: controller),
                     onSettingsTap: onSettingsTap,
                   ),
                 _ExitButton(onTap: () => _confirmExit(context)),

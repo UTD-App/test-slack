@@ -1,3 +1,43 @@
+abstract class AudioRoomKeys {
+  static const title = 'audio_room.title';
+  static const all = 'audio_room.all';
+  static const searchHint = 'audio_room.search_hint';
+  static const create = 'audio_room.create';
+  static const publish = 'audio_room.publish';
+  static const save = 'audio_room.save';
+  static const roomName = 'audio_room.room_name';
+  static const roomIntro = 'audio_room.room_intro';
+  static const roomRule = 'audio_room.room_rule';
+  static const category = 'audio_room.category';
+  static const seatMode = 'audio_room.seat_mode';
+  static const password = 'audio_room.password';
+  static const enterPassword = 'audio_room.enter_password';
+  static const passwordHint = 'audio_room.password_hint';
+  static const removePassword = 'audio_room.remove_password';
+  static const closeComments = 'audio_room.close_comments';
+  static const freeMic = 'audio_room.free_mic';
+  static const settings = 'audio_room.settings';
+  static const settingsSaved = 'audio_room.settings_saved';
+  static const admins = 'audio_room.admins';
+  static const noAdmins = 'audio_room.no_admins';
+  static const blacklist = 'audio_room.blacklist';
+  static const noBlacklist = 'audio_room.no_blacklist';
+  static const permanentBan = 'audio_room.permanent_ban';
+  static const visitors = 'audio_room.visitors';
+  static const noVisitors = 'audio_room.no_visitors';
+  static const makeAdmin = 'audio_room.make_admin';
+  static const kick = 'audio_room.kick';
+  static const ban = 'audio_room.ban';
+  static const error = 'audio_room.error';
+  static const retry = 'audio_room.retry';
+  static const empty = 'audio_room.empty';
+  static const back = 'audio_room.back';
+  static const cancel = 'audio_room.cancel';
+  static const enter = 'audio_room.enter';
+  static const streamConfigMissing = 'audio_room.stream_config_missing';
+  static const noBackgrounds = 'audio_room.no_backgrounds';
+}
+
 const Map<String, Map<String, String>> audioRoomTranslations = {
   'en': {
     'audio_room.title': 'Rooms',

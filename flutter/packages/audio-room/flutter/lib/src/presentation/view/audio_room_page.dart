@@ -22,13 +22,12 @@ import '../widgets/room/seat_avatar_widget.dart';
 import '../widgets/room/seat_options_sheet.dart';
 import '../widgets/room/speaker_invitation_dialog.dart';
 import '../widgets/room_admin_sheet.dart';
-import '../widgets/room_blacklist_sheet.dart';
-import '../widgets/room_visitors_sheet.dart';
 
 class AudioRoomPage extends StatefulWidget {
   final int roomId;
+  final RoomModel? verifiedRoom;
 
-  const AudioRoomPage({super.key, required this.roomId});
+  const AudioRoomPage({super.key, required this.roomId, this.verifiedRoom});
 
   @override
   State<AudioRoomPage> createState() => _AudioRoomPageState();
@@ -58,6 +57,14 @@ class _AudioRoomPageState extends State<AudioRoomPage> {
   }
 
   Future<void> _enterRoom() async {
+    if (widget.verifiedRoom != null) {
+      setState(() {
+        _room = widget.verifiedRoom;
+        _isLoading = false;
+      });
+      return;
+    }
+
     final repository = context.read<AudioRoomRepository>();
     final result = await repository.enterRoom(widget.roomId);
 
@@ -142,18 +149,6 @@ class _AudioRoomPageState extends State<AudioRoomPage> {
     }
   }
 
-  void _showVisitors() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (_) => BlocProvider.value(
-        value: context.read<RoomManagementBloc>()
-          ..add(LoadVisitorsEvent(roomId: widget.roomId)),
-        child: RoomVisitorsSheet(roomId: widget.roomId),
-      ),
-    );
-  }
-
   void _showAdmins() {
     showModalBottomSheet(
       context: context,
@@ -162,18 +157,6 @@ class _AudioRoomPageState extends State<AudioRoomPage> {
         value: context.read<RoomManagementBloc>()
           ..add(LoadAdminsEvent(roomId: widget.roomId)),
         child: RoomAdminSheet(roomId: widget.roomId),
-      ),
-    );
-  }
-
-  void _showBlacklist() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      builder: (_) => BlocProvider.value(
-        value: context.read<RoomManagementBloc>()
-          ..add(LoadBlacklistEvent(roomId: widget.roomId)),
-        child: RoomBlacklistSheet(roomId: widget.roomId),
       ),
     );
   }
@@ -246,9 +229,7 @@ class _AudioRoomPageState extends State<AudioRoomPage> {
                   room: room,
                   controller: _controller!,
                   onExit: _exitRoom,
-                  onVisitorsTap: _showVisitors,
                   onAdminsTap: _showAdmins,
-                  onBlacklistTap: _showBlacklist,
                   onSettingsTap: () =>
                       context.push('/rooms/${room.id}/settings'),
                 )
@@ -326,21 +307,21 @@ class _AudioRoomPageState extends State<AudioRoomPage> {
   List<UTDRoomMode> _buildModes() {
     return const [
       UTDRoomMode(
-        id: '7',
-        seatCount: 7,
-        rows: [
-          [0],
-          [1, 2, 3],
-          [4, 5, 6],
-        ],
-      ),
-      UTDRoomMode(
         id: '9',
         seatCount: 9,
         rows: [
           [0],
           [1, 2, 3, 4],
           [5, 6, 7, 8],
+        ],
+      ),
+      UTDRoomMode(
+        id: '7',
+        seatCount: 7,
+        rows: [
+          [0],
+          [1, 2, 3],
+          [4, 5, 6],
         ],
       ),
       UTDRoomMode(

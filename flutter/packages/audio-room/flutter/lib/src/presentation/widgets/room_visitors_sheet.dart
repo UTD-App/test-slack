@@ -2,14 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:utd_app/shared/core/enums.dart';
+import 'package:utd_audio_room_kit/utd_audio_room_kit.dart';
 
 import '../bloc/room_management_bloc.dart';
 import 'room/room_strings.dart';
 
 class RoomVisitorsSheet extends StatelessWidget {
   final int roomId;
+  final bool isOwner;
+  final bool isAdmin;
+  final UTDRoomController? controller;
 
-  const RoomVisitorsSheet({super.key, required this.roomId});
+  const RoomVisitorsSheet({
+    super.key,
+    required this.roomId,
+    this.isOwner = false,
+    this.isAdmin = false,
+    this.controller,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -90,47 +100,50 @@ class RoomVisitorsSheet extends StatelessWidget {
                                 : null,
                           ),
                           title: Text(visitor.name),
-                          trailing: PopupMenuButton<String>(
-                            onSelected: (value) {
-                              switch (value) {
-                                case 'admin':
-                                  context.read<RoomManagementBloc>().add(
-                                        AddAdminEvent(
+                          trailing: (isOwner || isAdmin)
+                              ? PopupMenuButton<String>(
+                                  onSelected: (value) {
+                                    final bloc = context.read<RoomManagementBloc>();
+                                    switch (value) {
+                                      case 'admin':
+                                        bloc.add(AddAdminEvent(
                                           roomId: roomId,
                                           userId: visitor.id,
-                                        ),
-                                      );
-                                case 'kick':
-                                  context.read<RoomManagementBloc>().add(
-                                        KickUserEvent(
+                                        ));
+                                        controller?.changeRole(
+                                          targetIdentity: visitor.id.toString(),
+                                          role: 'admin',
+                                        );
+                                      case 'kick':
+                                        bloc.add(KickUserEvent(
                                           roomId: roomId,
                                           userId: visitor.id,
-                                        ),
-                                      );
-                                case 'ban':
-                                  context.read<RoomManagementBloc>().add(
-                                        BanUserEvent(
+                                        ));
+                                      case 'ban':
+                                        bloc.add(BanUserEvent(
                                           roomId: roomId,
                                           userId: visitor.id,
-                                        ),
-                                      );
-                              }
-                            },
-                            itemBuilder: (_) => [
-                              PopupMenuItem(
-                                value: 'admin',
-                                child: Text(s.makeAdmin),
-                              ),
-                              PopupMenuItem(
-                                value: 'kick',
-                                child: Text(s.kick),
-                              ),
-                              PopupMenuItem(
-                                value: 'ban',
-                                child: Text(s.ban),
-                              ),
-                            ],
-                          ),
+                                        ));
+                                        controller?.banUser(visitor.id.toString());
+                                    }
+                                  },
+                                  itemBuilder: (_) => [
+                                    if (isOwner)
+                                      PopupMenuItem(
+                                        value: 'admin',
+                                        child: Text(s.makeAdmin),
+                                      ),
+                                    PopupMenuItem(
+                                      value: 'kick',
+                                      child: Text(s.kick),
+                                    ),
+                                    PopupMenuItem(
+                                      value: 'ban',
+                                      child: Text(s.ban),
+                                    ),
+                                  ],
+                                )
+                              : null,
                         );
                       },
                     ),

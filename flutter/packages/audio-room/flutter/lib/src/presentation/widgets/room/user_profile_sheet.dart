@@ -60,8 +60,7 @@ class _UserProfileBody extends StatelessWidget {
     final s = RoomStrings.of(context);
     final isAdmin = controller.isHostOrAdmin;
     final targetRole = controller.getParticipantRole(_userId);
-    final isTargetAdmin =
-        targetRole == 'admin' || targetRole == 'host';
+    final isTargetAdmin = targetRole == 'admin' || targetRole == 'host';
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
@@ -96,16 +95,17 @@ class _UserProfileBody extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(top: 6),
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 3,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.amber.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
                   targetRole == 'host' ? s.host : s.admin,
-                  style:
-                      const TextStyle(color: Colors.amber, fontSize: 12),
+                  style: const TextStyle(color: Colors.amber, fontSize: 12),
                 ),
               ),
             ),
@@ -116,8 +116,7 @@ class _UserProfileBody extends StatelessWidget {
               label: s.leaveSeat,
               onTap: () async {
                 Navigator.of(context).pop();
-                await controller.seatController
-                    .leaveSeat(localUserId);
+                await controller.seatController.leaveSeat(localUserId);
               },
             ),
           ] else ...[
@@ -133,22 +132,27 @@ class _UserProfileBody extends StatelessWidget {
                       final seatIndex = controller.seatController
                           .getSeatIndexByUserId(_userId);
                       if (seatIndex < 0) return;
-                      final identity =
-                          controller.localIdentity ?? localUserId;
+                      final identity = controller.localIdentity ?? localUserId;
                       bool ok;
                       if (isMuted) {
-                        ok = await controller.seatController
-                            .unmuteSeat(seatIndex, identity: identity);
+                        ok = await controller.seatController.unmuteSeat(
+                          seatIndex,
+                          identity: identity,
+                        );
                       } else {
-                        ok = await controller.seatController
-                            .muteSeat(seatIndex, identity: identity);
+                        ok = await controller.seatController.muteSeat(
+                          seatIndex,
+                          identity: identity,
+                        );
                       }
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(ok
-                                ? (isMuted ? s.userUnmuted : s.userMuted)
-                                : s.failed),
+                            content: Text(
+                              ok
+                                  ? (isMuted ? s.userUnmuted : s.userMuted)
+                                  : s.failed,
+                            ),
                           ),
                         );
                       }
@@ -165,10 +169,11 @@ class _UserProfileBody extends StatelessWidget {
                   final seatIndex = controller.seatController
                       .getSeatIndexByUserId(_userId);
                   if (seatIndex < 0) return;
-                  final identity =
-                      controller.localIdentity ?? localUserId;
-                  await controller.seatController
-                      .kickFromSeat(seatIndex, identity: identity);
+                  final identity = controller.localIdentity ?? localUserId;
+                  await controller.seatController.kickFromSeat(
+                    seatIndex,
+                    identity: identity,
+                  );
                 },
               ),
             ],
@@ -181,9 +186,7 @@ class _UserProfileBody extends StatelessWidget {
               ),
             if (isOwner && !_isMyProfile)
               _ActionButton(
-                icon: isTargetAdmin
-                    ? Icons.arrow_downward
-                    : Icons.arrow_upward,
+                icon: isTargetAdmin ? Icons.arrow_downward : Icons.arrow_upward,
                 label: isTargetAdmin ? s.removeAdmin : s.makeAdmin,
                 color: isTargetAdmin ? Colors.orange : Colors.green,
                 onTap: () => _handleRoleChange(context, isTargetAdmin),
@@ -200,6 +203,21 @@ class _UserProfileBody extends StatelessWidget {
     if (result == null || !context.mounted) return;
 
     final durationSeconds = result == -1 ? null : result;
+    final bloc = context.read<RoomManagementBloc>();
+
+    // 1) Backend ban — persists in database
+    final userId = int.tryParse(_userId);
+    if (userId != null) {
+      bloc.add(
+        BanUserEvent(
+          roomId: roomId,
+          userId: userId,
+          durationSeconds: durationSeconds,
+        ),
+      );
+    }
+
+    // 2) Kit ban — kicks from LiveKit session immediately
     final ok = await controller.banUser(
       _userId,
       durationSeconds: durationSeconds,
@@ -208,21 +226,20 @@ class _UserProfileBody extends StatelessWidget {
     if (context.mounted) {
       final s = RoomStrings.of(context);
       Navigator.of(context).pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(ok ? s.userBanned : s.banFailed)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(ok ? s.userBanned : s.banFailed)));
     }
   }
 
   Future<void> _handleRoleChange(
-      BuildContext context, bool isCurrentlyAdmin) async {
+    BuildContext context,
+    bool isCurrentlyAdmin,
+  ) async {
     final role = isCurrentlyAdmin ? 'audience' : 'admin';
     final bloc = context.read<RoomManagementBloc>();
     try {
-      await controller.changeRole(
-        targetIdentity: _userId,
-        role: role,
-      );
+      await controller.changeRole(targetIdentity: _userId, role: role);
       final userId = int.tryParse(_userId);
       if (userId != null) {
         if (isCurrentlyAdmin) {
@@ -243,9 +260,9 @@ class _UserProfileBody extends StatelessWidget {
     } catch (_) {
       if (context.mounted) {
         final s = RoomStrings.of(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(s.roleChangeFailed)),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(s.roleChangeFailed)));
       }
     }
   }
@@ -303,9 +320,7 @@ class _ActionButton extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: ListTile(
         dense: true,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         tileColor: Colors.white.withValues(alpha: 0.06),
         leading: Icon(icon, color: c, size: 22),
         title: Text(label, style: TextStyle(color: c, fontSize: 15)),

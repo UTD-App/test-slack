@@ -8,6 +8,7 @@ class RoomManagementState extends Equatable {
   final RequestState visitorsState;
   final RequestState blacklistState;
   final RequestState updateState;
+  final RequestState deleteState;
   final RoomModel? updatedRoom;
   final String? message;
   final int visitorsPage;
@@ -21,6 +22,7 @@ class RoomManagementState extends Equatable {
     this.visitorsState = RequestState.idle,
     this.blacklistState = RequestState.idle,
     this.updateState = RequestState.idle,
+    this.deleteState = RequestState.idle,
     this.updatedRoom,
     this.message,
     this.visitorsPage = 1,
@@ -35,6 +37,7 @@ class RoomManagementState extends Equatable {
     RequestState? visitorsState,
     RequestState? blacklistState,
     RequestState? updateState,
+    RequestState? deleteState,
     RoomModel? updatedRoom,
     String? message,
     int? visitorsPage,
@@ -48,6 +51,7 @@ class RoomManagementState extends Equatable {
       visitorsState: visitorsState ?? this.visitorsState,
       blacklistState: blacklistState ?? this.blacklistState,
       updateState: updateState ?? this.updateState,
+      deleteState: deleteState ?? this.deleteState,
       updatedRoom: updatedRoom ?? this.updatedRoom,
       message: message ?? this.message,
       visitorsPage: visitorsPage ?? this.visitorsPage,
@@ -64,6 +68,7 @@ class RoomManagementState extends Equatable {
         visitorsState,
         blacklistState,
         updateState,
+        deleteState,
         updatedRoom,
         message,
         visitorsPage,

@@ -105,8 +105,8 @@ class AudioRoomRemoteDataSourceImpl implements AudioRoomRemoteDataSource {
     if (mode != null) formMap['mode'] = mode;
     if (roomType != null) formMap['room_type'] = roomType;
     if (roomClass != null) formMap['room_class'] = roomClass;
-    if (isCommentsClosed != null) formMap['is_comment_closed'] = isCommentsClosed;
-    if (freeMic != null) formMap['free_mic'] = freeMic;
+    if (isCommentsClosed != null) formMap['is_comment_closed'] = isCommentsClosed ? 1 : 0;
+    if (freeMic != null) formMap['free_mic'] = freeMic ? 1 : 0;
     if (cover != null) {
       formMap['room_cover'] = await MultipartFile.fromFile(cover.path);
     }
@@ -132,7 +132,7 @@ class AudioRoomRemoteDataSourceImpl implements AudioRoomRemoteDataSource {
   @override
   Future<Result<BaseResponse<RoomModel>>> enterRoom(int id, {String? password}) async {
     final data = <String, dynamic>{};
-    if (password != null) data['password'] = password;
+    if (password != null) data['room_pass'] = password;
 
     return apiService.post(
       apiService.enterPath(id),

@@ -39,6 +39,9 @@ class RoomManagementBloc
     // Visitors
     on<LoadVisitorsEvent>(_onLoadVisitors);
     on<LoadMoreVisitorsEvent>(_onLoadMoreVisitors);
+
+    // Delete
+    on<DeleteRoomEvent>(_onDeleteRoom);
   }
 
   Future<void> _onUpdateRoom(
@@ -324,5 +327,24 @@ class RoomManagementBloc
         break;
     }
     _isLoadingMoreVisitors = false;
+  }
+
+  Future<void> _onDeleteRoom(
+    DeleteRoomEvent event,
+    Emitter<RoomManagementState> emit,
+  ) async {
+    emit(state.copyWith(deleteState: RequestState.loading));
+
+    final result = await repository.deleteRoom(event.roomId);
+
+    switch (result) {
+      case Success():
+        emit(state.copyWith(deleteState: RequestState.loaded));
+      case Failure(message: final message):
+        emit(state.copyWith(
+          deleteState: RequestState.error,
+          message: message,
+        ));
+    }
   }
 }

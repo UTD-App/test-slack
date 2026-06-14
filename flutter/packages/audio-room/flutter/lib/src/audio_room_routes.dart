@@ -57,6 +57,7 @@ class AudioRoomRoutes {
             builder: (context, state) {
               final roomId =
                   int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
+              final verifiedRoom = state.extra as RoomModel?;
               final repository = _createRepository();
               return MultiBlocProvider(
                 providers: [
@@ -68,7 +69,10 @@ class AudioRoomRoutes {
                         RoomManagementBloc(repository: repository),
                   ),
                 ],
-                child: AudioRoomPage(roomId: roomId),
+                child: AudioRoomPage(
+                  roomId: roomId,
+                  verifiedRoom: verifiedRoom,
+                ),
               );
             },
             routes: [
@@ -76,13 +80,16 @@ class AudioRoomRoutes {
                 path: 'settings',
                 builder: (context, state) {
                   final room = state.extra as RoomModel?;
-                  if (room == null) {
-                    return const SizedBox.shrink();
-                  }
+                  final roomId =
+                      int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
+                  final repository = _createRepository();
                   return BlocProvider(
                     create: (_) =>
-                        RoomManagementBloc(repository: _createRepository()),
-                    child: RoomSettingsPage(room: room),
+                        RoomManagementBloc(repository: repository),
+                    child: room != null
+                        ? RoomSettingsPage(room: room)
+                        : _RoomSettingsLoader(
+                            roomId: roomId, repository: repository),
                   );
                 },
               ),
@@ -91,5 +98,67 @@ class AudioRoomRoutes {
         ],
       ),
     ];
+  }
+}
+
+class _RoomSettingsLoader extends StatefulWidget {
+  final int roomId;
+  final AudioRoomRepository repository;
+
+  const _RoomSettingsLoader({
+    required this.roomId,
+    required this.repository,
+  });
+
+  @override
+  State<_RoomSettingsLoader> createState() => _RoomSettingsLoaderState();
+}
+
+class _RoomSettingsLoaderState extends State<_RoomSettingsLoader> {
+  RoomModel? _room;
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchRoom();
+  }
+
+  Future<void> _fetchRoom() async {
+    final result = await widget.repository.getRoom(widget.roomId);
+    if (!mounted) return;
+    result.when(
+      success: (response) {
+        setState(() {
+          _room = response.data;
+          _loading = false;
+        });
+      },
+      failure: (message, _) {
+        setState(() {
+          _error = message;
+          _loading = false;
+        });
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_room == null) {
+      return Scaffold(
+        appBar: AppBar(),
+        body: Center(child: Text(_error ?? 'Room not found')),
+      );
+    }
+
+    return RoomSettingsPage(room: _room!);
   }
 }

@@ -177,3 +177,14 @@ class LoadMoreVisitorsEvent extends RoomManagementEvent {
   @override
   List<Object?> get props => [roomId];
 }
+
+// Delete room
+
+class DeleteRoomEvent extends RoomManagementEvent {
+  final int roomId;
+
+  const DeleteRoomEvent({required this.roomId});
+
+  @override
+  List<Object?> get props => [roomId];
+}
