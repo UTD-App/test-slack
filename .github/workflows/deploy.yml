@@ -7,54 +7,54 @@ on:
       - 'backend/**'
   workflow_dispatch:
 
+concurrency:
+  group: deploy-project-x
+  cancel-in-progress: false
+
 jobs:
   deploy:
     name: Deploy Backend
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, project-x]
+    defaults:
+      run:
+        working-directory: /var/www/project-x/backend
 
     steps:
-      - name: Setup SSH
+      - name: Pull latest code
+        working-directory: /var/www/project-x
         run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H ${{ secrets.SSH_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+          git fetch origin main
+          git reset --hard origin/main
 
-      - name: Deploy
+      - name: Install dependencies
+        run: composer install --no-interaction --optimize-autoloader --no-dev
+
+      - name: Run migrations
+        run: php artisan migrate --force
+
+      - name: Optimize
         run: |
-          ssh -o StrictHostKeyChecking=no ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
-            set -e
-            cd /var/www/project-x/backend
+          php artisan config:cache
+          php artisan route:cache
+          php artisan view:cache
+          php artisan filament:assets 2>/dev/null || true
 
-            echo "=== Pulling latest code ==="
-            git pull origin main
+      - name: Fix permissions
+        run: |
+          sudo chown -R www-data:www-data /var/www/project-x/backend/storage /var/www/project-x/backend/bootstrap/cache
+          sudo chmod -R 775 /var/www/project-x/backend/storage /var/www/project-x/backend/bootstrap/cache
 
-            echo "=== Installing dependencies ==="
-            composer install --no-interaction --optimize-autoloader --no-dev
+      - name: Reload services
+        run: |
+          sudo service php8.2-fpm reload
+          sudo service nginx reload
 
-            echo "=== Running migrations ==="
-            php artisan migrate --force
-
-            echo "=== Clearing caches ==="
-            php artisan config:clear
-            php artisan cache:clear
-            php artisan view:clear
-            php artisan route:clear
-
-            echo "=== Optimizing ==="
-            php artisan config:cache
-            php artisan route:cache
-
-            echo "=== Fixing permissions ==="
-            sudo chown -R www-data:www-data storage bootstrap/cache
-            sudo chmod -R 775 storage bootstrap/cache
-
-            echo "=== Publishing assets ==="
-            php artisan filament:assets 2>/dev/null || true
-
-            echo "=== Reloading services ==="
-            sudo service php8.2-fpm reload
-            sudo service nginx reload
-
-            echo "=== Deploy complete ==="
-          EOF
+      - name: Health check
+        run: |
+          sleep 3
+          STATUS=$(curl -sf -o /dev/null -w "%{http_code}" http://localhost || echo "000")
+          echo "HTTP Status: $STATUS"
+          if [ "$STATUS" -ge 500 ] || [ "$STATUS" = "000" ]; then
+            echo "::warning::Health check returned $STATUS"
+          fi
+          echo "Deploy complete"
