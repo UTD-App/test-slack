@@ -41,8 +41,8 @@ jobs:
 
       - name: Fix permissions
         run: |
-          sudo chown -R www-data:www-data storage bootstrap/cache
-          sudo chmod -R 775 storage bootstrap/cache
+          sudo chown -R www-data:www-data /var/www/project-x/backend/storage /var/www/project-x/backend/bootstrap/cache
+          sudo chmod -R 775 /var/www/project-x/backend/storage /var/www/project-x/backend/bootstrap/cache
 
       - name: Reload services
         run: |
