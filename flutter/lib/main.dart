@@ -78,7 +78,8 @@ void main() async {
   // Initialize Translation service
   await TranslationService.instance.init();
 
-  final config = AppConfig.development();
+  // Production server at project-x.utdsoftware.com (baseUrl https://project-x.utdsoftware.com/api).
+  final config = AppConfig.production();
   AppConfigProvider.initialize(config);
 
   final localeNotifier = LocaleNotifier();
