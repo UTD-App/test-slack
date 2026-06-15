@@ -4,20 +4,44 @@
     $uidDisplay = $getUidDisplay();
     $avatar = $getAvatarUrl();
     $copyMessage = $getCopyMessage();
+    $url = $getProfileUrl();
+    $defaultAvatar = \App\Filament\Tables\Columns\UserColumn::defaultAvatarUrl();
 @endphp
 
 <div class="fi-ta-user flex items-center gap-3 py-1">
-    <img
-        src="{{ $avatar }}"
-        alt="{{ $name }}"
-        loading="lazy"
-        class="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-gray-950/10 dark:ring-white/20"
-    />
+    @if (filled($url))
+        <a href="{{ $url }}" class="shrink-0">
+            <img
+                src="{{ $avatar }}"
+                alt="{{ $name }}"
+                loading="lazy"
+                onerror="this.onerror=null;this.src='{{ $defaultAvatar }}';"
+                class="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-gray-950/10 dark:ring-white/20"
+            />
+        </a>
+    @else
+        <img
+            src="{{ $avatar }}"
+            alt="{{ $name }}"
+            loading="lazy"
+            onerror="this.onerror=null;this.src='{{ $defaultAvatar }}';"
+            class="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-gray-950/10 dark:ring-white/20"
+        />
+    @endif
 
     <div class="flex min-w-0 flex-col leading-tight">
-        <span class="truncate text-sm font-semibold text-gray-950 dark:text-white">
-            {{ $name }}
-        </span>
+        @if (filled($url))
+            <a
+                href="{{ $url }}"
+                class="truncate text-sm font-semibold text-gray-950 transition hover:text-primary-600 hover:underline dark:text-white dark:hover:text-primary-400"
+            >
+                {{ $name }}
+            </a>
+        @else
+            <span class="truncate text-sm font-semibold text-gray-950 dark:text-white">
+                {{ $name }}
+            </span>
+        @endif
 
         @if (filled($uid))
             <span

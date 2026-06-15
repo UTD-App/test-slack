@@ -30,6 +30,10 @@ class Handler extends ExceptionHandler
                 return Common::apiResponse(false, $e->getMessage(), null, $statusCode);
             }
 
+            if ($e instanceof MediaUploadException) {
+                return Common::apiResponse(false, $e->getMessage(), null, $e->getStatusCode());
+            }
+
             if ($e instanceof AuthenticationException) {
                 return Common::apiResponse(false, 'Unauthenticated', [], 401);
             }

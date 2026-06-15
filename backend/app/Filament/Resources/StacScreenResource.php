@@ -9,26 +9,23 @@ use Filament\Infolists\Components\Grid;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
-use Filament\Resources\Resource;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
-class StacScreenResource extends Resource
+class StacScreenResource extends BaseResource
 {
     protected static ?string $model = StacScreen::class;
     protected static ?string $navigationIcon = 'heroicon-o-device-phone-mobile';
     protected static ?int $navigationSort = 25;
 
+    protected static ?string $permissionPrefix = 'stac';
+
     public static function getNavigationLabel(): string { return __('admin.nav_stac'); }
     public static function getModelLabel(): string { return __('admin.screen_name'); }
     public static function getPluralModelLabel(): string { return __('admin.nav_stac'); }
     public static function getNavigationGroup(): ?string { return null; }
-
-    public static function canAccess(): bool
-    {
-        return filament()->auth()->user()?->hasAnyRole(["super_admin", "settings_manager"]) ?? false;
-    }
 
     public static function form(Form $form): Form
     {
@@ -90,6 +87,6 @@ class StacScreenResource extends Resource
 
     // Read-only — all writes come from UTD Studio via API
     public static function canCreate(): bool { return false; }
-    public static function canEdit($record): bool { return false; }
-    public static function canDelete($record): bool { return false; }
+    public static function canEdit(Model $record): bool { return false; }
+    public static function canDelete(Model $record): bool { return false; }
 }

@@ -8,7 +8,6 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
 use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Actions\Action;
@@ -16,20 +15,17 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
-class LanguageResource extends Resource
+class LanguageResource extends BaseResource
 {
     protected static ?string $model = Language::class;
     protected static ?string $navigationIcon = 'heroicon-o-language';
     protected static ?string $navigationLabel = null;
     protected static ?int $navigationSort = 20;
 
+    protected static ?string $permissionPrefix = 'languages';
+
     public static function getModelLabel(): string { return __('admin.language'); }
     public static function getPluralModelLabel(): string { return __("admin.nav_languages"); }
-
-    public static function canAccess(): bool
-    {
-        return filament()->auth()->user()?->hasAnyRole(["super_admin", "settings_manager"]) ?? false;
-    }
 
     public static function form(Form $form): Form
     {

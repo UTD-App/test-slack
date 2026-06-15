@@ -115,36 +115,24 @@ class AuthController extends Controller
     {
         $user = $request->user();
 
-        $data = $request->only(['name', 'bio', 'birthday', 'gender']);
-        $user->update(array_filter($data));
+        $user->update(array_filter($request->only(['name', 'bio', 'birthday', 'gender'])));
 
-        return Common::apiResponse(true, 'Profile updated', $user->fresh());
-    }
+        // Avatar: either an already-uploaded path/URL string (from /media/upload,
+        // the reusable client path) or a raw file uploaded inline. Both go
+        // through / resolve via the Media seam, so storage stays provider-agnostic.
+        $avatar = null;
+        if ($request->hasFile('avatar')) {
+            $request->validate(['avatar' => 'image|mimes:jpeg,jpg,png,webp|max:5120']);
+            $avatar = \App\Facades\Media::upload($request->file('avatar'), 'avatars')->path;
+        } elseif ($request->filled('avatar')) {
+            $request->validate(['avatar' => 'string|max:2048']);
+            $avatar = $request->input('avatar');
+        }
+        if ($avatar !== null) {
+            $user->profile()->updateOrCreate(['user_id' => $user->id], ['avatar' => $avatar]);
+        }
 
-    /**
-     * تغيير صورة الملف الشخصي (image picker من التطبيق).
-     * بيستقبل الصورة، يخزّنها على القرص العام، ويحفظ URL مطلق في users.img
-     * (نفس الحقل اللي الـ chat بيعرض منه) عشان يظهر في كل مكان فورًا. الـ URL
-     * مبني من host الطلب — فبيشتغل على الجهاز مهما كان APP_URL.
-     */
-    public function updateAvatar(Request $request)
-    {
-        $request->validate([
-            'image' => 'required|image|mimes:jpeg,jpg,png,webp|max:5120',
-        ]);
-
-        $user = $request->user();
-
-        $path = $request->file('image')->store('avatars', 'public');
-        $url  = $request->getSchemeAndHttpHost() . \Illuminate\Support\Facades\Storage::url($path);
-
-        $user->img = $url;
-        $user->save();
-
-        return Common::apiResponse(true, 'Avatar updated', [
-            'url'  => $url,
-            'user' => app(UserDataService::class)->aggregateUserData($user->fresh()),
-        ]);
+        return Common::apiResponse(true, 'Profile updated', $user->fresh()->load(['profile', 'country']));
     }
 
     public function getSettings(Request $request)
@@ -174,5 +162,20 @@ class AuthController extends Controller
         $request->user()->currentAccessToken()->delete();
 
         return Common::apiResponse(true, 'Logged out');
+    }
+
+    /**
+     * Delete the authenticated user's own account: revoke all tokens and
+     * soft-delete the user (User uses SoftDeletes, so the row is kept with
+     * deleted_at set and can be restored by an admin if needed).
+     */
+    public function deleteAccount(Request $request)
+    {
+        $user = $request->user();
+
+        $user->tokens()->delete();
+        $user->delete();
+
+        return Common::apiResponse(true, 'Account deleted');
     }
 }

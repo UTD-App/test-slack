@@ -10,7 +10,6 @@ use Filament\Infolists\Components\ImageEntry;
 use Filament\Infolists\Components\Section;
 use Filament\Infolists\Components\TextEntry;
 use Filament\Infolists\Infolist;
-use Filament\Resources\Resource;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
@@ -18,12 +17,16 @@ use Filament\Tables\Columns\ImageColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TernaryFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 
-class UserResource extends Resource
+class UserResource extends BaseResource
 {
     protected static ?string $model = User::class;
     protected static ?string $navigationIcon = 'heroicon-o-users';
     protected static ?int $navigationSort = 1;
+
+    // Access is permission-based: users.view to see, users.ban for the ban action.
+    protected static ?string $permissionPrefix = 'users';
 
     public static function getNavigationLabel(): string { return __('admin.nav_users'); }
     public static function getModelLabel(): string { return __('admin.user'); }
@@ -36,6 +39,13 @@ class UserResource extends Resource
 
     public static function infolist(Infolist $infolist): Infolist
     {
+        // A package (Profile) may own the profile view: when it registers a
+        // builder it takes over; otherwise we fall back to the default schema.
+        $registry = app(\App\Support\UserProfileInfolistRegistry::class);
+        if ($registry->has()) {
+            return ($registry->resolve())($infolist);
+        }
+
         return $infolist->schema([
             Section::make(__('admin.profile'))->schema([
                 Grid::make(3)->schema([
@@ -43,7 +53,7 @@ class UserResource extends Resource
                         ->circular()
                         ->label(__('admin.avatar'))
                         ->defaultImageUrl(fn() => 'https://ui-avatars.com/api/?background=random'),
-                    TextEntry::make('id')->label('ID'),
+                    TextEntry::make('id')->label(__('admin.id')),
                     TextEntry::make('uuid')->label(__('admin.uuid'))->copyable(),
                 ]),
             ]),
@@ -88,7 +98,7 @@ class UserResource extends Resource
                     ->circular()
                     ->label('')
                     ->defaultImageUrl(fn($record) => 'https://ui-avatars.com/api/?name=' . urlencode($record->name ?? 'U') . '&background=random'),
-                TextColumn::make('id')->label('ID')->sortable()->searchable(),
+                TextColumn::make('id')->label(__('admin.id'))->sortable()->searchable(),
                 TextColumn::make('uuid')->label(__('admin.uuid'))->copyable()->limit(12),
                 TextColumn::make('name')->label(__('admin.name'))->searchable()->sortable(),
                 TextColumn::make('email')->label(__('admin.email'))->searchable()->sortable(),
@@ -109,17 +119,26 @@ class UserResource extends Resource
                     ->color('danger')
                     ->icon('heroicon-o-no-symbol')
                     ->requiresConfirmation()
-                    ->visible(fn(User $record) => $record->status == 1)
+                    ->visible(fn(User $record) => $record->status == 1
+                        && (filament()->auth()->user()?->can('users.ban') ?? false))
                     ->action(fn(User $record) => $record->update(['status' => 0])),
                 Action::make('unban')
                     ->label(__('admin.unban'))
                     ->color('success')
                     ->icon('heroicon-o-check-circle')
                     ->requiresConfirmation()
-                    ->visible(fn(User $record) => $record->status == 0)
+                    ->visible(fn(User $record) => $record->status == 0
+                        && (filament()->auth()->user()?->can('users.ban') ?? false))
                     ->action(fn(User $record) => $record->update(['status' => 1])),
             ])
             ->defaultSort('created_at', 'desc');
+    }
+
+    // Tabs (RelationManagers) contributed by packages via the base registry —
+    // keeps the User profile extensible without base depending on any package.
+    public static function getRelations(): array
+    {
+        return app(\App\Support\UserProfileTabRegistry::class)->all();
     }
 
     public static function getPages(): array
@@ -130,14 +149,9 @@ class UserResource extends Resource
         ];
     }
 
+    // Users are managed read-only (+ ban/unban); access gated by users.view
+    // via BaseResource. Creating/editing/deleting users from the panel is off.
     public static function canCreate(): bool { return false; }
-
-    public static function canAccess(): bool
-    {
-        return filament()->auth()->user()?->hasAnyRole(["super_admin", "user_manager"]) ?? false;
-    }
-    public static function canEdit($record): bool { return false; }
-    public static function canDelete($record): bool { return false; }
+    public static function canEdit(Model $record): bool { return false; }
+    public static function canDelete(Model $record): bool { return false; }
 }
-
-    // Only users with user_manager or super_admin can access

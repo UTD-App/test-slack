@@ -5,26 +5,22 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\PackageResource\Pages;
 use App\Models\Package;
 use Filament\Notifications\Notification;
-use Filament\Resources\Resource;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 
-class PackageResource extends Resource
+class PackageResource extends BaseResource
 {
     protected static ?string $model = Package::class;
     protected static ?string $navigationIcon = 'heroicon-o-puzzle-piece';
     protected static ?int $navigationSort = 30;
 
+    protected static ?string $permissionPrefix = 'packages';
+
     public static function getNavigationLabel(): string { return __('admin.nav_packages'); }
     public static function getModelLabel(): string { return __('admin.package'); }
     public static function getPluralModelLabel(): string { return __('admin.nav_packages'); }
-
-    public static function canAccess(): bool
-    {
-        return filament()->auth()->user()?->hasAnyRole(['super_admin']) ?? false;
-    }
 
     public static function table(Table $table): Table
     {

@@ -468,4 +468,41 @@ Saat dipilih, pengguna hanya akan melihat hadiah khusus CP, yang dapat mereka gu
 
 
 
+
+    // App Settings — Maintenance + App Version & Force Update
+    'maintenance_section' => 'Mode Pemeliharaan',
+    'maintenance_section_hint' => 'Saat diaktifkan, aplikasi menampilkan layar pemeliharaan saat dibuka dan memblokir penggunaan.',
+    'maintenance_mode' => 'Aktifkan mode pemeliharaan',
+    'maintenance_message' => 'Pesan pemeliharaan',
+    'version_section' => 'Versi Aplikasi & Pembaruan Paksa',
+    'version_section_hint' => 'Kontrol nomor build minimum dan terbaru per platform. Klien di bawah minimum (atau di bawah terbaru saat «Pembaruan paksa» aktif) dipaksa memperbarui.',
+    'android' => 'Android',
+    'ios' => 'iOS',
+    'huawei' => 'Huawei',
+    'min_version' => 'Nomor build minimum',
+    'min_version_hint' => 'Di bawah build ini = pembaruan paksa.',
+    'latest_version' => 'Nomor build terbaru',
+    'latest_version_hint' => 'Build terbaru yang dipublikasikan.',
+    'update_required' => 'Pembaruan paksa',
+    'update_required_hint' => 'Paksa klien di bawah build terbaru untuk memperbarui.',
+    'store_url' => 'URL Toko',
+
+    // App Settings — Colors
+    'colors_section' => 'Warna',
+    'colors_section_hint' => 'Sesuaikan warna aplikasi. Biarkan kosong untuk mempertahankan warna bawaan.',
+    'colors_brand' => 'Merek',
+    'colors_background' => 'Latar',
+    'colors_cards' => 'Kartu',
+    'colors_text' => 'Teks',
+    'color_primary' => 'Primer / aksen',
+    'color_accent' => 'Aksen sekunder',
+    'color_bg_dark' => 'Latar (solid)',
+    'color_bg_gradient_1' => 'Gradien latar 1',
+    'color_bg_gradient_2' => 'Gradien latar 2',
+    'color_bg_gradient_3' => 'Gradien latar 3',
+    'color_card_bg' => 'Warna kartu',
+    'color_card_border' => 'Batas kartu',
+    'color_text_primary' => 'Teks primer',
+    'color_text_secondary' => 'Teks sekunder',
+    'color_field_hint' => 'Biarkan kosong untuk memakai warna bawaan aplikasi.',
 ];

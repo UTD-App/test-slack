@@ -10,7 +10,6 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
 use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Actions\EditAction;
 use Filament\Tables\Columns\TextColumn;
@@ -18,11 +17,13 @@ use Filament\Tables\Columns\ToggleColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 
-class MenuItemResource extends Resource
+class MenuItemResource extends BaseResource
 {
     protected static ?string $model = MenuItem::class;
     protected static ?string $navigationIcon = 'heroicon-o-bars-3';
     protected static ?int $navigationSort = 31;
+
+    protected static ?string $permissionPrefix = 'menu';
 
     /** UI slots — must mirror Flutter lib/addons/ui_slot.dart */
     public const SLOTS = [
@@ -33,11 +34,6 @@ class MenuItemResource extends Resource
     public static function getNavigationLabel(): string { return __('admin.nav_menu'); }
     public static function getModelLabel(): string { return __('admin.menu_item'); }
     public static function getPluralModelLabel(): string { return __('admin.menu_items'); }
-
-    public static function canAccess(): bool
-    {
-        return filament()->auth()->user()?->hasAnyRole(['super_admin', 'settings_manager']) ?? false;
-    }
 
     public static function form(Form $form): Form
     {

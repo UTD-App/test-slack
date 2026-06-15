@@ -10,7 +10,6 @@ use Filament\Forms\Components\Section;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Forms\Form;
-use Filament\Resources\Resource;
 use Filament\Tables\Actions\Action;
 use Filament\Tables\Actions\DeleteAction;
 use Filament\Tables\Columns\IconColumn;
@@ -19,20 +18,23 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Hash;
 
-class AdminUserResource extends Resource
+class AdminUserResource extends BaseResource
 {
     protected static ?string $model = AdminUser::class;
     protected static ?string $navigationIcon = 'heroicon-o-shield-check';
     protected static ?string $navigationLabel = null;
     protected static ?int $navigationSort = 5;
 
+    // Access control group. By default only super_admin holds admin_users.* (it
+    // also bypasses), so behaviour matches the old isSuperAdmin()-only gate; an
+    // admin can now grant these to a custom role.
+    protected static ?string $permissionPrefix = 'admin_users';
+    protected static ?string $navigationGroup = 'Access Control';
+
     public static function getModelLabel(): string { return __('admin.administrator'); }
     public static function getPluralModelLabel(): string { return __("admin.nav_admin_users"); }
 
-    public static function canAccess(): bool
-    {
-        return filament()->auth()->user()?->isSuperAdmin() ?? false;
-    }
+    public static function getNavigationGroup(): ?string { return __('admin.nav_access_control'); }
 
     public static function form(Form $form): Form
     {

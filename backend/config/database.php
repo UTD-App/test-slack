@@ -130,7 +130,9 @@ return [
 
     'redis' => [
 
-        'client' => env('REDIS_CLIENT', 'phpredis'),
+        // Default to predis (the composer-installed pure-PHP client) so a fresh
+        // install works without the phpredis C extension. Override via env.
+        'client' => env('REDIS_CLIENT', 'predis'),
 
         'options' => [
             'cluster' => env('REDIS_CLUSTER', 'redis'),

@@ -2,11 +2,14 @@
 
 namespace App\Providers;
 
+use App\Contracts\NotificationSender;
 use App\Models\MenuItem;
 use App\Models\Package;
+use App\Models\User;
 use App\Observers\MenuItemObserver;
 use App\Observers\PackageObserver;
 use App\Services\FirebaseConfigService;
+use App\Support\Notifications\NotificationMessage;
 use App\Services\MenuService;
 use App\Services\PackageRegistry;
 use App\Services\ProfileContributorRegistry;
@@ -40,7 +43,10 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(PackageRegistry::class);
         $this->app->singleton(MenuService::class);
         $this->app->singleton(SettingService::class);
+        $this->app->singleton(\App\Services\AdminPermissionRegistry::class);
         $this->app->singleton(ProfileContributorRegistry::class);
+        $this->app->singleton(\App\Support\UserProfileTabRegistry::class);
+        $this->app->singleton(\App\Support\UserProfileInfolistRegistry::class);
 
         if ($this->app->isLocal()) {
             $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
@@ -57,15 +63,24 @@ class AppServiceProvider extends ServiceProvider
             // DB not ready yet (e.g. during migrations) — fall back to .env
         }
 
-        // Expose the base app's own core screens (auth/profile/settings) to
-        // UTD Studio, same mechanism a package uses from its ServiceProvider.
-        if (class_exists(\App\Support\UtdManifest::class)) {
-            \App\Support\UtdManifest::registerPackage(
-                require config_path('utd_manifest_core.php')
-            );
-        }
-
         Package::observe(PackageObserver::class);
         MenuItem::observe(MenuItemObserver::class);
+
+        // Force-logout a user the instant they're suspended (status flipped to 0):
+        // push a 'banned' data message; the app clears its session on receipt.
+        // Covers every ban path (UserResource ban, comment ban, …) in one place.
+        User::updated(function (User $user): void {
+            if ($user->wasChanged('status') && ! $user->status && app()->bound(NotificationSender::class)) {
+                try {
+                    app(NotificationSender::class)->send($user, NotificationMessage::make(
+                        'Account suspended',
+                        'Your account has been suspended.',
+                        ['type' => 'banned', 'action' => 'logout'],
+                    ));
+                } catch (\Throwable) {
+                    // A push failure must never block the ban itself.
+                }
+            }
+        });
     }
 }

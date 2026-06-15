@@ -3,6 +3,10 @@
 namespace App\Services;
 
 use App\Models\Config;
+use Illuminate\Support\Facades\Log;
+use Kreait\Firebase\Factory;
+use Kreait\Firebase\Messaging\CloudMessage;
+use Kreait\Firebase\Messaging\Notification as FcmNotification;
 
 class FirebaseConfigService
 {
@@ -17,14 +21,11 @@ class FirebaseConfigService
         }
 
         if ($serverKey) {
-            // Used for sending FCM notifications directly
             config(['services.firebase.server_key' => $serverKey]);
         }
 
-        // If both are set, override the credentials path so kreait uses DB values
         if ($projectId && $serverKey) {
             config([
-                'firebase.projects.app.credentials' => null,
                 'firebase.projects.app.database_url' => "https://{$projectId}-default-rtdb.firebaseio.com",
             ]);
         }
@@ -41,38 +42,53 @@ class FirebaseConfigService
     }
 
     /**
-     * Send FCM push notification to a device token.
-     * Uses server key from DB (configured via App Settings).
+     * Send an FCM push to a device token via the modern HTTP v1 API (kreait,
+     * OAuth from a service-account JSON). The legacy `fcm/send` + server-key
+     * endpoint this used to call was shut down by Google in 2024.
+     *
+     * Returns false (never throws) when no service account is configured or the
+     * send fails, so callers degrade gracefully.
      */
     public function sendNotification(string $deviceToken, string $title, string $body, array $data = []): bool
     {
-        $serverKey = $this->getServerKey();
-        if (!$serverKey) {
+        $credentials = $this->credentialsPath();
+        if (! $credentials) {
             return false;
         }
 
-        $payload = [
-            'to'           => $deviceToken,
-            'notification' => compact('title', 'body'),
-            'data'         => $data,
+        try {
+            $messaging = (new Factory())->withServiceAccount($credentials)->createMessaging();
+
+            $message = CloudMessage::withTarget('token', $deviceToken)
+                ->withNotification(FcmNotification::create($title, $body))
+                ->withData(array_map(static fn ($v) => (string) $v, $data));
+
+            $messaging->send($message);
+
+            return true;
+        } catch (\Throwable $e) {
+            Log::warning('FCM v1 send failed: ' . $e->getMessage());
+
+            return false;
+        }
+    }
+
+    /** Locate the FCM v1 service-account JSON (DB setting → FILE_NAME → default storage path). */
+    public function credentialsPath(): ?string
+    {
+        $candidates = [
+            $this->get('firebase_credentials_path'),
+            env('FILE_NAME') ? base_path((string) env('FILE_NAME')) : null,
+            storage_path('app/firebase/service-account.json'),
         ];
 
-        $ch = curl_init('https://fcm.googleapis.com/fcm/send');
-        curl_setopt_array($ch, [
-            CURLOPT_POST           => true,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_HTTPHEADER     => [
-                'Content-Type: application/json',
-                "Authorization: key={$serverKey}",
-            ],
-            CURLOPT_POSTFIELDS => json_encode($payload),
-        ]);
+        foreach ($candidates as $path) {
+            if ($path && is_file($path)) {
+                return $path;
+            }
+        }
 
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        curl_close($ch);
-
-        return $httpCode === 200;
+        return null;
     }
 
     private function get(string $key, mixed $default = null): mixed

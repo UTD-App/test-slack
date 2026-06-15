@@ -252,6 +252,25 @@ return [
     'update_required_hint' => 'Force clients below the latest build to update.',
     'store_url'           => 'Store URL',
 
+    // App Settings — Colors
+    'colors_section'      => 'Colors',
+    'colors_section_hint' => "Customize the app's colors. Leave a field empty to keep the app's built-in color.",
+    'colors_brand'        => 'Brand',
+    'colors_background'   => 'Background',
+    'colors_cards'        => 'Cards',
+    'colors_text'         => 'Text',
+    'color_primary'       => 'Primary / accent',
+    'color_accent'        => 'Secondary accent',
+    'color_bg_dark'       => 'Background (solid)',
+    'color_bg_gradient_1' => 'Background gradient 1',
+    'color_bg_gradient_2' => 'Background gradient 2',
+    'color_bg_gradient_3' => 'Background gradient 3',
+    'color_card_bg'       => 'Card color',
+    'color_card_border'   => 'Card border',
+    'color_text_primary'  => 'Primary text',
+    'color_text_secondary' => 'Secondary text',
+    'color_field_hint'    => 'Leave empty to use the app default.',
+
     // Stac Screens
     'screen_name'            => 'Screen Name',
     'last_push'              => 'Last Push',

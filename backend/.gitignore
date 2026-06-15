@@ -18,16 +18,3 @@ yarn-error.log
 gcp.json
 service-account.json
 *.p8
-
-# Local SQLite database
-/database/*.sqlite
-/database/*.sqlite-journal
-
-# Local dev-server artifacts
-/.serve_port
-/serve.local.err
-/serve.local.out
-
-# Local diagnostic / secret tokens
-/storage/diag_token.txt
-/storage/*.txt

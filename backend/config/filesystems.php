@@ -36,11 +36,14 @@ return [
         ],
 
         'public' => [
-            'driver' => 'gcs',
+            'driver' => 'local',
             'root' => storage_path('app/public'),
-            'url' => env('APP_URL').'/storage',
+            // Defaults to APP_URL/storage; override with STORAGE_PUBLIC_URL when
+            // the host serving images differs (e.g. the Android emulator needs
+            // http://10.0.2.2:8000/storage while admin stays on APP_URL).
+            'url' => env('STORAGE_PUBLIC_URL', rtrim(env('APP_URL', 'http://localhost'), '/').'/storage'),
             'visibility' => 'public',
-            'path' => ''
+            'throw' => false,
         ],
 
 

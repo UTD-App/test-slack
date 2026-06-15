@@ -48,7 +48,6 @@ class Kernel extends HttpKernel
         'userBan' => \App\Http\Middleware\UserBanMiddleware::class,
         'update.last.seen' => \App\Http\Middleware\UpdateLastSeen::class,
         'stac.auth'        => \App\Http\Middleware\StacAuthMiddleware::class,
-        'utd.secret'       => \App\Http\Middleware\VerifyUtdSecret::class,
         'auth.rate.limit' => \App\Http\Middleware\AuthRateLimiter::class,
         'package.enabled' => \App\Http\Middleware\EnsurePackageEnabled::class,
     ];

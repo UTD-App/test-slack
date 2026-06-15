@@ -440,79 +440,116 @@ return [
     "CDN" => "CDN",
     "L3" => "L3",
     "charge_level" => "şarj seviyesi",
-    ‘feature_description’ => "Bu özellik, bir kullanıcının hangi hediyelere erişebileceğini kontrol etmenizi sağlar:
+    'feature_description' => "Bu özellik, bir kullanıcının hangi hediyelere erişebileceğini kontrol etmenizi sağlar:
 
 Tüm Hediyeler:
 Seçildiğinde, kullanıcı sistemde mevcut olan tüm hediyeleri görebilir ve kullanabilir.
 
 Sadece CP Hediyeleri:
-Seçildiğinde, kullanıcı yalnızca CP’ye özel hediyeleri görebilecek ve bunları yalnızca CP özelliği içinde kullanabilecektir.",
+Seçildiğinde, kullanıcı yalnızca CP'ye özel hediyeleri görebilecek ve bunları yalnızca CP özelliği içinde kullanabilecektir.",
 
     // UTD Stream Webhooks
-    ‘UTD Stream Webhooks’ => ‘UTD Stream Webhook\’leri’,
-    ‘Base Webhook URL’ => ‘Temel Webhook URL\’si’,
-    ‘Total Events’ => ‘Toplam Etkinlikler’,
-    ‘events’ => ‘etkinlikler’,
-    ‘Copy’ => ‘Kopyala’,
-    ‘Copied!’ => ‘Kopyalandı!’,
-    ‘Failed’ => ‘Başarısız’,
+    'UTD Stream Webhooks' => 'UTD Stream Webhook\'leri',
+    'Base Webhook URL' => 'Temel Webhook URL\'si',
+    'Total Events' => 'Toplam Etkinlikler',
+    'events' => 'etkinlikler',
+    'Copy' => 'Kopyala',
+    'Copied!' => 'Kopyalandı!',
+    'Failed' => 'Başarısız',
 
     // Webhook Categories
-    ‘webhook_category_rooms_streaming’ => ‘Odalar ve Yayın’,
-    ‘webhook_category_calls’ => ‘Aramalar’,
-    ‘webhook_category_presence’ => ‘Durum’,
-    ‘webhook_category_messaging’ => ‘Mesajlaşma’,
+    'webhook_category_rooms_streaming' => 'Odalar ve Yayın',
+    'webhook_category_calls' => 'Aramalar',
+    'webhook_category_presence' => 'Durum',
+    'webhook_category_messaging' => 'Mesajlaşma',
 
     // Rooms & Streaming Events
-    ‘webhook_room_started_name’ => ‘Oda Başladı’,
-    ‘webhook_room_started_desc’ => ‘Yeni bir oda açıldığında ve canlı yayın başladığında tetiklenir’,
+    'webhook_room_started_name' => 'Oda Başladı',
+    'webhook_room_started_desc' => 'Yeni bir oda açıldığında ve canlı yayın başladığında tetiklenir',
 
-    ‘webhook_room_finished_name’ => ‘Oda Bitti’,
-    ‘webhook_room_finished_desc’ => ‘Oda kapatıldığında ve canlı yayın tamamen sona erdiğinde tetiklenir’,
+    'webhook_room_finished_name' => 'Oda Bitti',
+    'webhook_room_finished_desc' => 'Oda kapatıldığında ve canlı yayın tamamen sona erdiğinde tetiklenir',
 
-    ‘webhook_participant_joined_name’ => ‘Katılımcı Katıldı’,
-    ‘webhook_participant_joined_desc’ => ‘Yeni bir kullanıcı odaya katıldığında tetiklenir’,
+    'webhook_participant_joined_name' => 'Katılımcı Katıldı',
+    'webhook_participant_joined_desc' => 'Yeni bir kullanıcı odaya katıldığında tetiklenir',
 
-    ‘webhook_participant_left_name’ => ‘Katılımcı Ayrıldı’,
-    ‘webhook_participant_left_desc’ => ‘Bir kullanıcı odadan ayrıldığında veya bağlantıyı kestiğinde tetiklenir’,
+    'webhook_participant_left_name' => 'Katılımcı Ayrıldı',
+    'webhook_participant_left_desc' => 'Bir kullanıcı odadan ayrıldığında veya bağlantıyı kestiğinde tetiklenir',
 
-    ‘webhook_track_published_name’ => ‘Ses/Video Etkin’,
-    ‘webhook_track_published_desc’ => ‘Bir katılımcı ses veya kamerayı açtığında ve yayına başladığında tetiklenir’,
+    'webhook_track_published_name' => 'Ses/Video Etkin',
+    'webhook_track_published_desc' => 'Bir katılımcı ses veya kamerayı açtığında ve yayına başladığında tetiklenir',
 
-    ‘webhook_track_unpublished_name’ => ‘Ses/Video Devre Dışı’,
-    ‘webhook_track_unpublished_desc’ => ‘Bir katılımcı ses veya kamerayı kapattığında ve yayını durdurduğunda tetiklenir’,
+    'webhook_track_unpublished_name' => 'Ses/Video Devre Dışı',
+    'webhook_track_unpublished_desc' => 'Bir katılımcı ses veya kamerayı kapattığında ve yayını durdurduğunda tetiklenir',
 
     // Calls Events
-    ‘webhook_call_initiated_name’ => ‘Arama Başlatıldı’,
-    ‘webhook_call_initiated_desc’ => ‘Yeni bir arama başladığında ve bağlantı isteği gönderildiğinde tetiklenir’,
+    'webhook_call_initiated_name' => 'Arama Başlatıldı',
+    'webhook_call_initiated_desc' => 'Yeni bir arama başladığında ve bağlantı isteği gönderildiğinde tetiklenir',
 
-    ‘webhook_call_ringing_name’ => ‘Arama Çalıyor’,
-    ‘webhook_call_ringing_desc’ => ‘Alıcı arama bildirimini aldığında ve çalmaya başladığında tetiklenir’,
+    'webhook_call_ringing_name' => 'Arama Çalıyor',
+    'webhook_call_ringing_desc' => 'Alıcı arama bildirimini aldığında ve çalmaya başladığında tetiklenir',
 
-    ‘webhook_call_accepted_name’ => ‘Arama Kabul Edildi’,
-    ‘webhook_call_accepted_desc’ => ‘Alıcı aramayı yanıtladığında ve bağlantı başladığında tetiklenir’,
+    'webhook_call_accepted_name' => 'Arama Kabul Edildi',
+    'webhook_call_accepted_desc' => 'Alıcı aramayı yanıtladığında ve bağlantı başladığında tetiklenir',
 
-    ‘webhook_call_rejected_name’ => ‘Arama Reddedildi’,
-    ‘webhook_call_rejected_desc’ => ‘Alıcı aramayı açıkça reddettiğinde tetiklenir’,
+    'webhook_call_rejected_name' => 'Arama Reddedildi',
+    'webhook_call_rejected_desc' => 'Alıcı aramayı açıkça reddettiğinde tetiklenir',
 
-    ‘webhook_call_busy_name’ => ‘Meşgul’,
-    ‘webhook_call_busy_desc’ => ‘Alıcı başka bir aramada meşgul olduğunda tetiklenir’,
+    'webhook_call_busy_name' => 'Meşgul',
+    'webhook_call_busy_desc' => 'Alıcı başka bir aramada meşgul olduğunda tetiklenir',
 
-    ‘webhook_call_ended_name’ => ‘Arama Sonlandı’,
-    ‘webhook_call_ended_desc’ => ‘Her iki taraftan arama sona erdiğinde veya bağlantı kesildiğinde tetiklenir’,
+    'webhook_call_ended_name' => 'Arama Sonlandı',
+    'webhook_call_ended_desc' => 'Her iki taraftan arama sona erdiğinde veya bağlantı kesildiğinde tetiklenir',
 
-    ‘webhook_call_missed_name’ => ‘Cevapsız Arama’,
-    ‘webhook_call_missed_desc’ => ‘Alıcı cevap vermediğinde ve arama zaman aşımı sona erdiğinde tetiklenir’,
+    'webhook_call_missed_name' => 'Cevapsız Arama',
+    'webhook_call_missed_desc' => 'Alıcı cevap vermediğinde ve arama zaman aşımı sona erdiğinde tetiklenir',
 
     // Presence Events
-    ‘webhook_user_online_name’ => ‘Kullanıcı Çevrimiçi’,
-    ‘webhook_user_online_desc’ => ‘Bir kullanıcı sisteme bağlandığında ve aktif olduğunda tetiklenir’,
+    'webhook_user_online_name' => 'Kullanıcı Çevrimiçi',
+    'webhook_user_online_desc' => 'Bir kullanıcı sisteme bağlandığında ve aktif olduğunda tetiklenir',
 
-    ‘webhook_user_offline_name’ => ‘Kullanıcı Çevrimdışı’,
-    ‘webhook_user_offline_desc’ => ‘Bir kullanıcı bağlantısını kestiğinde veya pasif olduğunda tetiklenir’,
+    'webhook_user_offline_name' => 'Kullanıcı Çevrimdışı',
+    'webhook_user_offline_desc' => 'Bir kullanıcı bağlantısını kestiğinde veya pasif olduğunda tetiklenir',
 
     // Messaging Events
-    ‘webhook_message_sent_name’ => ‘Mesaj Gönderildi’,
-    ‘webhook_message_sent_desc’ => ‘Bir konuşmada yeni bir mesaj gönderildiğinde tetiklenir’,
+    'webhook_message_sent_name' => 'Mesaj Gönderildi',
+    'webhook_message_sent_desc' => 'Bir konuşmada yeni bir mesaj gönderildiğinde tetiklenir',
 
+
+    // App Settings — Maintenance + App Version & Force Update
+    'maintenance_section' => 'Bakım Modu',
+    'maintenance_section_hint' => 'Etkinleştirildiğinde, uygulama açılışta bir bakım ekranı gösterir ve kullanımı engeller.',
+    'maintenance_mode' => 'Bakım modunu etkinleştir',
+    'maintenance_message' => 'Bakım mesajı',
+    'version_section' => 'Uygulama Sürümü ve Zorunlu Güncelleme',
+    'version_section_hint' => 'Her platform için minimum ve en son derleme numarasını kontrol edin. Minimumun altındaki (veya «Zorunlu güncelleme» açıkken en sonun altındaki) istemciler güncellemeye zorlanır.',
+    'android' => 'Android',
+    'ios' => 'iOS',
+    'huawei' => 'Huawei',
+    'min_version' => 'Minimum derleme numarası',
+    'min_version_hint' => 'Bu derlemenin altı = zorunlu güncelleme.',
+    'latest_version' => 'En son derleme numarası',
+    'latest_version_hint' => 'Yayınlanan en son derleme.',
+    'update_required' => 'Zorunlu güncelleme',
+    'update_required_hint' => 'En son derlemenin altındaki istemcileri güncellemeye zorla.',
+    'store_url' => 'Mağaza URL',
+
+    // App Settings — Colors
+    'colors_section' => 'Renkler',
+    'colors_section_hint' => 'Uygulama renklerini özelleştirin. Yerleşik rengi korumak için bir alanı boş bırakın.',
+    'colors_brand' => 'Marka',
+    'colors_background' => 'Arka plan',
+    'colors_cards' => 'Kartlar',
+    'colors_text' => 'Metin',
+    'color_primary' => 'Birincil / vurgu',
+    'color_accent' => 'İkincil vurgu',
+    'color_bg_dark' => 'Arka plan (düz)',
+    'color_bg_gradient_1' => 'Arka plan gradyanı 1',
+    'color_bg_gradient_2' => 'Arka plan gradyanı 2',
+    'color_bg_gradient_3' => 'Arka plan gradyanı 3',
+    'color_card_bg' => 'Kart rengi',
+    'color_card_border' => 'Kart kenarlığı',
+    'color_text_primary' => 'Birincil metin',
+    'color_text_secondary' => 'İkincil metin',
+    'color_field_hint' => 'Uygulama varsayılan rengini kullanmak için boş bırakın.',
 ];

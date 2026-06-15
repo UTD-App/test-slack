@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use App\Models\Config;
+use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
@@ -79,6 +80,17 @@ class AppSettings extends Page
             'huawei_latest_version'   => $this->getSetting('huawei_latest_version'),
             'huawei_update_required'  => (bool) $this->getSetting('huawei_update_required'),
             'huawei_store_url'        => $this->getSetting('huawei_store_url'),
+            // App colors (empty = the app's built-in default color is used)
+            'theme_primary'        => $this->getSetting('theme_primary'),
+            'theme_accent'         => $this->getSetting('theme_accent'),
+            'theme_bg_dark'        => $this->getSetting('theme_bg_dark'),
+            'theme_bg_gradient_1'  => $this->getSetting('theme_bg_gradient_1'),
+            'theme_bg_gradient_2'  => $this->getSetting('theme_bg_gradient_2'),
+            'theme_bg_gradient_3'  => $this->getSetting('theme_bg_gradient_3'),
+            'theme_card_bg'        => $this->getSetting('theme_card_bg'),
+            'theme_card_border'    => $this->getSetting('theme_card_border'),
+            'theme_text_primary'   => $this->getSetting('theme_text_primary'),
+            'theme_text_secondary' => $this->getSetting('theme_text_secondary'),
         ]);
     }
 
@@ -208,8 +220,46 @@ class AppSettings extends Page
                             $this->versionFieldset('huawei', __('admin.huawei')),
                         ]),
 
+                    Tabs\Tab::make(__('admin.colors_section'))
+                        ->icon('heroicon-o-swatch')
+                        ->schema([
+                            Placeholder::make('colors_hint')
+                                ->hiddenLabel()
+                                ->content(__('admin.colors_section_hint')),
+                            Fieldset::make(__('admin.colors_brand'))->schema([
+                                $this->colorField('theme_primary', __('admin.color_primary'), '#BE4AFF'),
+                                $this->colorField('theme_accent', __('admin.color_accent'), '#D9A0FF'),
+                            ])->columns(2),
+                            Fieldset::make(__('admin.colors_background'))->schema([
+                                $this->colorField('theme_bg_dark', __('admin.color_bg_dark'), '#463394'),
+                                $this->colorField('theme_bg_gradient_1', __('admin.color_bg_gradient_1'), '#7E3E97'),
+                                $this->colorField('theme_bg_gradient_2', __('admin.color_bg_gradient_2'), '#583C9E'),
+                                $this->colorField('theme_bg_gradient_3', __('admin.color_bg_gradient_3'), '#3D2D86'),
+                            ])->columns(2),
+                            Fieldset::make(__('admin.colors_cards'))->schema([
+                                $this->colorField('theme_card_bg', __('admin.color_card_bg'), '#6750AE'),
+                                $this->colorField('theme_card_border', __('admin.color_card_border'), '#8E72D2'),
+                            ])->columns(2),
+                            Fieldset::make(__('admin.colors_text'))->schema([
+                                $this->colorField('theme_text_primary', __('admin.color_text_primary'), '#FFFFFF'),
+                                $this->colorField('theme_text_secondary', __('admin.color_text_secondary'), '#D0C0EE'),
+                            ])->columns(2),
+                        ]),
+
                 ]),
         ])->statePath('data');
+    }
+
+    /**
+     * One admin-overridable app color. Left empty, the app keeps its built-in
+     * default; the placeholder shows the built-in value as a guide.
+     */
+    private function colorField(string $key, string $label, string $exampleHex): ColorPicker
+    {
+        return ColorPicker::make($key)
+            ->label($label)
+            ->placeholder($exampleHex)
+            ->helperText(__('admin.color_field_hint'));
     }
 
     /**

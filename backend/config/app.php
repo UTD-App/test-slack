@@ -69,10 +69,6 @@ return [
 
     'api_prefix' => env('API_PREFIX', ''),
 
-    // Secret token guarding the web /setup/{key} bootstrap + /setup/gcs-test/{key}
-    // routes so they can be run from a browser. Empty = the routes are disabled (404).
-    'setup_key' => env('SETUP_KEY', ''),
-
     'app_origin_name' => env('APP_ORIGIN_NAME', 'r-star'),
 
 
@@ -227,6 +223,11 @@ return [
         // MUST come before PackageServiceProvider so package providers (registered
         // by it) can override these defaults.
         App\Providers\ContractsServiceProvider::class,
+
+        // High-level notification system (Notifier + type/channel registries).
+        // MUST come before PackageServiceProvider so packages can register their
+        // own notification types/channels in boot().
+        App\Providers\NotificationServiceProvider::class,
 
         // Generic package discovery — scans backend/packages/*, reads each
         // package's own composer.json, registers its PSR-4 + provider(s).

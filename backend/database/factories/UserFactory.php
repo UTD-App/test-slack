@@ -15,20 +15,20 @@ class UserFactory extends Factory
 
     public function definition(): array
     {
-        $name = fake()->name();
-
         return [
-            'name' => $name,
-            'email' => fake()->unique()->safeEmail(),
-            'phone' => fake()->unique()->numerify('+20100#######'),
-            'uuid' => (string) Str::uuid(),
-            'password' => 'password',
-            'avatar' => "https://i.pravatar.cc/300?u=" . Str::slug($name) . fake()->numberBetween(1, 9999),
-            'img' => "https://i.pravatar.cc/300?u=" . Str::slug($name) . fake()->numberBetween(1, 9999),
-            'bio' => fake()->sentence(),
-            'gender' => fake()->numberBetween(1, 2),
-            'status' => true,
-            'online' => fake()->boolean(40),
+            'name'              => fake()->name(),
+            'email'             => fake()->unique()->safeEmail(),
+            'phone'             => fake()->unique()->numerify('+2010########'),
+            'uuid'              => (string) Str::uuid(),
+            'email_verified_at' => now(),
+            'password'          => 'password',
+            'status'            => true,
         ];
+    }
+
+    /** A soft-disabled user. */
+    public function inactive(): static
+    {
+        return $this->state(fn () => ['status' => false]);
     }
 }

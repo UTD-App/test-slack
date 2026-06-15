@@ -66,14 +66,30 @@ abstract class BaseModuleServiceProvider extends ServiceProvider
         return [];
     }
 
+    /**
+     * Granular ADMIN permissions this package contributes to the dashboard.
+     * Compact map `group => [abilities]`, e.g. ['gifts' => ['view', 'manage']].
+     * Synced into admin_permissions by `utd:sync-packages`.
+     *
+     * @return array<string, array<int, string>>
+     */
+    public function adminPermissions(): array
+    {
+        return [];
+    }
+
     public function register(): void
     {
-        // Record the manifest (incl. role/setting definitions) in memory as early as
-        // possible so `utd:sync-packages` and enabled checks can see it.
+        // Record the manifest (incl. role/setting/permission definitions) in memory
+        // as early as possible so `utd:sync-packages` and enabled checks can see it.
         app(PackageRegistry::class)->register(array_merge(
             ['slug' => $this->packageSlug()],
             $this->packageManifest(),
-            ['roles' => $this->roles(), 'settings' => $this->settings()],
+            [
+                'roles'             => $this->roles(),
+                'settings'          => $this->settings(),
+                'admin_permissions' => $this->adminPermissions(),
+            ],
         ));
     }
 

@@ -1,14 +1,17 @@
 <?php
 
+use App\Http\Controllers\Api\V1\AppVersionController;
 use App\Http\Controllers\Api\V1\Auth\ForgotPasswordController;
 use App\Http\Controllers\Api\V1\Auth\RegisterController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\ConfigController;
+use App\Http\Controllers\Api\V1\MediaController;
 use App\Http\Controllers\Api\V1\PackageController;
+use App\Http\Controllers\Api\V1\PageController;
 use App\Http\Controllers\Api\V1\StacController;
 use App\Http\Controllers\Api\V1\MenuController;
+use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\TranslationController;
-use App\Http\Controllers\Api\V1\UtdManifestController;
 use Illuminate\Support\Facades\Route;
 
 // HAProxy health check — must be outside throttle middleware
@@ -21,14 +24,6 @@ Route::post('/check-email', [AuthController::class, 'checkEmail']);
 // Package registration & discovery
 Route::get('/packages/installed', [PackageController::class, 'installed']);
 Route::post('/packages/register', [PackageController::class, 'register']);
-
-// ── UTD Studio — design-time discovery (manifest) ────────────────
-// Separate auth from push: X-UTD-Secret (read) vs X-Stac-Key (write).
-// Contract: utdStack/docs/INTEGRATION.md §2–3.
-Route::middleware('utd.secret')->prefix('utd')->group(function () {
-    Route::get('/manifest', [UtdManifestController::class, 'manifest']);
-    Route::get('/packages/{key}/sample', [UtdManifestController::class, 'sample']);
-});
 
 // Stac server-driven UI
 Route::post('/stac/push', [StacController::class, 'push']);
@@ -112,12 +107,23 @@ Route::prefix(config('app.api_prefix'))->group(function () {
         Route::post('reset-password', [ForgotPasswordController::class, 'reset'])->middleware('auth.rate.limit:3,5');
     });
 
+    // ── Static content pages (privacy policy, about us, …) — public ──
+    Route::get('page/{key}', [PageController::class, 'show']);
+
+    // ── Launch gate: force-update + maintenance — public (pre-login) ──
+    Route::get('app-version', [AppVersionController::class, 'check']);
+
     // ── Authenticated routes ─────────────────────────────────
     Route::middleware(['auth:sanctum', 'checkLatestToken', 'generalBan', 'userBan', 'update.last.seen', 'localization'])->group(
         function () {
             Route::get('my-data', [AuthController::class, 'myData']);
             Route::post('profile/update', [AuthController::class, 'updateProfile']);
-            Route::post('profile/avatar', [AuthController::class, 'updateAvatar']);
+
+            // Delete my own account (revoke tokens + soft-delete the user)
+            Route::post('account/delete', [AuthController::class, 'deleteAccount']);
+
+            // Reusable, provider-agnostic media upload (returns {path, url})
+            Route::post('media/upload', [MediaController::class, 'upload']);
             Route::post('auth/logout', [AuthController::class, 'logout']);
 
             // User settings
@@ -129,6 +135,14 @@ Route::prefix(config('app.api_prefix'))->group(function () {
 
             // App configs
             Route::get('configs', [ConfigController::class, 'index']);
+
+            // ── Notifications (in-app feed + preferences + device token) ──
+            Route::get('notifications', [NotificationController::class, 'index']);
+            Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount']);
+            Route::post('notifications/read-all', [NotificationController::class, 'markAllRead']);
+            Route::post('notifications/{id}/read', [NotificationController::class, 'markRead'])->whereNumber('id');
+            Route::put('notifications/preferences', [NotificationController::class, 'updatePreferences']);
+            Route::post('notifications/device-token', [NotificationController::class, 'registerDeviceToken']);
         }
     );
 });

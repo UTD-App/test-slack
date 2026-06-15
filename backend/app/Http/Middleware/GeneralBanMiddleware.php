@@ -13,7 +13,9 @@ class GeneralBanMiddleware
         $user = $request->user();
 
         if (!$user || !$user->status) {
-            return Common::apiResponse(false, 'Your account has been suspended', null, 403);
+            // `code` lets the app distinguish a ban from other 403s (e.g. a
+            // disabled package) and force the user to log out.
+            return Common::apiResponse(false, 'Your account has been suspended', ['code' => 'account_suspended'], 403);
         }
 
         return $next($request);

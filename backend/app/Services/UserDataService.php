@@ -14,6 +14,30 @@ class UserDataService
         $this->contributors[$contributor->getKey()] = $contributor;
     }
 
+    /**
+     * Public, viewer-safe core identity for a user as seen by OTHERS (profiles,
+     * listings, search). Deliberately omits private fields (email, phone,
+     * firebase_uuid, notification_id, settings) that {@see aggregateUserData}
+     * returns for the authenticated user's own /api/my-data. Feature-package
+     * sections are NOT added here — those are merged by the Profile package via
+     * {@see ProfileContributorRegistry}, so each section is package-gated.
+     */
+    public function publicData(User $user): array
+    {
+        $user->load(['country', 'profile', 'roles']);
+
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'uuid' => $user->uuid,
+            'bio' => $user->bio,
+            'online_time' => $user->online_time,
+            'country' => $user->country?->toArray(),
+            'profile' => $user->profile?->toArray(),
+            'roles' => $user->roles->pluck('key')->values()->toArray(),
+        ];
+    }
+
     public function aggregateUserData(User $user): array
     {
         $user->load(['country', 'profile', 'roles']);
@@ -26,9 +50,6 @@ class UserDataService
             'uuid' => $user->uuid,
             'firebase_uuid' => $user->firebase_uuid,
             'bio' => $user->bio,
-            // صورة المستخدم كـ URL جاهز للعرض (نفس منطق البحث: img ثم avatar) — عشان
-            // مصدر core.currentUser في فلاتر يحلّ الـ avatar binding على شاشة profile.
-            'avatar' => $user->img ?: $user->avatar,
             'notification_id' => $user->notification_id,
             'is_first' => (bool) ($user->is_points_first ?? false),
             'online_time' => $user->online_time,

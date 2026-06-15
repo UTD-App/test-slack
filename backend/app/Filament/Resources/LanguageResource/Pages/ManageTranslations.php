@@ -85,7 +85,7 @@ class ManageTranslations extends Page implements HasTable
                     ->searchable()
                     ->limit(50),
                 TextColumn::make('translations.0.value')
-                    ->label('Translation (' . strtoupper($this->record->code) . ')')
+                    ->label(__('admin.translation_col', ['code' => strtoupper($this->record->code)]))
                     ->placeholder(__('admin.not_translated'))
                     ->wrap()
                     ->color(fn($state) => $state ? 'success' : 'warning'),
@@ -101,7 +101,7 @@ class ManageTranslations extends Page implements HasTable
                     ])
                     ->form([
                         TextInput::make('value')
-                            ->label('Translation in ' . $this->record->native_name)
+                            ->label(__('admin.translation_in', ['lang' => $this->record->native_name]))
                             ->required(),
                     ])
                     ->action(function (TranslationKey $record, array $data) {
@@ -168,13 +168,13 @@ class ManageTranslations extends Page implements HasTable
                     }),
 
                 Tables\Actions\Action::make('filter_group')
-                    ->label($this->selectedGroup ? "Group: {$this->selectedGroup}" : 'All Groups')
+                    ->label($this->selectedGroup ? __('admin.group_label', ['group' => $this->selectedGroup]) : __('admin.all_groups'))
                     ->icon('heroicon-o-funnel')
                     ->form([
                         Select::make('group')
-                            ->label('Filter by Group')
+                            ->label(__('admin.filter_group'))
                             ->options(
-                                TranslationKey::distinct()->pluck('group', 'group')->prepend('All', '')
+                                TranslationKey::distinct()->pluck('group', 'group')->prepend(__('admin.all_groups'), '')
                             )
                             ->nullable(),
                     ])
