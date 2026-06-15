@@ -8,7 +8,8 @@ class StorageConfigService
 {
     public function configure(): void
     {
-        $driver = $this->get('storage_driver', 'local');
+        // GCS is the default provider.
+        $driver = $this->get('storage_driver', 'gcs');
 
         if ($driver === 'local' || !$driver) {
             config(['filesystems.default' => 'public']);
@@ -23,7 +24,10 @@ class StorageConfigService
             default => null,
         };
 
-        if (!$diskConfig) {
+        // Cloud drivers need a bucket. If one isn't configured yet (e.g. a fresh
+        // install where gcs is the default but no credentials are set), stay on
+        // the local public disk so uploads degrade gracefully instead of 500ing.
+        if (!$diskConfig || (in_array($driver, ['s3', 'gcs'], true) && empty($diskConfig['bucket']))) {
             config(['filesystems.default' => 'public']);
             return;
         }
@@ -39,7 +43,7 @@ class StorageConfigService
      */
     public function url(string $path): string
     {
-        $driver   = $this->get('storage_driver', 'local');
+        $driver   = $this->get('storage_driver', 'gcs');
         $endpoint = $this->get('storage_endpoint');
         $bucket   = $this->get('storage_bucket');
 
@@ -79,10 +83,22 @@ class StorageConfigService
         // in key_file_path (key_file is for an inline credentials array).
         $base = config('filesystems.disks.gcs', []);
 
+        // Key file: prefer one uploaded from the admin panel (stored privately on
+        // the `local` disk = storage/app), else the env-configured path, else the
+        // conventional service-account.json at the project root.
+        $uploaded = $this->get('storage_gcs_key_file');
+        $keyFilePath = $uploaded
+            ? storage_path('app/' . ltrim($uploaded, '/'))
+            : ($base['key_file_path'] ?? base_path('service-account.json'));
+
         return [
             'driver'        => 'gcs',
-            'key_file_path' => $base['key_file_path'] ?? base_path('service-account.json'),
-            'project_id'    => $this->get('firebase_project_id') ?: ($base['project_id'] ?? null),
+            'key_file_path' => $keyFilePath,
+            // Project id from the storage settings, falling back to the Firebase
+            // project id, then the env-derived disk config.
+            'project_id'    => $this->get('storage_project_id')
+                ?: $this->get('firebase_project_id')
+                ?: ($base['project_id'] ?? null),
             // Bucket is admin-configurable at runtime (DB), with an env-derived fallback.
             'bucket'        => $this->get('storage_bucket') ?: ($base['bucket'] ?? null),
             'visibility'    => 'public',
