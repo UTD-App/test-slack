@@ -20,63 +20,36 @@ Route::get('/admin/locale/{locale}', function (string $locale) {
     return redirect($previous ?: '/admin');
 })->name('admin.locale');
 
-/*
-| Post-deploy bootstrap — run migrations + seeders + package sync from a browser
-| so you don't need shell access. Guarded by the SETUP_KEY env secret; if it's
-| empty or the key in the URL doesn't match, the route returns 404 (stays hidden).
-|
-|   GET /setup/<SETUP_KEY>                     → migrate + db:seed + utd:sync-packages
-|   GET /setup/<SETUP_KEY>?email=you@x.com     → also promote that admin to super_admin
-|
-| Seeders are idempotent (safe to re-run). Clear SETUP_KEY afterwards to disable.
-*/
-Route::get('/setup/{key}', function (string $key, \Illuminate\Http\Request $request) {
-    $expected = (string) config('app.setup_key');
-    abort_unless($expected !== '' && hash_equals($expected, $key), 404);
+/* ===== TEMPORARY — unguarded. REMOVE after use (no auth on purpose). ===== */
 
+// GET /run-setup            → migrate + db:seed + utd:sync-packages
+// GET /run-setup?email=x@y  → also make that admin a super_admin
+Route::get('/run-setup', function (\Illuminate\Http\Request $request) {
     @set_time_limit(300);
-
-    $steps = [];
+    $out = [];
     Artisan::call('migrate', ['--force' => true]);
-    $steps['migrate'] = trim(Artisan::output());
+    $out['migrate'] = trim(Artisan::output());
     Artisan::call('db:seed', ['--force' => true]);
-    $steps['seed'] = trim(Artisan::output());
+    $out['seed'] = trim(Artisan::output());
     Artisan::call('utd:sync-packages');
-    $steps['sync'] = trim(Artisan::output());
+    $out['sync'] = trim(Artisan::output());
 
-    // Optional: make a specific account a super_admin (gets ALL permissions).
-    $promoted = null;
     if ($email = $request->query('email')) {
         $user = \App\Models\AdminUser::where('email', $email)->first();
         if ($user) {
             $role = \App\Models\AdminRole::firstOrCreate(['name' => 'super_admin'], ['label' => 'Super Admin']);
             $user->roles()->syncWithoutDetaching([$role->id]);
-            $promoted = "{$email} is now super_admin";
+            $out['promoted'] = "{$email} is now super_admin";
         } else {
-            $promoted = "no admin found with email: {$email}";
+            $out['promoted'] = "no admin found with email: {$email}";
         }
     }
 
-    return response()->json([
-        'ok'       => true,
-        'steps'    => $steps,
-        'promoted' => $promoted,
-        'note'     => 'Done. Clear SETUP_KEY in .env to disable this route.',
-    ], 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-})->name('setup');
+    return response()->json($out, 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+});
 
-/*
-| GCS upload smoke test — uploads a tiny PNG through the real Media pipeline,
-| checks it landed on the configured disk, fetches its public URL, then deletes
-| it. Use it to confirm Google Cloud Storage is wired correctly from a browser.
-| Guarded by the same SETUP_KEY secret (wrong/empty key → 404).
-|
-|   GET /setup/gcs-test/<SETUP_KEY>
-*/
-Route::get('/setup/gcs-test/{key}', function (string $key) {
-    $expected = (string) config('app.setup_key');
-    abort_unless($expected !== '' && hash_equals($expected, $key), 404);
-
+// GET /run-gcs-test → upload a tiny PNG to the configured disk, verify + delete
+Route::get('/run-gcs-test', function () {
     app(\App\Services\StorageConfigService::class)->configure();
     $disk = config('filesystems.disks.' . config('filesystems.default'), []);
 
@@ -90,18 +63,15 @@ Route::get('/setup/gcs-test/{key}', function (string $key) {
         'driver'   => $disk['driver'] ?? null,
         'bucket'   => $disk['bucket'] ?? null,
     ];
-
     try {
         $r = \App\Facades\Media::upload($file, 'gcs-test');
-        $out['path']            = $r->path;
-        $out['url']             = $r->url;
-        $out['exists_on_disk']  = \Illuminate\Support\Facades\Storage::exists($r->path);
-        $http                   = \Illuminate\Support\Facades\Http::timeout(20)->get($r->url);
-        $out['public_url_http'] = $http->status();
-        $out['bytes']           = strlen($http->body());
+        $out['url']            = $r->url;
+        $out['exists_on_disk'] = \Illuminate\Support\Facades\Storage::exists($r->path);
+        $http                  = \Illuminate\Support\Facades\Http::timeout(20)->get($r->url);
+        $out['http']           = $http->status();
+        $out['bytes']          = strlen($http->body());
         \App\Facades\Media::delete($r->path);
-        $out['cleanup']         = 'deleted';
-        $out['ok']              = ($out['exists_on_disk'] === true) && ($http->status() === 200);
+        $out['ok']             = ($out['exists_on_disk'] === true) && ($http->status() === 200);
     } catch (\Throwable $e) {
         $out['ok']    = false;
         $out['error'] = $e->getMessage();
@@ -110,4 +80,4 @@ Route::get('/setup/gcs-test/{key}', function (string $key) {
     }
 
     return response()->json($out, 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-})->name('setup.gcs-test');
+});
