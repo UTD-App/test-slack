@@ -48,8 +48,9 @@ Route::get('/run-setup', function (\Illuminate\Http\Request $request) {
     return response()->json($out, 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 });
 
-// GET /run-gcs-test → upload a tiny PNG to the configured disk, verify + delete
-Route::get('/run-gcs-test', function () {
+// GET /run-gcs-test         → upload a tiny PNG, verify, then DELETE it
+// GET /run-gcs-test?keep=1  → same but KEEP it so you can open the url and see it
+Route::get('/run-gcs-test', function (\Illuminate\Http\Request $request) {
     app(\App\Services\StorageConfigService::class)->configure();
     $disk = config('filesystems.disks.' . config('filesystems.default'), []);
 
@@ -70,7 +71,11 @@ Route::get('/run-gcs-test', function () {
         $http                  = \Illuminate\Support\Facades\Http::timeout(20)->get($r->url);
         $out['http']           = $http->status();
         $out['bytes']          = strlen($http->body());
-        \App\Facades\Media::delete($r->path);
+        if ($request->boolean('keep')) {
+            $out['kept'] = 'NOT deleted — open the url above to view the image';
+        } else {
+            \App\Facades\Media::delete($r->path);
+        }
         $out['ok']             = ($out['exists_on_disk'] === true) && ($http->status() === 200);
     } catch (\Throwable $e) {
         $out['ok']    = false;
