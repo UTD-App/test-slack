@@ -72,12 +72,20 @@ class StorageConfigService
 
     private function gcsConfig(): array
     {
+        // Static credentials come from the base's `gcs` disk defined in
+        // config/filesystems.php — the only place env() is read, so this stays
+        // correct under `php artisan config:cache` (env() outside config files
+        // returns null once the config is cached). spatie expects the key PATH
+        // in key_file_path (key_file is for an inline credentials array).
+        $base = config('filesystems.disks.gcs', []);
+
         return [
-            'driver'     => 'gcs',
-            'key_file'   => env('GOOGLE_CLOUD_KEY_FILE'),
-            'project_id' => $this->get('firebase_project_id'),
-            'bucket'     => $this->get('storage_bucket'),
-            'visibility' => 'public',
+            'driver'        => 'gcs',
+            'key_file_path' => $base['key_file_path'] ?? base_path('service-account.json'),
+            'project_id'    => $this->get('firebase_project_id') ?: ($base['project_id'] ?? null),
+            // Bucket is admin-configurable at runtime (DB), with an env-derived fallback.
+            'bucket'        => $this->get('storage_bucket') ?: ($base['bucket'] ?? null),
+            'visibility'    => 'public',
         ];
     }
 
