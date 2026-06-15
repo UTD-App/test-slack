@@ -20,6 +20,11 @@ jobs:
         working-directory: /var/www/project-x/backend
 
     steps:
+      - name: Reclaim file ownership
+        working-directory: /var/www/project-x
+        run: |
+          sudo chown -R github-runner:www-data /var/www/project-x/backend/storage /var/www/project-x/backend/bootstrap/cache
+
       - name: Pull latest code
         working-directory: /var/www/project-x
         run: |
