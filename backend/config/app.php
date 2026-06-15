@@ -69,6 +69,10 @@ return [
 
     'api_prefix' => env('API_PREFIX', ''),
 
+    // Secret token guarding the web /setup/{key} bootstrap + /setup/gcs-test/{key}
+    // routes so they can be run from a browser. Empty = the routes are disabled (404).
+    'setup_key' => env('SETUP_KEY', ''),
+
     'app_origin_name' => env('APP_ORIGIN_NAME', 'r-star'),
 
 
