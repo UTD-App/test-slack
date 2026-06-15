@@ -17,6 +17,13 @@ class Room extends Model
     ];
 
     protected $casts = [
+        'num_id' => 'integer',
+        'user_id' => 'integer',
+        'mode' => 'integer',
+        'room_status' => 'integer',
+        'room_type' => 'integer',
+        'room_class' => 'integer',
+        'max_admin' => 'integer',
         'is_afk' => 'boolean',
         'is_comment_closed' => 'boolean',
         'free_mic' => 'boolean',

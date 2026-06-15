@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Utd\AudioRoom\Http\Controllers\CharismaController;
 use Utd\AudioRoom\Http\Controllers\RoomController;
 use Utd\AudioRoom\Http\Controllers\RoomAdminController;
 
@@ -41,4 +42,11 @@ Route::middleware(['auth:sanctum', 'package.enabled:audio-room'])->group(functio
     Route::post('rooms/{id}/ban', [RoomAdminController::class, 'ban']);
     Route::delete('rooms/{roomId}/blacklist/{userId}', [RoomAdminController::class, 'unban']);
     Route::post('rooms/{id}/check-role', [RoomAdminController::class, 'checkRole']);
+
+    // Charisma
+    Route::get('charisma/levels', [CharismaController::class, 'levels']);
+    Route::get('charisma/room/{roomId}', [CharismaController::class, 'roomCharisma']);
+    Route::get('charisma/status/{roomId}', [CharismaController::class, 'status']);
+    Route::post('charisma/change-status', [CharismaController::class, 'changeStatus']);
+    Route::post('charisma/reset', [CharismaController::class, 'reset']);
 });
