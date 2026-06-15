@@ -4,6 +4,7 @@ namespace Utd\AudioRoom\Http\Controllers;
 
 use App\Helpers\Common;
 use App\Http\Controllers\Controller;
+use App\Services\StorageConfigService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -60,7 +61,7 @@ class RoomController extends Controller
 
         $coverPath = null;
         if ($request->hasFile('room_cover')) {
-            $coverPath = $request->file('room_cover')->store('rooms/covers', 'public');
+            $coverPath = $request->file('room_cover')->store('rooms/covers');
         }
 
         $room = Room::create([
@@ -120,9 +121,9 @@ class RoomController extends Controller
 
         if ($request->hasFile('room_cover')) {
             if ($room->room_cover) {
-                Storage::disk('public')->delete($room->room_cover);
+                Storage::delete($room->room_cover);
             }
-            $data['room_cover'] = $request->file('room_cover')->store('rooms/covers', 'public');
+            $data['room_cover'] = $request->file('room_cover')->store('rooms/covers');
         }
 
         $room->update(array_filter($data, fn ($v) => $v !== null));
@@ -141,7 +142,7 @@ class RoomController extends Controller
         }
 
         if ($room->room_cover) {
-            Storage::disk('public')->delete($room->room_cover);
+            Storage::delete($room->room_cover);
         }
 
         $room->delete();
@@ -401,6 +402,7 @@ class RoomController extends Controller
 
     private function formatRoom(Room $room): array
     {
+        $storage = app(StorageConfigService::class);
         $owner = $room->owner;
         $visitorImages = $room->visitors()
             ->with('user.profile')
@@ -416,10 +418,10 @@ class RoomController extends Controller
             'num_id' => $room->num_id,
             'owner_id' => $room->user_id,
             'room_name' => $room->room_name,
-            'room_cover' => $room->room_cover ? Storage::disk('public')->url($room->room_cover) : null,
+            'room_cover' => $room->room_cover ? $storage->url($room->room_cover) : null,
             'room_intro' => $room->room_intro,
             'room_rule' => $room->room_rule,
-            'room_background' => $room->room_background ? Storage::disk('public')->url($room->room_background) : null,
+            'room_background' => $room->room_background ? $storage->url($room->room_background) : null,
             'has_password' => $room->hasPassword(),
             'mode' => $room->mode,
             'room_status' => $room->room_status,
