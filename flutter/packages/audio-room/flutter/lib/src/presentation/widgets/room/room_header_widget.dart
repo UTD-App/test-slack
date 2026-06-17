@@ -6,11 +6,11 @@ import '../../../domain/room_model.dart';
 import 'room_assets.dart';
 import 'room_strings.dart';
 
-
 class RoomHeaderWidget extends StatelessWidget {
   final RoomModel room;
   final UTDRoomController controller;
   final VoidCallback onExit;
+  final VoidCallback? onMinimize;
   final VoidCallback? onAdminsTap;
   final VoidCallback? onSettingsTap;
 
@@ -19,6 +19,7 @@ class RoomHeaderWidget extends StatelessWidget {
     required this.room,
     required this.controller,
     required this.onExit,
+    this.onMinimize,
     this.onAdminsTap,
     this.onSettingsTap,
   });
@@ -34,18 +35,24 @@ class RoomHeaderWidget extends StatelessWidget {
           children: [
             Row(
               children: [
-                _RoomInfo(room: room),
+                GestureDetector(
+                  onTap: onSettingsTap,
+                  child: _RoomInfo(room: room),
+                ),
                 const Spacer(),
                 _VisitorCount(
                   controller: controller,
-                  onTap: () => UTDMemberListSheet.show(context, controller: controller),
+                  onTap: () =>
+                      UTDMemberListSheet.show(context, controller: controller),
                 ),
                 const SizedBox(width: 4),
                 if (room.isOwner == true || room.isAdmin == true)
                   _AdminMenu(
                     onAdminsTap: onAdminsTap,
-                    onBlacklistTap: () => UTDBanManagementSheet.show(context, controller: controller),
-                    onSettingsTap: onSettingsTap,
+                    onBlacklistTap: () => UTDBanManagementSheet.show(
+                      context,
+                      controller: controller,
+                    ),
                   ),
                 _ExitButton(onTap: () => _confirmExit(context)),
               ],
@@ -60,23 +67,32 @@ class RoomHeaderWidget extends StatelessWidget {
     final s = RoomStrings.of(context);
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(s.leaveRoom),
-        content: Text(s.leaveRoomConfirm),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(s.cancel),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              onExit();
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: Text(s.leave),
-          ),
-        ],
+      barrierColor: Colors.black54,
+      builder: (ctx) => Center(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            if (onMinimize != null)
+              _ExitOption(
+                icon: Icons.picture_in_picture_alt,
+                label: s.keep,
+                color: Colors.blue,
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  onMinimize!();
+                },
+              ),
+            _ExitOption(
+              icon: Icons.exit_to_app,
+              label: s.leave,
+              color: Colors.red,
+              onTap: () {
+                Navigator.of(ctx).pop();
+                onExit();
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -99,7 +115,7 @@ class _RoomInfo extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _OwnerAvatar(url: room.ownerAvatar, size: 32),
+          _OwnerAvatar(url: room.roomCover ?? room.ownerAvatar, size: 32),
           const SizedBox(width: 8),
           Flexible(
             child: Column(
@@ -206,13 +222,8 @@ class _VisitorCount extends StatelessWidget {
 class _AdminMenu extends StatelessWidget {
   final VoidCallback? onAdminsTap;
   final VoidCallback? onBlacklistTap;
-  final VoidCallback? onSettingsTap;
 
-  const _AdminMenu({
-    this.onAdminsTap,
-    this.onBlacklistTap,
-    this.onSettingsTap,
-  });
+  const _AdminMenu({this.onAdminsTap, this.onBlacklistTap});
 
   @override
   Widget build(BuildContext context) {
@@ -226,18 +237,67 @@ class _AdminMenu extends StatelessWidget {
             onAdminsTap?.call();
           case 'blacklist':
             onBlacklistTap?.call();
-          case 'settings':
-            onSettingsTap?.call();
         }
       },
       itemBuilder: (ctx) {
         final s = RoomStrings.of(ctx);
         return [
-          PopupMenuItem(value: 'admins', child: Text(s.admins, style: const TextStyle(color: Colors.white))),
-          PopupMenuItem(value: 'blacklist', child: Text(s.blacklist, style: const TextStyle(color: Colors.white))),
-          PopupMenuItem(value: 'settings', child: Text(s.settings, style: const TextStyle(color: Colors.white))),
+          PopupMenuItem(
+            value: 'admins',
+            child: Text(s.admins, style: const TextStyle(color: Colors.white)),
+          ),
+          PopupMenuItem(
+            value: 'blacklist',
+            child: Text(
+              s.blacklist,
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
         ];
       },
+    );
+  }
+}
+
+class _ExitOption extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ExitOption({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.2),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 32, color: Colors.white),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

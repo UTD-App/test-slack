@@ -9,10 +9,10 @@ import 'domain/room_model.dart';
 import 'presentation/bloc/create_room_bloc.dart';
 import 'presentation/bloc/room_list_bloc.dart';
 import 'presentation/bloc/room_management_bloc.dart';
-import 'presentation/view/audio_room_page.dart';
 import 'presentation/view/create_room_page.dart';
 import 'presentation/view/room_list_page.dart';
 import 'presentation/view/room_settings_page.dart';
+import 'presentation/widgets/audio_room_app_overlay.dart';
 
 class AudioRoomRoutes {
   static const String rooms = '/rooms';
@@ -58,28 +58,27 @@ class AudioRoomRoutes {
               final roomId =
                   int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
               final verifiedRoom = state.extra as RoomModel?;
-              final repository = _createRepository();
-              return MultiBlocProvider(
-                providers: [
-                  RepositoryProvider<AudioRoomRepository>.value(
-                    value: repository,
-                  ),
-                  BlocProvider(
-                    create: (_) =>
-                        RoomManagementBloc(repository: repository),
-                  ),
-                ],
-                child: AudioRoomPage(
-                  roomId: roomId,
-                  verifiedRoom: verifiedRoom,
-                ),
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                AudioRoomAppOverlay.openRoom(roomId, verifiedRoom: verifiedRoom);
+                if (context.mounted) context.pop();
+              });
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
               );
             },
             routes: [
               GoRoute(
                 path: 'settings',
                 builder: (context, state) {
-                  final room = state.extra as RoomModel?;
+                  final extra = state.extra;
+                  RoomModel? room;
+                  void Function(RoomModel)? onUpdated;
+                  if (extra is Map<String, dynamic>) {
+                    room = extra['room'] as RoomModel?;
+                    onUpdated = extra['onUpdated'] as void Function(RoomModel)?;
+                  } else if (extra is RoomModel) {
+                    room = extra;
+                  }
                   final roomId =
                       int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
                   final repository = _createRepository();
@@ -87,7 +86,7 @@ class AudioRoomRoutes {
                     create: (_) =>
                         RoomManagementBloc(repository: repository),
                     child: room != null
-                        ? RoomSettingsPage(room: room)
+                        ? RoomSettingsPage(room: room, onUpdated: onUpdated)
                         : _RoomSettingsLoader(
                             roomId: roomId, repository: repository),
                   );

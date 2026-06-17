@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:utd_audio_room_kit/utd_audio_room_kit.dart';
 
+import '../../../audio_room_feature.dart';
 import 'room_assets.dart';
 
 class SeatAvatarWidget extends StatelessWidget {
@@ -12,6 +13,7 @@ class SeatAvatarWidget extends StatelessWidget {
   final int seatIndex;
   final String userName;
   final UTDRoomController controller;
+  final int roomId;
 
   const SeatAvatarWidget({
     super.key,
@@ -22,6 +24,7 @@ class SeatAvatarWidget extends StatelessWidget {
     required this.seatIndex,
     required this.userName,
     required this.controller,
+    this.roomId = 0,
   });
 
   @override
@@ -32,46 +35,56 @@ class SeatAvatarWidget extends StatelessWidget {
         ? userName
         : (attributes['name'] ?? '');
 
-    return SizedBox(
-      width: size,
-      height: size,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: avatarSize,
-            height: avatarSize,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                _SpeakingWave(
-                  userId: userId,
-                  controller: controller,
-                  avatarSize: avatarSize,
+    return ValueListenableBuilder<Set<String>>(
+      valueListenable: controller.mutedParticipants,
+      builder: (context, mutedSet, _) {
+        final effectivelyMuted = isMuted || mutedSet.contains(userId);
+
+        return SizedBox(
+          width: size,
+          height: size,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: avatarSize,
+                height: avatarSize,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  alignment: Alignment.center,
+                  children: [
+                    _SpeakingWave(
+                      userId: userId,
+                      controller: controller,
+                      avatarSize: avatarSize,
+                    ),
+                    _Avatar(url: avatarUrl, size: avatarSize),
+
+                    ...AudioRoomFeature.registeredPlugins
+                        .map((p) => p.buildSeatBadge(context, userId, roomId))
+                        .where((w) => w != null)
+                        .cast<Widget>(),
+                    if (effectivelyMuted)
+                      Positioned(
+                        bottom: 0,
+                        right: 0,
+                        child: _MicMutedIcon(size: avatarSize * 0.3),
+                      ),
+                  ],
                 ),
-                _Avatar(url: avatarUrl, size: avatarSize),
-                if (isMuted)
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: _MicMutedIcon(size: avatarSize * 0.3),
-                  ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                displayName,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Colors.white, fontSize: 11),
+              ),
+            ],
           ),
-          const SizedBox(height: 4),
-          Text(
-            displayName,
-            textAlign: TextAlign.center,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 11,
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -137,10 +150,7 @@ class _SpeakingWaveState extends State<_SpeakingWave>
         _onSpeakingChanged(isSpeaking);
 
         if (!isSpeaking) {
-          return SizedBox(
-            width: widget.avatarSize,
-            height: widget.avatarSize,
-          );
+          return SizedBox(width: widget.avatarSize, height: widget.avatarSize);
         }
 
         return SizedBox(
@@ -161,8 +171,9 @@ class _SpeakingWaveState extends State<_SpeakingWave>
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         border: Border.all(
-                          color: const Color(0xFF4CAF50)
-                              .withValues(alpha: 0.3 - (_wave2.value * 0.2)),
+                          color: const Color(
+                            0xFF4CAF50,
+                          ).withValues(alpha: 0.3 - (_wave2.value * 0.2)),
                           width: 3,
                         ),
                       ),
@@ -275,10 +286,7 @@ class _MicMutedIcon extends StatelessWidget {
       ),
       child: Padding(
         padding: EdgeInsets.all(size * 0.15),
-        child: Image.asset(
-          RoomAssets.micOff,
-          color: Colors.white,
-        ),
+        child: Image.asset(RoomAssets.micOff, color: Colors.white),
       ),
     );
   }

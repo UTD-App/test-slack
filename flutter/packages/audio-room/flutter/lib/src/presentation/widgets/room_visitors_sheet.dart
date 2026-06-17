@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:utd_app/cache/cache_manager.dart';
 import 'package:utd_app/shared/core/enums.dart';
 import 'package:utd_audio_room_kit/utd_audio_room_kit.dart';
 
@@ -114,6 +115,16 @@ class RoomVisitorsSheet extends StatelessWidget {
                                           targetIdentity: visitor.id.toString(),
                                           role: 'admin',
                                         );
+                                        final promoterData = CacheManager.getUserData();
+                                        controller?.sendRoomMessage({
+                                          'type': 'roleChange',
+                                          'data': {
+                                            'user_id': visitor.id.toString(),
+                                            'role': 'admin',
+                                            'user_name': visitor.name,
+                                            'promoter_name': promoterData?['name']?.toString() ?? '',
+                                          },
+                                        });
                                       case 'kick':
                                         bloc.add(KickUserEvent(
                                           roomId: roomId,

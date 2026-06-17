@@ -13,20 +13,22 @@ final class FetchCharismaLevelsEvent extends CharismaEvent {
 
 final class LoadRoomCharismaEvent extends CharismaEvent {
   final int roomId;
+  final bool? activeOverride;
 
-  const LoadRoomCharismaEvent({required this.roomId});
+  const LoadRoomCharismaEvent({required this.roomId, this.activeOverride});
 
   @override
-  List<Object?> get props => [roomId];
+  List<Object?> get props => [roomId, activeOverride];
 }
 
 final class ChangeCharismaStatusEvent extends CharismaEvent {
   final int roomId;
+  final bool status;
 
-  const ChangeCharismaStatusEvent({required this.roomId});
+  const ChangeCharismaStatusEvent({required this.roomId, required this.status});
 
   @override
-  List<Object?> get props => [roomId];
+  List<Object?> get props => [roomId, status];
 }
 
 final class ResetCharismaEvent extends CharismaEvent {

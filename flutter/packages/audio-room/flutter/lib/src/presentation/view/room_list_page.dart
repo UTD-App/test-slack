@@ -9,6 +9,7 @@ import 'package:utd_app/shared/core/enums.dart';
 import 'package:utd_app/network/models/api_response.dart';
 
 import '../../audio_room_routes.dart';
+import '../widgets/audio_room_app_overlay.dart';
 import '../../audio_room_strings.dart';
 import '../../data/audio_room_api_service.dart';
 import '../../data/audio_room_remote_datasource.dart';
@@ -16,6 +17,7 @@ import '../../domain/audio_room_repository.dart';
 import '../../domain/room_model.dart';
 import '../bloc/room_list_bloc.dart';
 import '../widgets/room_card.dart';
+import '../widgets/room/room_assets.dart';
 
 class RoomListPage extends StatefulWidget {
   const RoomListPage({super.key});
@@ -42,15 +44,31 @@ class _RoomListPageState extends State<RoomListPage> {
     super.dispose();
   }
 
+  void _onCreateOrEnterMyRoom() {
+    final myRoom = context.read<RoomListBloc>().state.myRoom;
+    if (myRoom != null) {
+      AudioRoomAppOverlay.openRoom(myRoom.id);
+    } else {
+      context.push(AudioRoomRoutes.createPath);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(context.tr(AudioRoomKeys.title)),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add),
-            onPressed: () => context.push(AudioRoomRoutes.createPath),
+          GestureDetector(
+            onTap: _onCreateOrEnterMyRoom,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12.w),
+              child: Image.asset(
+                RoomAssets.createRoom,
+                width: 28.r,
+                height: 28.r,
+              ),
+            ),
           ),
         ],
       ),
@@ -82,6 +100,7 @@ class _RoomListPageState extends State<RoomListPage> {
     );
   }
 }
+
 
 class _CategoriesBar extends StatelessWidget {
   @override
@@ -190,9 +209,9 @@ class _EnterRoomPasswordSheetState extends State<_EnterRoomPasswordSheet> {
       case Success(data: final data):
         if (data.data != null) {
           Navigator.pop(context);
-          context.push(
-            AudioRoomRoutes.roomPath(widget.room.id),
-            extra: data.data,
+          AudioRoomAppOverlay.openRoom(
+            widget.room.id,
+            verifiedRoom: data.data,
           );
         } else {
           setState(() {
@@ -349,7 +368,7 @@ class _RoomGrid extends StatelessWidget {
                         if (room.hasPassword && !isOwner) {
                           _showPasswordSheet(context, room);
                         } else {
-                          context.push(AudioRoomRoutes.roomPath(room.id));
+                          AudioRoomAppOverlay.openRoom(room.id);
                         }
                       },
                     );

@@ -41,10 +41,21 @@ class CharismaRemoteDataSourceImpl implements CharismaRemoteDataSource {
   }
 
   @override
-  Future<Result<BaseResponse>> changeStatus(int roomId) async {
+  Future<Result<BaseResponse<Map<String, dynamic>>>> getStatus(int roomId) async {
+    return apiService.get(
+      apiService.statusPath(roomId),
+      fromJson: (json) => BaseResponse<Map<String, dynamic>>.fromJson(
+        json,
+        fromJsonT: (data) => data as Map<String, dynamic>,
+      ),
+    );
+  }
+
+  @override
+  Future<Result<BaseResponse>> changeStatus(int roomId, {required bool status}) async {
     return apiService.post(
       apiService.changeStatusPath(),
-      data: {'room_id': roomId},
+      data: {'room_id': roomId, 'status': status},
       fromJson: (json) => BaseResponse.fromJson(json),
     );
   }

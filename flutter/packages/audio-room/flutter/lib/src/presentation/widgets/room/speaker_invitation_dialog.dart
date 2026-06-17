@@ -1,16 +1,30 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:utd_audio_room_kit/utd_audio_room_kit.dart';
 
 import 'room_strings.dart';
 
 Future<bool> showSpeakerInvitationDialog(
   BuildContext context,
-  Map<String, dynamic> data,
-) async {
+  Map<String, dynamic> data, {
+  UTDRoomController? controller,
+}) async {
   final s = RoomStrings.of(context);
   final seatIndex = data['seat_index'] as int? ?? 0;
-  final inviterName = data['inviter_name']?.toString() ?? s.host;
-  final inviterAvatar = data['inviter_avatar']?.toString();
+  final inviterId = data['inviter_identity']?.toString();
+
+  String inviterName = data['inviter_name']?.toString() ?? s.host;
+  String? inviterAvatar = data['inviter_avatar']?.toString();
+
+  if (inviterId != null && controller != null) {
+    for (final p in controller.participants) {
+      if (p.id == inviterId) {
+        if (p.name.isNotEmpty) inviterName = p.name;
+        final av = p.attributes['avatar'];
+        if (av != null && av.isNotEmpty) inviterAvatar = av;
+        break;
+      }
+    }
+  }
 
   final result = await showDialog<bool>(
     context: context,
@@ -90,26 +104,14 @@ class _InviterAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (url == null || url!.isEmpty) {
-      return CircleAvatar(
-        radius: 36,
-        backgroundColor: Colors.grey.shade700,
-        child: const Icon(Icons.person, size: 36, color: Colors.white70),
-      );
-    }
-
-    return ClipOval(
-      child: CachedNetworkImage(
-        imageUrl: url!,
-        width: 72,
-        height: 72,
-        fit: BoxFit.cover,
-        errorWidget: (_, __, ___) => CircleAvatar(
-          radius: 36,
-          backgroundColor: Colors.grey.shade700,
-          child: const Icon(Icons.person, size: 36, color: Colors.white70),
-        ),
-      ),
+    final hasImage = url != null && url!.isNotEmpty;
+    return CircleAvatar(
+      radius: 36,
+      backgroundColor: Colors.grey.shade700,
+      backgroundImage: hasImage ? NetworkImage(url!) : null,
+      child: hasImage
+          ? null
+          : const Icon(Icons.person, size: 36, color: Colors.white70),
     );
   }
 }

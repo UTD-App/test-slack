@@ -12,6 +12,7 @@ dependencies:
     sdk: flutter
   audio_room:
     path: ../../../flutter
+  utd_audio_room_kit: ^1.0.1
   utd_app:
     path: ../../../../base-project/flutter
   flutter_bloc: ^8.1.6

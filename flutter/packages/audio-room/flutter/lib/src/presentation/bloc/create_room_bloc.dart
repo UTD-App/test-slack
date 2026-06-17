@@ -18,6 +18,7 @@ class CreateRoomBloc extends Bloc<CreateRoomEvent, CreateRoomState> {
   CreateRoomBloc({required this.repository}) : super(const CreateRoomState()) {
     on<SubmitCreateRoomEvent>(_onCreateRoom);
     on<LoadRoomTypesEvent>(_onLoadRoomTypes);
+    on<CheckMyRoomEvent>(_onCheckMyRoom);
   }
 
   Future<void> _onCreateRoom(
@@ -45,6 +46,29 @@ class CreateRoomBloc extends Bloc<CreateRoomEvent, CreateRoomState> {
       case Failure(message: final message):
         emit(state.copyWith(
           createState: RequestState.error,
+          message: message,
+        ));
+    }
+  }
+
+  Future<void> _onCheckMyRoom(
+    CheckMyRoomEvent event,
+    Emitter<CreateRoomState> emit,
+  ) async {
+    emit(state.copyWith(checkState: RequestState.loading));
+
+    final result = await repository.getMyRoom();
+
+    switch (result) {
+      case Success(data: final data):
+        emit(state.copyWith(
+          checkState: RequestState.loaded,
+          existingRoom: data.data,
+          clearExistingRoom: data.data == null,
+        ));
+      case Failure(message: final message):
+        emit(state.copyWith(
+          checkState: RequestState.error,
           message: message,
         ));
     }

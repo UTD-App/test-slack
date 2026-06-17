@@ -42,53 +42,78 @@ class RoomModel extends RoomEntity {
         [];
 
     return RoomModel(
-      id: (json['id'] as num?)?.toInt() ?? 0,
-      numId: (json['num_id'] as num?)?.toInt() ?? 0,
-      ownerId: (json['owner_id'] as num?)?.toInt() ?? 0,
-      roomName: json['room_name'] as String? ?? '',
-      roomCover: json['room_cover'] as String?,
-      roomIntro: json['room_intro'] as String?,
-      roomRule: json['room_rule'] as String?,
-      roomBackground: json['room_background'] as String?,
-      hasPassword: json['has_password'] as bool? ?? false,
-      mode: (json['mode'] as num?)?.toInt() ?? 9,
-      roomStatus: (json['room_status'] as num?)?.toInt() ?? 1,
-      isAfk: json['is_afk'] as bool? ?? false,
-      visitorCount: (json['visitor_count'] as num?)?.toInt() ?? 0,
+      id: _toInt(json['id']) ?? 0,
+      numId: _toInt(json['num_id']) ?? 0,
+      ownerId: _toInt(json['owner_id']) ?? 0,
+      roomName: json['room_name']?.toString() ?? '',
+      roomCover: json['room_cover']?.toString(),
+      roomIntro: json['room_intro']?.toString(),
+      roomRule: json['room_rule']?.toString(),
+      roomBackground: json['room_background']?.toString(),
+      hasPassword: _toBool(json['has_password']) ?? false,
+      mode: _toInt(json['mode']) ?? 9,
+      roomStatus: _toInt(json['room_status']) ?? 1,
+      isAfk: _toBool(json['is_afk']) ?? false,
+      visitorCount: _toInt(json['visitor_count']) ?? 0,
       visitorImages: visitorImages,
-      roomTypeId: (json['room_type'] as num?)?.toInt(),
-      roomClassId: (json['room_class'] as num?)?.toInt(),
-      categoryName: json['category_name'] as String?,
-      isCommentsClosed: json['is_comment_closed'] as bool? ?? false,
-      freeMic: json['free_mic'] as bool? ?? false,
-      maxAdmin: (json['max_admin'] as num?)?.toInt() ?? 4,
-      ownerName: json['owner_name'] as String?,
-      ownerAvatar: json['owner_avatar'] as String?,
-      ownerCountryFlag: json['owner_country_flag'] as String?,
+      roomTypeId: _toInt(json['room_type']),
+      roomClassId: _toInt(json['room_class']),
+      categoryName: json['category_name']?.toString(),
+      isCommentsClosed: _toBool(json['is_comment_closed']) ?? false,
+      freeMic: _toBool(json['free_mic']) ?? false,
+      maxAdmin: _toInt(json['max_admin']) ?? 4,
+      ownerName: json['owner_name']?.toString(),
+      ownerAvatar: json['owner_avatar']?.toString(),
+      ownerCountryFlag: json['owner_country_flag']?.toString(),
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString())
           : null,
-      isOwner: json['is_owner'] as bool?,
-      isAdmin: json['is_admin'] as bool?,
+      isOwner: _toBool(json['is_owner']),
+      isAdmin: _toBool(json['is_admin']),
       streamConfig: json['stream_config'] as Map<String, dynamic>?,
     );
   }
 
+  static int? _toInt(dynamic v) {
+    if (v == null) return null;
+    if (v is int) return v;
+    if (v is num) return v.toInt();
+    if (v is String) return int.tryParse(v);
+    return null;
+  }
+
+  static bool? _toBool(dynamic v) {
+    if (v == null) return null;
+    if (v is bool) return v;
+    if (v is int) return v != 0;
+    if (v is String) return v == '1' || v.toLowerCase() == 'true';
+    return null;
+  }
+
   RoomModel copyWith({
+    String? roomName,
+    String? roomCover,
+    String? roomIntro,
+    String? roomRule,
+    String? roomBackground,
+    bool? hasPassword,
+    int? mode,
     int? visitorCount,
     bool? isCommentsClosed,
-    int? mode,
+    bool? freeMic,
+    String? ownerAvatar,
+    bool? isAdmin,
   }) {
     return RoomModel(
       id: id,
       numId: numId,
       ownerId: ownerId,
-      roomName: roomName,
-      roomCover: roomCover,
-      roomIntro: roomIntro,
-      roomRule: roomRule,
-      roomBackground: roomBackground,
-      hasPassword: hasPassword,
+      roomName: roomName ?? this.roomName,
+      roomCover: roomCover ?? this.roomCover,
+      roomIntro: roomIntro ?? this.roomIntro,
+      roomRule: roomRule ?? this.roomRule,
+      roomBackground: roomBackground ?? this.roomBackground,
+      hasPassword: hasPassword ?? this.hasPassword,
       mode: mode ?? this.mode,
       roomStatus: roomStatus,
       isAfk: isAfk,
@@ -98,14 +123,14 @@ class RoomModel extends RoomEntity {
       roomClassId: roomClassId,
       categoryName: categoryName,
       isCommentsClosed: isCommentsClosed ?? this.isCommentsClosed,
-      freeMic: freeMic,
+      freeMic: freeMic ?? this.freeMic,
       maxAdmin: maxAdmin,
       ownerName: ownerName,
-      ownerAvatar: ownerAvatar,
+      ownerAvatar: ownerAvatar ?? this.ownerAvatar,
       ownerCountryFlag: ownerCountryFlag,
       createdAt: createdAt,
       isOwner: isOwner,
-      isAdmin: isAdmin,
+      isAdmin: isAdmin ?? this.isAdmin,
       streamConfig: streamConfig,
     );
   }

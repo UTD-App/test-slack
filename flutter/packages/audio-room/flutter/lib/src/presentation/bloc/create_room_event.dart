@@ -33,3 +33,7 @@ class SubmitCreateRoomEvent extends CreateRoomEvent {
 class LoadRoomTypesEvent extends CreateRoomEvent {
   const LoadRoomTypesEvent();
 }
+
+class CheckMyRoomEvent extends CreateRoomEvent {
+  const CheckMyRoomEvent();
+}

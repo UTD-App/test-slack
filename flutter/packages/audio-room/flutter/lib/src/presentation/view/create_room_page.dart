@@ -7,8 +7,9 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:utd_app/shared/core/enums.dart';
 
-import '../../audio_room_routes.dart';
 import '../bloc/create_room_bloc.dart';
+import '../widgets/audio_room_app_overlay.dart';
+import '../widgets/room/room_strings.dart';
 
 class CreateRoomPage extends StatefulWidget {
   const CreateRoomPage({super.key});
@@ -68,26 +69,28 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
 
   @override
   Widget build(BuildContext context) {
+    final s = RoomStrings.of(context);
+
     return BlocListener<CreateRoomBloc, CreateRoomState>(
       listenWhen: (prev, curr) => prev.createState != curr.createState,
       listener: (context, state) {
         if (state.createState == RequestState.loaded &&
             state.createdRoom != null) {
-          context.pushReplacement(
-            AudioRoomRoutes.roomPath(state.createdRoom!.id),
-          );
+          context.pop();
+          AudioRoomAppOverlay.openRoom(state.createdRoom!.id);
         } else if (state.createState == RequestState.error) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message ?? 'audio_room.error')),
+            SnackBar(content: Text(state.message ?? s.createError)),
           );
         }
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('audio_room.create'),
+          title: Text(s.createRoom),
           actions: [
             BlocBuilder<CreateRoomBloc, CreateRoomState>(
-              buildWhen: (prev, curr) => prev.createState != curr.createState,
+              buildWhen: (prev, curr) =>
+                  prev.createState != curr.createState,
               builder: (context, state) {
                 return TextButton(
                   onPressed: state.createState == RequestState.loading
@@ -101,7 +104,7 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                             strokeWidth: 2,
                           ),
                         )
-                      : const Text('audio_room.publish'),
+                      : Text(s.publish),
                 );
               },
             ),
@@ -127,25 +130,26 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                         : null,
                   ),
                   child: _coverImage == null
-                      ? const Center(child: Icon(Icons.camera_alt, size: 40))
+                      ? const Center(
+                          child: Icon(Icons.camera_alt, size: 40))
                       : null,
                 ),
               ),
               SizedBox(height: 16.h),
               TextField(
                 controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'audio_room.room_name',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: s.roomName,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               SizedBox(height: 12.h),
               TextField(
                 controller: _introController,
                 maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'audio_room.room_intro',
-                  border: OutlineInputBorder(),
+                decoration: InputDecoration(
+                  labelText: s.roomIntro,
+                  border: const OutlineInputBorder(),
                 ),
               ),
               SizedBox(height: 12.h),
@@ -155,9 +159,9 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                   if (state.types.isEmpty) return const SizedBox.shrink();
                   return DropdownButtonFormField<int>(
                     initialValue: _selectedType,
-                    decoration: const InputDecoration(
-                      labelText: 'audio_room.category',
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: s.category,
+                      border: const OutlineInputBorder(),
                     ),
                     items: state.types
                         .map(
@@ -167,7 +171,8 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                           ),
                         )
                         .toList(),
-                    onChanged: (value) => setState(() => _selectedType = value),
+                    onChanged: (value) =>
+                        setState(() => _selectedType = value),
                   );
                 },
               ),
@@ -178,7 +183,7 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
               ),
               SizedBox(height: 12.h),
               SwitchListTile(
-                title: const Text('audio_room.password'),
+                title: Text(s.password),
                 value: _hasPassword,
                 onChanged: (v) => setState(() => _hasPassword = v),
               ),
@@ -187,9 +192,9 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                 TextField(
                   controller: _passwordController,
                   obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: 'audio_room.enter_password',
-                    border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: s.enterPassword,
+                    border: const OutlineInputBorder(),
                   ),
                 ),
               ],
@@ -212,20 +217,17 @@ class _SeatModeSelector extends StatelessWidget {
 
   static const _modes = [
     (mode: 9, label: '9'),
-    //(mode: 8, label: '8'),
-    //(mode: 12, label: '12'),
-    //(mode: 16, label: '16'),
-    //(mode: 22, label: '22'),
-    //(mode: 2, label: '2'),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final s = RoomStrings.of(context);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'audio_room.seat_mode',
+          s.seatMode,
           style: Theme.of(context).textTheme.titleSmall,
         ),
         SizedBox(height: 8.h),
@@ -235,7 +237,7 @@ class _SeatModeSelector extends StatelessWidget {
           children: _modes.map((m) {
             final isSelected = m.mode == selectedMode;
             return ChoiceChip(
-              label: Text('${m.label} seats'),
+              label: Text(s.seats(m.label)),
               selected: isSelected,
               onSelected: (_) => onChanged(m.mode),
             );

@@ -21,6 +21,7 @@ Route::middleware(['auth:sanctum', 'package.enabled:audio-room'])->group(functio
 
     // Room actions
     Route::post('rooms/{id}/enter', [RoomController::class, 'enter']);
+    Route::post('rooms/{id}/token', [RoomController::class, 'token']);
     Route::post('rooms/{id}/exit', [RoomController::class, 'exit']);
     Route::post('rooms/{id}/favorite', [RoomController::class, 'toggleFavorite']);
     Route::post('rooms/{id}/comment-status', [RoomController::class, 'toggleComments']);

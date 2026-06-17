@@ -8,6 +8,7 @@ use App\Services\StorageConfigService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
 use Utd\AudioRoom\Entities\Room;
 use Utd\AudioRoom\Entities\RoomBlacklist;
@@ -190,7 +191,6 @@ class RoomController extends Controller
 
         $streamConfig = [
             'app_id' => config('audio-room.utd_stream.app_id', ''),
-            'server_secret' => config('audio-room.utd_stream.server_secret', ''),
         ];
 
         $roomData = $this->formatRoom($room);
@@ -199,6 +199,66 @@ class RoomController extends Controller
         $roomData['is_admin'] = $room->isAdmin(Auth::id());
 
         return Common::apiResponse(true, '', $roomData);
+    }
+
+    public function token(Request $request, int $id): JsonResponse
+    {
+        $room = Room::findOrFail($id);
+
+        $request->validate([
+            'identity' => 'required|string',
+            'service' => 'required|string',
+            'room_owner_id' => 'nullable|string',
+            'name' => 'nullable|string',
+            'seat_count' => 'nullable|integer',
+            'seat_mode' => 'nullable|string',
+            'host_seat' => 'nullable|integer',
+            'mode_id' => 'nullable|string',
+            'metadata' => 'nullable|array',
+        ]);
+
+        $user = Auth::user();
+        $isOwner = $room->isOwner($user->id);
+        $isAdmin = $room->isAdmin($user->id);
+
+        $role = $isOwner ? 'host' : ($isAdmin ? 'admin' : 'audience');
+
+        $payload = [
+            'identity' => $request->identity,
+            'room_name' => $room->id,
+            'service' => $request->service,
+            'room_owner_id' => $request->room_owner_id ?? $room->user_id,
+            'role' => $role,
+        ];
+
+        if ($request->filled('name')) $payload['name'] = $request->name;
+        if ($request->filled('seat_count')) $payload['seat_count'] = $request->seat_count;
+        if ($request->filled('seat_mode')) $payload['seat_mode'] = $request->seat_mode;
+        if ($request->filled('host_seat')) $payload['host_seat'] = $request->host_seat;
+        if ($request->filled('mode_id')) $payload['mode_id'] = $request->mode_id;
+        if ($request->filled('metadata')) $payload['metadata'] = $request->metadata;
+
+        $engineBaseUrl = config('audio-room.utd_stream.engine_url', 'https://utd-stream.com');
+        $appId = config('audio-room.utd_stream.app_id', '');
+        $appSecret = config('audio-room.utd_stream.server_secret', '');
+
+        $response = Http::withHeaders([
+            'X-App-Id' => $appId,
+            'X-App-Secret' => $appSecret,
+            'Accept' => 'application/json',
+            'Content-Type' => 'application/json',
+        ])->post("{$engineBaseUrl}/api/v1/token", $payload);
+
+        if ($response->failed()) {
+            return Common::apiResponse(
+                false,
+                $response->json('message', 'Token generation failed'),
+                null,
+                $response->status()
+            );
+        }
+
+        return Common::apiResponse(true, '', $response->json());
     }
 
     public function streamWebhook(Request $request): JsonResponse
@@ -395,7 +455,6 @@ class RoomController extends Controller
     {
         return Common::apiResponse(true, '', [
             'app_id' => config('audio-room.utd_stream.app_id', ''),
-            'server_secret' => config('audio-room.utd_stream.server_secret', ''),
             'max_admin' => 4,
         ]);
     }
@@ -435,7 +494,7 @@ class RoomController extends Controller
             'room_class' => $room->room_class,
             'category_name' => $room->categoryType->name ?? null,
             'owner_name' => $owner?->profile?->name ?? $owner?->name ?? '',
-            'owner_avatar' => $owner?->profile?->avatar ?? null,
+            'owner_avatar' => ($owner?->profile?->avatar) ? $storage->url($owner->profile->avatar) : null,
             'owner_country_flag' => $owner?->country?->flag ?? null,
             'created_at' => $room->created_at,
         ];

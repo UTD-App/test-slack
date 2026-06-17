@@ -7,14 +7,16 @@ import 'charisma_model.dart';
 abstract class CharismaRepository {
   Future<Result<BaseResponse<List<CharismaLevelModel>>>> getCharismaLevels();
   Future<Result<BaseResponse<List<CharismaModel>>>> getRoomCharisma(int roomId);
-  Future<Result<BaseResponse>> changeStatus(int roomId);
+  Future<Result<BaseResponse<Map<String, dynamic>>>> getStatus(int roomId);
+  Future<Result<BaseResponse>> changeStatus(int roomId, {required bool status});
   Future<Result<BaseResponse>> resetCharisma(int roomId);
 }
 
 abstract class CharismaRemoteDataSource {
   Future<Result<BaseResponse<List<CharismaLevelModel>>>> getCharismaLevels();
   Future<Result<BaseResponse<List<CharismaModel>>>> getRoomCharisma(int roomId);
-  Future<Result<BaseResponse>> changeStatus(int roomId);
+  Future<Result<BaseResponse<Map<String, dynamic>>>> getStatus(int roomId);
+  Future<Result<BaseResponse>> changeStatus(int roomId, {required bool status});
   Future<Result<BaseResponse>> resetCharisma(int roomId);
 }
 
@@ -33,8 +35,12 @@ class CharismaRepositoryImpl implements CharismaRepository {
       remoteDataSource.getRoomCharisma(roomId);
 
   @override
-  Future<Result<BaseResponse>> changeStatus(int roomId) =>
-      remoteDataSource.changeStatus(roomId);
+  Future<Result<BaseResponse<Map<String, dynamic>>>> getStatus(int roomId) =>
+      remoteDataSource.getStatus(roomId);
+
+  @override
+  Future<Result<BaseResponse>> changeStatus(int roomId, {required bool status}) =>
+      remoteDataSource.changeStatus(roomId, status: status);
 
   @override
   Future<Result<BaseResponse>> resetCharisma(int roomId) =>

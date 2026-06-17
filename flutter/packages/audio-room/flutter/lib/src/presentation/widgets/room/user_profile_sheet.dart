@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:utd_app/cache/cache_manager.dart';
 import 'package:utd_audio_room_kit/utd_audio_room_kit.dart';
 
 import '../../bloc/room_management_bloc.dart';
@@ -248,6 +249,16 @@ class _UserProfileBody extends StatelessWidget {
           bloc.add(AddAdminEvent(roomId: roomId, userId: userId));
         }
       }
+      final promoterData = CacheManager.getUserData();
+      controller.sendRoomMessage({
+        'type': 'roleChange',
+        'data': {
+          'user_id': _userId,
+          'role': role,
+          'user_name': _userName,
+          'promoter_name': promoterData?['name']?.toString() ?? '',
+        },
+      });
       if (context.mounted) {
         final s = RoomStrings.of(context);
         Navigator.of(context).pop();

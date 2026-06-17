@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:utd_app/addons/app_feature.dart';
 import 'package:utd_app/addons/ui_contribution.dart';
 import 'package:utd_app/addons/ui_slot.dart';
+import 'package:utd_audio_room_kit/utd_audio_room_kit.dart';
 
 import 'audio_room_mode_plugin.dart';
 import 'audio_room_plugin.dart';
@@ -12,12 +13,38 @@ import 'audio_room_strings.dart';
 import 'data/audio_room_api_service.dart';
 import 'data/audio_room_remote_datasource.dart';
 import 'domain/audio_room_repository.dart';
+import 'domain/room_model.dart';
 import 'presentation/bloc/room_list_bloc.dart';
 import 'presentation/view/room_list_page.dart';
 
 class AudioRoomFeature extends AppFeature {
+  static AudioRoomFeature? _instance;
+  static AudioRoomFeature? get instance => _instance;
+  static List<AudioRoomPlugin> get registeredPlugins =>
+      _instance?._plugins ?? const [];
+
   final List<AudioRoomPlugin> _plugins = [];
   final List<AudioRoomModePlugin> _modePlugins = [];
+
+  UTDRoomController? activeController;
+  RoomModel? activeRoom;
+  int? activeRoomId;
+
+  void setActiveRoom(UTDRoomController controller, RoomModel room, int roomId) {
+    activeController = controller;
+    activeRoom = room;
+    activeRoomId = roomId;
+  }
+
+  void clearActiveRoom() {
+    activeController = null;
+    activeRoom = null;
+    activeRoomId = null;
+  }
+
+  AudioRoomFeature() {
+    _instance = this;
+  }
 
   @override
   String get id => 'com.utd.audio_room';

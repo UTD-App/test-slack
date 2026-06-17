@@ -11,3 +11,6 @@ export 'src/domain/room_category_model.dart';
 export 'src/domain/room_visitor_model.dart';
 export 'src/domain/room_admin_model.dart';
 export 'src/domain/audio_room_repository.dart';
+export 'src/data/pip_manager.dart';
+export 'src/presentation/widgets/audio_room_app_overlay.dart';
+export 'src/plugin_setting_row.dart';

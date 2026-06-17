@@ -13,8 +13,9 @@ class RoomStrings {
   bool get _isAr => _locale == 'ar';
 
   // ── Seat Options ──
-  String get seatReservedForOwner =>
-      _isAr ? 'هذا المقعد محجوز لصاحب الغرفة' : 'This seat is reserved for the owner';
+  String get seatReservedForOwner => _isAr
+      ? 'هذا المقعد محجوز لصاحب الغرفة'
+      : 'This seat is reserved for the owner';
   String get seatLocked => _isAr ? 'هذا المقعد مغلق' : 'This seat is locked';
   String seat(int index) => _isAr ? 'مقعد ${index + 1}' : 'Seat ${index + 1}';
   String get unlockSeat => _isAr ? 'فتح المقعد' : 'Unlock Seat';
@@ -77,9 +78,11 @@ class RoomStrings {
 
   // ── Room Header ──
   String get leaveRoom => _isAr ? 'مغادرة الغرفة' : 'Leave Room';
-  String get leaveRoomConfirm =>
-      _isAr ? 'هل أنت متأكد من مغادرة الغرفة؟' : 'Are you sure you want to leave this room?';
+  String get leaveRoomConfirm => _isAr
+      ? 'هل أنت متأكد من مغادرة الغرفة؟'
+      : 'Are you sure you want to leave this room?';
   String get leave => _isAr ? 'مغادرة' : 'Leave';
+  String get keep => _isAr ? 'تصغير' : 'Minimize';
   String get admins => _isAr ? 'المشرفين' : 'Admins';
   String get blacklist => _isAr ? 'القائمة السوداء' : 'Blacklist';
   String get settings => _isAr ? 'الإعدادات' : 'Settings';
@@ -102,6 +105,33 @@ class RoomStrings {
       _isAr ? '$name دخل الغرفة' : '$name joined the room';
   String userLeft(String name) =>
       _isAr ? '$name غادر الغرفة' : '$name left the room';
+
+  // ── Role Change ──
+  String get youAreNowAdmin =>
+      _isAr ? 'تم تعيينك مشرف في الغرفة' : 'You are now an admin';
+  String get youAreNoLongerAdmin =>
+      _isAr ? 'تم إزالتك من الإشراف' : 'You are no longer an admin';
+  String userPromotedToAdmin(String name, String by) =>
+      _isAr ? '$by عيّن $name مشرف' : '$by promoted $name to admin';
+  String userDemotedFromAdmin(String name, String by) =>
+      _isAr ? '$by أزال $name من الإشراف' : '$by removed $name from admin';
+
+  // ── Create Room ──
+  String get createRoom => _isAr ? 'إنشاء غرفة' : 'Create Room';
+  String get publish => _isAr ? 'نشر' : 'Publish';
+  String get roomName => _isAr ? 'اسم الغرفة' : 'Room Name';
+  String get roomIntro => _isAr ? 'وصف الغرفة' : 'Room Description';
+  String get category => _isAr ? 'التصنيف' : 'Category';
+  String get seatMode => _isAr ? 'عدد المقاعد' : 'Seat Mode';
+  String get password => _isAr ? 'كلمة مرور' : 'Password';
+  String get enterPassword => _isAr ? 'أدخل كلمة المرور' : 'Enter Password';
+  String get createError => _isAr ? 'حدث خطأ' : 'Something went wrong';
+  String get alreadyHaveRoom =>
+      _isAr ? 'لديك غرفة بالفعل' : 'You already have a room';
+  String get checkingRoom =>
+      _isAr ? 'جاري التحقق...' : 'Checking...';
+  String get enterRoom => _isAr ? 'دخول الغرفة' : 'Enter Room';
+  String seats(String count) => _isAr ? '$count مقعد' : '$count seats';
 
   // ── Room Page ──
   String get bannedFromRoom =>

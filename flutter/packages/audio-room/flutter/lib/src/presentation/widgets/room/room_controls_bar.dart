@@ -25,10 +25,10 @@ class RoomControlsBar extends StatelessWidget {
           return Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _AssetControlButton(
+              /* _AssetControlButton(
                 asset: RoomAssets.chatIcon,
                 onTap: onMessageTap,
-              ),
+              ),*/
               if (isOnSeat) ...[
                 const SizedBox(width: 20),
                 _MicButton(controller: controller),

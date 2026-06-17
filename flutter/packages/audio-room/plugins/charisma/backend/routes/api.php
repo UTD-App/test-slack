@@ -14,6 +14,7 @@ Route::prefix(config('app.api_prefix'))->group(function () {
     ])->group(function () {
         Route::get('charisma/levels', [CharismaController::class, 'levels']);
         Route::get('charisma/room/{roomId}', [CharismaController::class, 'roomCharisma']);
+        Route::get('charisma/status/{roomId}', [CharismaController::class, 'status']);
         Route::post('charisma/change-status', [CharismaController::class, 'changeStatus']);
         Route::post('charisma/reset', [CharismaController::class, 'reset']);
     });

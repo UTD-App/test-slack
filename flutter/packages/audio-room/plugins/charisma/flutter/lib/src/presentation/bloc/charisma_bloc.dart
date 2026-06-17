@@ -73,16 +73,34 @@ class CharismaBloc extends Bloc<CharismaEvent, CharismaState> {
   ) async {
     emit(state.copyWith(dataState: RequestState.loading));
 
+    bool active;
+    if (event.activeOverride != null) {
+      active = event.activeOverride!;
+    } else {
+      active = false;
+      final statusResult = await repository.getStatus(event.roomId);
+      if (statusResult case Success(data: final statusResponse)) {
+        active = statusResponse.data?['charisma_status'] as bool? ?? false;
+      }
+    }
+
+    emit(state.copyWith(charismaActive: active));
+
     final result = await repository.getRoomCharisma(event.roomId);
 
     switch (result) {
       case Success(data: final data):
         emit(state.copyWith(
           data: data.data ?? [],
+          charismaActive: active,
           dataState: RequestState.loaded,
         ));
       case Failure(message: final message):
-        emit(state.copyWith(dataState: RequestState.error, message: message));
+        emit(state.copyWith(
+          charismaActive: active,
+          dataState: RequestState.error,
+          message: message,
+        ));
     }
   }
 
@@ -90,21 +108,27 @@ class CharismaBloc extends Bloc<CharismaEvent, CharismaState> {
     ChangeCharismaStatusEvent event,
     Emitter<CharismaState> emit,
   ) async {
-    emit(state.copyWith(statusState: RequestState.loading));
+    emit(state.copyWith(
+      statusState: RequestState.loading,
+      charismaActive: event.status,
+    ));
 
-    final result = await repository.changeStatus(event.roomId);
+    final result = await repository.changeStatus(event.roomId, status: event.status);
 
     switch (result) {
       case Success(data: final data):
         final statusData = data.data as Map<String, dynamic>?;
-        final active = statusData?['charisma_status'] as bool? ??
-            !state.charismaActive;
+        final active = statusData?['charisma_status'] as bool? ?? event.status;
         emit(state.copyWith(
           charismaActive: active,
           statusState: RequestState.loaded,
         ));
       case Failure(message: final message):
-        emit(state.copyWith(statusState: RequestState.error, message: message));
+        emit(state.copyWith(
+          charismaActive: !event.status,
+          statusState: RequestState.error,
+          message: message,
+        ));
     }
   }
 

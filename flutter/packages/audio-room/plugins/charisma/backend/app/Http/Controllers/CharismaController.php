@@ -38,6 +38,18 @@ class CharismaController extends Controller
         return Common::apiResponse(true, '', $result);
     }
 
+    public function status(int $roomId): JsonResponse
+    {
+        $room = Room::find($roomId);
+        if (!$room) {
+            return Common::apiResponse(false, 'Room not found', null, 404);
+        }
+
+        return Common::apiResponse(true, '', [
+            'charisma_status' => (bool) $room->charizma_status,
+        ]);
+    }
+
     public function changeStatus(Request $request): JsonResponse
     {
         $request->validate(['room_id' => 'required|integer']);
