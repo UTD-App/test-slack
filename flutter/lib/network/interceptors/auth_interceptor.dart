@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
 
+import '../../main.dart' show restartApp;
+
 /// Callback type for token refresh
 typedef TokenRefreshCallback = Future<String?> Function();
 
@@ -48,6 +50,17 @@ class AuthInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
+    // Another device logged in with this account: CheckLatestToken middleware
+    // replies 505 once a newer token exists. This session's token is now stale,
+    // so clear it and bounce to login instead of leaving the user stuck on a
+    // retry screen (retrying can never succeed with the invalidated token).
+    if (err.response?.statusCode == 505) {
+      await onLogout?.call();
+      restartApp();
+      handler.reject(err);
+      return;
+    }
+
     // Handle 401 Unauthorized
     if (err.response?.statusCode == 401 && onTokenExpired != null) {
       // If already refreshing, queue the request

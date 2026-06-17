@@ -26,6 +26,23 @@ class User extends Authenticatable
         'is_logout' => 'boolean',
     ];
 
+    protected static function booted(): void
+    {
+        // Every user must have a UID. The app/API register flow doesn't set one
+        // (the client's `uuid` goes to `firebase_uuid`), so generate a short,
+        // unique 7-digit number here when none was provided. The admin panel
+        // supplies its own (required field), which is preserved as-is.
+        static::creating(function (User $user) {
+            if (blank($user->uuid)) {
+                do {
+                    $uuid = (string) random_int(1000000, 9999999);
+                } while (static::withTrashed()->where('uuid', $uuid)->exists());
+
+                $user->uuid = $uuid;
+            }
+        });
+    }
+
     public function setPasswordAttribute($value)
     {
         if ($value) {
