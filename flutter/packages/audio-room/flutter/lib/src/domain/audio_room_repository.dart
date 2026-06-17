@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:utd_app/network/models/api_response.dart';
 import 'package:utd_app/shared/core/base_response.dart';
 
+import 'blacklist_entry_model.dart';
 import 'room_admin_model.dart';
 import 'room_category_model.dart';
 import 'room_model.dart';
@@ -70,7 +71,7 @@ abstract class AudioRoomRepository {
   Future<Result<BaseResponse>> removeAdmin(int roomId, int userId);
 
   // Blacklist management
-  Future<Result<BaseResponse<List<Map<String, dynamic>>>>> getBlacklist(int roomId);
+  Future<Result<BaseResponse<List<BlacklistEntryModel>>>> getBlacklist(int roomId);
 
   Future<Result<BaseResponse>> kickUser(int roomId, int userId, {int minutes = 5});
 
@@ -80,6 +81,12 @@ abstract class AudioRoomRepository {
 
   // Room config
   Future<Result<BaseResponse<Map<String, dynamic>>>> getRoomConfig();
+
+  // Token generation
+  Future<Result<BaseResponse<Map<String, dynamic>>>> generateToken(
+    int roomId,
+    Map<String, dynamic> data,
+  );
 }
 
 class AudioRoomRepositoryImpl implements AudioRoomRepository {
@@ -202,7 +209,7 @@ class AudioRoomRepositoryImpl implements AudioRoomRepository {
       remoteDataSource.removeAdmin(roomId, userId);
 
   @override
-  Future<Result<BaseResponse<List<Map<String, dynamic>>>>> getBlacklist(int roomId) =>
+  Future<Result<BaseResponse<List<BlacklistEntryModel>>>> getBlacklist(int roomId) =>
       remoteDataSource.getBlacklist(roomId);
 
   @override
@@ -220,6 +227,13 @@ class AudioRoomRepositoryImpl implements AudioRoomRepository {
   @override
   Future<Result<BaseResponse<Map<String, dynamic>>>> getRoomConfig() =>
       remoteDataSource.getRoomConfig();
+
+  @override
+  Future<Result<BaseResponse<Map<String, dynamic>>>> generateToken(
+    int roomId,
+    Map<String, dynamic> data,
+  ) =>
+      remoteDataSource.generateToken(roomId, data);
 }
 
 abstract class AudioRoomRemoteDataSource {
@@ -240,9 +254,10 @@ abstract class AudioRoomRemoteDataSource {
   Future<Result<BaseResponse<List<RoomAdminModel>>>> getAdmins(int roomId);
   Future<Result<BaseResponse>> addAdmin(int roomId, int userId);
   Future<Result<BaseResponse>> removeAdmin(int roomId, int userId);
-  Future<Result<BaseResponse<List<Map<String, dynamic>>>>> getBlacklist(int roomId);
+  Future<Result<BaseResponse<List<BlacklistEntryModel>>>> getBlacklist(int roomId);
   Future<Result<BaseResponse>> kickUser(int roomId, int userId, {int minutes});
   Future<Result<BaseResponse>> banUser(int roomId, int userId, {int? durationSeconds, String? reason});
   Future<Result<BaseResponse>> unbanUser(int roomId, int userId);
   Future<Result<BaseResponse<Map<String, dynamic>>>> getRoomConfig();
+  Future<Result<BaseResponse<Map<String, dynamic>>>> generateToken(int roomId, Map<String, dynamic> data);
 }

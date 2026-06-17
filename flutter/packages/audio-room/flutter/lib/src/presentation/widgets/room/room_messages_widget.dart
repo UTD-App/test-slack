@@ -166,57 +166,89 @@ class _MessageInputState extends State<_MessageInput> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: Row(
-        children: [
-          Expanded(
-            child: Container(
-              height: 38,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(19),
-              ),
-              child: TextField(
-                controller: _textController,
-                style: const TextStyle(color: Colors.white, fontSize: 14),
-                decoration: InputDecoration(
-                  hintText: RoomStrings.of(context).sendMessageHint,
-                  hintStyle: TextStyle(
+    final s = RoomStrings.of(context);
+
+    return ValueListenableBuilder<bool>(
+      valueListenable: widget.controller.commentsLocked,
+      builder: (context, isLocked, _) {
+        final canComment = widget.controller.canIComment;
+
+        if (isLocked && !canComment) {
+          return Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.lock_outline, color: Colors.white38, size: 16),
+                const SizedBox(width: 6),
+                Text(
+                  s.commentsLocked,
+                  style: TextStyle(
                     color: Colors.white.withValues(alpha: 0.4),
-                    fontSize: 14,
+                    fontSize: 13,
                   ),
-                  border: InputBorder.none,
-                  contentPadding: const EdgeInsets.symmetric(vertical: 10),
                 ),
-                textInputAction: TextInputAction.send,
-                onChanged: (v) => setState(() => _isEmpty = v.trim().isEmpty),
-                onSubmitted: (_) => _send(),
-              ),
+              ],
             ),
-          ),
-          const SizedBox(width: 8),
-          GestureDetector(
-            onTap: _isEmpty ? null : _send,
-            child: Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: _isEmpty
-                    ? Colors.white.withValues(alpha: 0.1)
-                    : Theme.of(context).primaryColor,
+          );
+        }
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          child: Row(
+            children: [
+              Expanded(
+                child: Container(
+                  height: 38,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(19),
+                  ),
+                  child: TextField(
+                    controller: _textController,
+                    style:
+                        const TextStyle(color: Colors.white, fontSize: 14),
+                    decoration: InputDecoration(
+                      hintText: s.sendMessageHint,
+                      hintStyle: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.4),
+                        fontSize: 14,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding:
+                          const EdgeInsets.symmetric(vertical: 10),
+                    ),
+                    textInputAction: TextInputAction.send,
+                    onChanged: (v) =>
+                        setState(() => _isEmpty = v.trim().isEmpty),
+                    onSubmitted: (_) => _send(),
+                  ),
+                ),
               ),
-              child: Icon(
-                Icons.send,
-                color: _isEmpty ? Colors.white38 : Colors.white,
-                size: 18,
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: _isEmpty ? null : _send,
+                child: Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: _isEmpty
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : Theme.of(context).primaryColor,
+                  ),
+                  child: Icon(
+                    Icons.send,
+                    color: _isEmpty ? Colors.white38 : Colors.white,
+                    size: 18,
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

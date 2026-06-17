@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -28,6 +30,8 @@ class RoomListPage extends StatefulWidget {
 
 class _RoomListPageState extends State<RoomListPage> {
   final _searchController = TextEditingController();
+  Timer? _searchDebounce;
+  bool _isLoadingMyRoom = false;
 
   @override
   void initState() {
@@ -40,17 +44,43 @@ class _RoomListPageState extends State<RoomListPage> {
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _searchController.dispose();
     super.dispose();
   }
 
-  void _onCreateOrEnterMyRoom() {
-    final myRoom = context.read<RoomListBloc>().state.myRoom;
-    if (myRoom != null) {
-      AudioRoomAppOverlay.openRoom(myRoom.id);
-    } else {
-      context.push(AudioRoomRoutes.createPath);
+  Future<void> _onCreateOrEnterMyRoom() async {
+    if (_isLoadingMyRoom) return;
+    setState(() => _isLoadingMyRoom = true);
+
+    final repository = AudioRoomRepositoryImpl(
+      remoteDataSource: AudioRoomRemoteDataSourceImpl(
+        apiService: AudioRoomApiService(),
+      ),
+    );
+    final result = await repository.getMyRoom();
+    if (!mounted) return;
+    setState(() => _isLoadingMyRoom = false);
+
+    switch (result) {
+      case Success(data: final data):
+        if (data.data != null) {
+          AudioRoomAppOverlay.openRoom(data.data!.id);
+        } else {
+          context.push(AudioRoomRoutes.createPath);
+        }
+      case Failure(message: final message):
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message)),
+        );
     }
+  }
+
+  void _onSearchChanged(String query) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 400), () {
+      context.read<RoomListBloc>().add(SearchRoomsEvent(query: query));
+    });
   }
 
   @override
@@ -63,11 +93,17 @@ class _RoomListPageState extends State<RoomListPage> {
             onTap: _onCreateOrEnterMyRoom,
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 12.w),
-              child: Image.asset(
-                RoomAssets.createRoom,
-                width: 28.r,
-                height: 28.r,
-              ),
+              child: _isLoadingMyRoom
+                  ? SizedBox(
+                      width: 28.r,
+                      height: 28.r,
+                      child: const CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Image.asset(
+                      RoomAssets.createRoom,
+                      width: 28.r,
+                      height: 28.r,
+                    ),
             ),
           ),
         ],
@@ -86,7 +122,9 @@ class _RoomListPageState extends State<RoomListPage> {
                 ),
                 contentPadding: EdgeInsets.symmetric(horizontal: 16.w),
               ),
+              onChanged: _onSearchChanged,
               onSubmitted: (query) {
+                _searchDebounce?.cancel();
                 context
                     .read<RoomListBloc>()
                     .add(SearchRoomsEvent(query: query));
@@ -336,7 +374,10 @@ class _RoomGrid extends StatelessWidget {
           case RequestState.loaded:
             return RefreshIndicator(
               onRefresh: () async {
-                context.read<RoomListBloc>().add(const LoadRoomsEvent());
+                final bloc = context.read<RoomListBloc>();
+                bloc.add(const LoadRoomsEvent());
+                bloc.add(const LoadCategoriesEvent());
+                bloc.add(const LoadMyRoomEvent());
               },
               child: NotificationListener<ScrollNotification>(
                 onNotification: (notification) {
@@ -383,3 +424,4 @@ class _RoomGrid extends StatelessWidget {
     );
   }
 }
+

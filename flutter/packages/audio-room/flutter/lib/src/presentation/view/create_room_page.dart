@@ -19,6 +19,7 @@ class CreateRoomPage extends StatefulWidget {
 }
 
 class _CreateRoomPageState extends State<CreateRoomPage> {
+  final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _introController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -50,9 +51,9 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
   }
 
   void _submit() {
-    final name = _nameController.text.trim();
-    if (name.isEmpty) return;
+    if (!_formKey.currentState!.validate()) return;
 
+    final name = _nameController.text.trim();
     context.read<CreateRoomBloc>().add(
       SubmitCreateRoomEvent(
         name: name,
@@ -112,8 +113,10 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
         ),
         body: SingleChildScrollView(
           padding: EdgeInsets.all(16.r),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               GestureDetector(
                 onTap: _pickCover,
@@ -136,15 +139,24 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                 ),
               ),
               SizedBox(height: 16.h),
-              TextField(
+              TextFormField(
                 controller: _nameController,
                 decoration: InputDecoration(
                   labelText: s.roomName,
                   border: const OutlineInputBorder(),
                 ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return s.roomNameRequired;
+                  }
+                  if (value.trim().length < 2) {
+                    return s.roomNameTooShort;
+                  }
+                  return null;
+                },
               ),
               SizedBox(height: 12.h),
-              TextField(
+              TextFormField(
                 controller: _introController,
                 maxLines: 3,
                 decoration: InputDecoration(
@@ -189,16 +201,27 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
               ),
               if (_hasPassword) ...[
                 SizedBox(height: 8.h),
-                TextField(
+                TextFormField(
                   controller: _passwordController,
                   obscureText: true,
                   decoration: InputDecoration(
                     labelText: s.enterPassword,
                     border: const OutlineInputBorder(),
                   ),
+                  validator: (value) {
+                    if (!_hasPassword) return null;
+                    if (value == null || value.trim().isEmpty) {
+                      return s.passwordRequired;
+                    }
+                    if (value.trim().length < 4) {
+                      return s.passwordTooShort;
+                    }
+                    return null;
+                  },
                 ),
               ],
-            ],
+              ],
+            ),
           ),
         ),
       ),

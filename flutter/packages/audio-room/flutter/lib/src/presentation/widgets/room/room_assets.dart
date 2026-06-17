@@ -9,4 +9,5 @@ abstract final class RoomAssets {
   static const chatIcon = '$_icons/chat_icon.webp';
   static const exitRoom = '$_icons/exit_room_icon.png';
   static const createRoom = '$_icons/ic_create_room.webp';
+  static const seat = '$_icons/seat.png';
 }

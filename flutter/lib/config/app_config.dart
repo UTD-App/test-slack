@@ -10,6 +10,9 @@ class AppConfig {
   /// Base URL for API requests
   final String baseUrl;
 
+  /// UTD Stream app ID for audio rooms
+  final String utdStreamAppId;
+
   /// Storage bucket URL for file uploads/downloads
   final String storageBucketUrl;
 
@@ -41,6 +44,7 @@ class AppConfig {
     required this.domainUrl,
     required this.privacyPolicyUrl,
     required this.environment,
+    this.utdStreamAppId = '',
     this.useDeviceLocale = true,
     this.enableDebugFeatures = false,
     this.apiTimeout = const Duration(seconds: 30),
@@ -51,10 +55,11 @@ class AppConfig {
   factory AppConfig.development() {
     return AppConfig(
       appName: 'Tempo Dev',
-      baseUrl: 'http://192.168.1.7:8000/api',
+      baseUrl: 'http://192.168.1.5:8000/api',
       storageBucketUrl: 'https://storage.googleapis.com/base-app-utd',
-      domainUrl: 'http://192.168.1.7:8000',
-      privacyPolicyUrl: 'http://192.168.1.7:8000/api/privacy-policy',
+      domainUrl: 'http://192.168.1.5:8000',
+      privacyPolicyUrl: 'http://192.168.1.5:8000/api/privacy-policy',
+      utdStreamAppId: '3019100698',
       environment: Environment.development,
       enableDebugFeatures: true,
     );
@@ -69,6 +74,7 @@ class AppConfig {
       storageBucketUrl: 'https://storage.googleapis.com/base-app-utd',
       domainUrl: 'https://project-x.utdsoftware.com',
       privacyPolicyUrl: 'https://project-x.utdsoftware.com/api/privacy-policy',
+      utdStreamAppId: '4602085317',
       environment: Environment.production,
       enableDebugFeatures: false,
     );
@@ -96,6 +102,7 @@ class AppConfig {
   AppConfig copyWith({
     String? appName,
     String? baseUrl,
+    String? utdStreamAppId,
     String? storageBucketUrl,
     String? domainUrl,
     String? privacyPolicyUrl,
@@ -108,6 +115,7 @@ class AppConfig {
     return AppConfig(
       appName: appName ?? this.appName,
       baseUrl: baseUrl ?? this.baseUrl,
+      utdStreamAppId: utdStreamAppId ?? this.utdStreamAppId,
       storageBucketUrl: storageBucketUrl ?? this.storageBucketUrl,
       domainUrl: domainUrl ?? this.domainUrl,
       privacyPolicyUrl: privacyPolicyUrl ?? this.privacyPolicyUrl,

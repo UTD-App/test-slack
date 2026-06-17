@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:utd_app/shared/core/enums.dart';
 
-import '../bloc/room_management_bloc.dart';
+import '../bloc/blacklist_bloc.dart';
 import 'room/room_strings.dart';
 
 class RoomBlacklistSheet extends StatelessWidget {
@@ -41,7 +41,7 @@ class RoomBlacklistSheet extends StatelessWidget {
             ),
             const Divider(height: 1),
             Expanded(
-              child: BlocBuilder<RoomManagementBloc, RoomManagementState>(
+              child: BlocBuilder<BlacklistBloc, BlacklistState>(
                 buildWhen: (prev, curr) =>
                     prev.blacklist != curr.blacklist ||
                     prev.blacklistState != curr.blacklistState,
@@ -59,30 +59,28 @@ class RoomBlacklistSheet extends StatelessWidget {
                     itemCount: state.blacklist.length,
                     itemBuilder: (context, index) {
                       final entry = state.blacklist[index];
-                      final userName =
-                          entry['user_name'] as String? ?? s.unknown;
-                      final userId = (entry['user_id'] as num?)?.toInt() ?? 0;
-                      final reason = entry['reason'] as String?;
-                      final expiresAt = entry['expires_at'] as String?;
+                      final expiresStr = entry.expiresAt?.toIso8601String();
 
                       return ListTile(
                         leading: const CircleAvatar(
                           child: Icon(Icons.block),
                         ),
-                        title: Text(userName),
+                        title: Text(
+                          entry.userName.isNotEmpty ? entry.userName : s.unknown,
+                        ),
                         subtitle: Text(
-                          reason ?? (expiresAt != null
-                              ? s.expiresAt(expiresAt)
+                          entry.reason ?? (expiresStr != null
+                              ? s.expiresAt(expiresStr)
                               : s.permanentBan),
                         ),
                         trailing: IconButton(
                           icon: const Icon(Icons.remove_circle_outline,
                               color: Colors.green),
                           onPressed: () {
-                            context.read<RoomManagementBloc>().add(
+                            context.read<BlacklistBloc>().add(
                                   UnbanUserEvent(
                                     roomId: roomId,
-                                    userId: userId,
+                                    userId: entry.userId,
                                   ),
                                 );
                           },

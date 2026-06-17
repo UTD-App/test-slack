@@ -1,6 +1,3 @@
-import 'dart:async';
-
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -13,8 +10,12 @@ import '../../data/audio_room_remote_datasource.dart';
 import '../../data/pip_manager.dart';
 import '../../domain/audio_room_repository.dart';
 import '../../domain/room_model.dart';
+import '../bloc/admin_bloc.dart';
+import '../bloc/blacklist_bloc.dart';
 import '../bloc/room_management_bloc.dart';
 import '../view/audio_room_page.dart';
+import 'audio_room_mini_overlay.dart';
+import 'audio_room_pip_view.dart';
 
 class AudioRoomAppOverlay extends StatefulWidget {
   final Widget child;
@@ -286,6 +287,12 @@ class _AudioRoomAppOverlayState extends State<AudioRoomAppOverlay>
         BlocProvider(
           create: (_) => RoomManagementBloc(repository: repository),
         ),
+        BlocProvider(
+          create: (_) => AdminBloc(repository: repository),
+        ),
+        BlocProvider(
+          create: (_) => BlacklistBloc(repository: repository),
+        ),
       ],
       child: AudioRoomPage(
         roomId: roomId,
@@ -307,8 +314,6 @@ class _AudioRoomAppOverlayState extends State<AudioRoomAppOverlay>
     setState(() {});
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return ValueListenableBuilder<bool>(
@@ -323,7 +328,7 @@ class _AudioRoomAppOverlayState extends State<AudioRoomAppOverlay>
             return Stack(
               children: [
                 if (showPip)
-                  _AudioRoomPipView(
+                  AudioRoomPipView(
                     room: AudioRoomFeature.instance!.activeRoom,
                     controller: AudioRoomFeature.instance!.activeController!,
                   )
@@ -340,433 +345,10 @@ class _AudioRoomAppOverlayState extends State<AudioRoomAppOverlay>
                     ),
                   ),
                 if (!showPip && state == UTDMiniOverlayState.minimizing)
-                  _AudioRoomMiniOverlay(router: widget.router),
+                  AudioRoomMiniOverlay(onClose: _closeRoom),
               ],
             );
           },
-        );
-      },
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// PiP View
-// ---------------------------------------------------------------------------
-
-class _AudioRoomPipView extends StatelessWidget {
-  final dynamic room;
-  final UTDRoomController controller;
-
-  const _AudioRoomPipView({required this.room, required this.controller});
-
-  @override
-  Widget build(BuildContext context) {
-    final roomName = room?.roomName as String? ?? '';
-    final roomImage = room?.roomCover as String? ?? '';
-
-    return Scaffold(
-      body: Container(
-        color: Colors.black,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (roomImage.isNotEmpty)
-              Image.network(
-                roomImage,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
-              ),
-            DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.3),
-                    Colors.black.withValues(alpha: 0.7),
-                  ],
-                ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ValueListenableBuilder<Set<String>>(
-                    valueListenable: controller.activeSpeakers,
-                    builder: (_, speakers, __) {
-                      return Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: speakers.isNotEmpty
-                              ? const Color(0xFF32e5ac).withValues(alpha: 0.25)
-                              : Colors.white.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              speakers.isNotEmpty
-                                  ? Icons.graphic_eq_rounded
-                                  : Icons.mic_off_rounded,
-                              color: speakers.isNotEmpty
-                                  ? const Color(0xFF32e5ac)
-                                  : Colors.white54,
-                              size: 18,
-                            ),
-                            if (speakers.isNotEmpty) ...[
-                              const SizedBox(width: 4),
-                              Text(
-                                '${speakers.length}',
-                                style: const TextStyle(
-                                  color: Color(0xFF32e5ac),
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    roomName,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Mini Overlay (in-app, draggable)
-// ---------------------------------------------------------------------------
-
-class _AudioRoomMiniOverlay extends StatefulWidget {
-  final GoRouter router;
-  const _AudioRoomMiniOverlay({required this.router});
-
-  @override
-  State<_AudioRoomMiniOverlay> createState() => _AudioRoomMiniOverlayState();
-}
-
-class _AudioRoomMiniOverlayState extends State<_AudioRoomMiniOverlay>
-    with TickerProviderStateMixin {
-  late Offset _position;
-  final _size = const Size(150, 150);
-
-  late final AnimationController _entranceController;
-  late final Animation<double> _scaleAnimation;
-  late final Animation<double> _opacityAnimation;
-
-  late final List<AnimationController> _waveControllers;
-
-  Timer? _speakingTimer;
-  final _isSpeaking = ValueNotifier(false);
-
-  @override
-  void initState() {
-    super.initState();
-
-    final screenHeight = MediaQueryData.fromView(
-      WidgetsBinding.instance.platformDispatcher.views.first,
-    ).size.height;
-    _position = Offset(16, screenHeight - 220);
-
-    _entranceController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 300),
-    );
-    _scaleAnimation = CurvedAnimation(
-      parent: _entranceController,
-      curve: Curves.easeOutBack,
-    );
-    _opacityAnimation = CurvedAnimation(
-      parent: _entranceController,
-      curve: Curves.easeOut,
-    );
-    _entranceController.forward();
-
-    _waveControllers = List.generate(3, (i) {
-      return AnimationController(
-        vsync: this,
-        duration: Duration(milliseconds: 600 + (i * 200)),
-      )..repeat(reverse: true);
-    });
-
-    _startSpeakingPolling();
-  }
-
-  void _startSpeakingPolling() {
-    final controller = AudioRoomFeature.instance?.activeController;
-    if (controller == null) return;
-    _speakingTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      final speakers = controller.activeSpeakers.value;
-      final speaking = speakers.isNotEmpty;
-      if (_isSpeaking.value != speaking) {
-        _isSpeaking.value = speaking;
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _speakingTimer?.cancel();
-    _entranceController.dispose();
-    for (final c in _waveControllers) {
-      c.dispose();
-    }
-    _isSpeaking.dispose();
-    super.dispose();
-  }
-
-  void _onPanUpdate(DragUpdateDetails details) {
-    setState(() {
-      final screen = MediaQuery.of(context).size;
-      _position += details.delta;
-      _position = Offset(
-        _position.dx.clamp(0, screen.width - _size.width),
-        _position.dy.clamp(0, screen.height - _size.height),
-      );
-    });
-  }
-
-  void _onRestore() {
-    _entranceController.reverse().then((_) {
-      if (!mounted) return;
-      UTDMiniOverlayMachine.instance.changeState(
-        UTDMiniOverlayState.inAudioRoom,
-      );
-    });
-  }
-
-  void _onClose() {
-    _entranceController.reverse().then((_) async {
-      final feature = AudioRoomFeature.instance;
-      final controller = feature?.activeController;
-      if (controller != null) {
-        await controller.leave();
-      }
-      feature?.clearActiveRoom();
-      PipManager.instance.disableAutoPip();
-      UTDMiniOverlayMachine.instance.changeState(UTDMiniOverlayState.idle);
-      AudioRoomAppOverlay.closeRoom();
-    });
-  }
-
-  void _onMicToggle() {
-    final controller = AudioRoomFeature.instance?.activeController;
-    if (controller == null) return;
-    final media = controller.mediaController;
-    media.setMicrophoneEnabled(!media.isMicEnabled.value);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final room = AudioRoomFeature.instance?.activeRoom;
-    final controller = AudioRoomFeature.instance?.activeController;
-    final roomImage = room?.roomCover;
-
-    return AnimatedBuilder(
-      animation: _entranceController,
-      builder: (_, __) {
-        return Positioned(
-          left: _position.dx,
-          top: _position.dy,
-          child: GestureDetector(
-            onPanUpdate: _onPanUpdate,
-            onTap: _onRestore,
-            child: Transform.scale(
-              scale: _scaleAnimation.value,
-              child: Opacity(
-                opacity: _opacityAnimation.value.clamp(0.0, 1.0),
-                child: ValueListenableBuilder<bool>(
-                  valueListenable: _isSpeaking,
-                  builder: (_, isSpeaking, child) {
-                    return _SoundWaveBorder(
-                      isSpeaking: isSpeaking,
-                      waveControllers: _waveControllers,
-                      size: _size,
-                      child: child!,
-                    );
-                  },
-                  child: Container(
-                    width: _size.width,
-                    height: _size.height,
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.88),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.4),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(16),
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          if (roomImage != null && roomImage.isNotEmpty)
-                            CachedNetworkImage(
-                              imageUrl: roomImage,
-                              fit: BoxFit.cover,
-                              errorWidget: (_, __, ___) => Container(
-                                color: Colors.black.withValues(alpha: 0.88),
-                              ),
-                            ),
-                          Container(
-                            color: Colors.black.withValues(alpha: 0.35),
-                          ),
-                          Positioned(
-                            top: 6,
-                            right: 6,
-                            child: GestureDetector(
-                              onTap: _onClose,
-                              child: Container(
-                                width: 28,
-                                height: 28,
-                                decoration: BoxDecoration(
-                                  color: Colors.red.withValues(alpha: 0.8),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: const Icon(
-                                  Icons.call_end,
-                                  color: Colors.white,
-                                  size: 16,
-                                ),
-                              ),
-                            ),
-                          ),
-                          if (controller != null &&
-                              controller.localSeatIndex >= 0)
-                            Positioned(
-                              bottom: 6,
-                              right: 6,
-                              child: _MicToggleButton(
-                                controller: controller,
-                                onTap: _onMicToggle,
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _SoundWaveBorder extends StatelessWidget {
-  final bool isSpeaking;
-  final List<AnimationController> waveControllers;
-  final Size size;
-  final Widget child;
-
-  const _SoundWaveBorder({
-    required this.isSpeaking,
-    required this.waveControllers,
-    required this.size,
-    required this.child,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (!isSpeaking) return child;
-
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        for (int i = 0; i < waveControllers.length; i++)
-          AnimatedBuilder(
-            animation: waveControllers[i],
-            builder: (_, __) {
-              final scale = 1.0 + (waveControllers[i].value * 0.04 * (i + 1));
-              final opacity = (1.0 - waveControllers[i].value * 0.6).clamp(
-                0.0,
-                1.0,
-              );
-              return Transform.scale(
-                scale: scale,
-                child: Container(
-                  width: size.width,
-                  height: size.height,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: Colors.green.withValues(alpha: opacity * 0.5),
-                      width: 2,
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        child,
-      ],
-    );
-  }
-}
-
-class _MicToggleButton extends StatelessWidget {
-  final UTDRoomController controller;
-  final VoidCallback onTap;
-
-  const _MicToggleButton({required this.controller, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return ValueListenableBuilder<Set<String>>(
-      valueListenable: controller.mutedParticipants,
-      builder: (_, muted, __) {
-        final localId =
-            controller.roomManager.localParticipant?.identity.toString();
-        final isMuted = localId != null && muted.contains(localId);
-
-        return GestureDetector(
-          onTap: onTap,
-          child: Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: isMuted
-                  ? Colors.red.withValues(alpha: 0.2)
-                  : Colors.green.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              isMuted ? Icons.mic_off : Icons.mic,
-              color: isMuted ? Colors.red : Colors.green,
-              size: 16,
-            ),
-          ),
         );
       },
     );

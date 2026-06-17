@@ -13,6 +13,8 @@ class RoomHeaderWidget extends StatelessWidget {
   final VoidCallback? onMinimize;
   final VoidCallback? onAdminsTap;
   final VoidCallback? onSettingsTap;
+  final VoidCallback? onModeTap;
+  final ValueChanged<bool>? onLockCommentsToggled;
 
   const RoomHeaderWidget({
     super.key,
@@ -22,6 +24,8 @@ class RoomHeaderWidget extends StatelessWidget {
     this.onMinimize,
     this.onAdminsTap,
     this.onSettingsTap,
+    this.onModeTap,
+    this.onLockCommentsToggled,
   });
 
   @override
@@ -48,11 +52,13 @@ class RoomHeaderWidget extends StatelessWidget {
                 const SizedBox(width: 4),
                 if (room.isOwner == true || room.isAdmin == true)
                   _AdminMenu(
+                    controller: controller,
                     onAdminsTap: onAdminsTap,
                     onBlacklistTap: () => UTDBanManagementSheet.show(
                       context,
                       controller: controller,
                     ),
+                    onLockCommentsToggled: onLockCommentsToggled,
                   ),
                 _ExitButton(onTap: () => _confirmExit(context)),
               ],
@@ -220,40 +226,75 @@ class _VisitorCount extends StatelessWidget {
 }
 
 class _AdminMenu extends StatelessWidget {
+  final UTDRoomController controller;
   final VoidCallback? onAdminsTap;
   final VoidCallback? onBlacklistTap;
+  final ValueChanged<bool>? onLockCommentsToggled;
 
-  const _AdminMenu({this.onAdminsTap, this.onBlacklistTap});
+  const _AdminMenu({
+    required this.controller,
+    this.onAdminsTap,
+    this.onBlacklistTap,
+    this.onLockCommentsToggled,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<String>(
-      icon: const Icon(Icons.more_vert, color: Colors.white, size: 20),
-      color: const Color(0xFF2A2A3E),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      onSelected: (value) {
-        switch (value) {
-          case 'admins':
-            onAdminsTap?.call();
-          case 'blacklist':
-            onBlacklistTap?.call();
-        }
-      },
-      itemBuilder: (ctx) {
-        final s = RoomStrings.of(ctx);
-        return [
-          PopupMenuItem(
-            value: 'admins',
-            child: Text(s.admins, style: const TextStyle(color: Colors.white)),
-          ),
-          PopupMenuItem(
-            value: 'blacklist',
-            child: Text(
-              s.blacklist,
-              style: const TextStyle(color: Colors.white),
-            ),
-          ),
-        ];
+    return ValueListenableBuilder<bool>(
+      valueListenable: controller.commentsLocked,
+      builder: (context, isLocked, _) {
+        return PopupMenuButton<String>(
+          icon: const Icon(Icons.more_vert, color: Colors.white, size: 20),
+          color: const Color(0xFF2A2A3E),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          onSelected: (value) {
+            switch (value) {
+              case 'admins':
+                onAdminsTap?.call();
+              case 'blacklist':
+                onBlacklistTap?.call();
+              case 'lockComments':
+                final newState = !isLocked;
+                onLockCommentsToggled?.call(newState);
+                controller.setCommentsLocked(newState);
+            }
+          },
+          itemBuilder: (ctx) {
+            final s = RoomStrings.of(ctx);
+            return [
+              PopupMenuItem(
+                value: 'lockComments',
+                child: Row(
+                  children: [
+                    Icon(
+                      isLocked ? Icons.chat_bubble_outline : Icons.comments_disabled_outlined,
+                      color: isLocked ? const Color(0xFF32e5ac) : Colors.orange,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      isLocked ? s.unlockComments : s.lockComments,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'admins',
+                child:
+                    Text(s.admins, style: const TextStyle(color: Colors.white)),
+              ),
+              PopupMenuItem(
+                value: 'blacklist',
+                child: Text(
+                  s.blacklist,
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+            ];
+          },
+        );
       },
     );
   }

@@ -238,7 +238,7 @@ class RoomController extends Controller
         if ($request->filled('mode_id')) $payload['mode_id'] = $request->mode_id;
         if ($request->filled('metadata')) $payload['metadata'] = $request->metadata;
 
-        $engineBaseUrl = config('audio-room.utd_stream.engine_url', 'https://utd-stream.com');
+        $engineBaseUrl = config('audio-room.utd_stream.engine_url', 'https://engine.udt-stream.com');
         $appId = config('audio-room.utd_stream.app_id', '');
         $appSecret = config('audio-room.utd_stream.server_secret', '');
 

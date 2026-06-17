@@ -4,7 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:utd_app/cache/cache_manager.dart';
 import 'package:utd_audio_room_kit/utd_audio_room_kit.dart';
 
-import '../../bloc/room_management_bloc.dart';
+import '../../bloc/admin_bloc.dart';
+import '../../bloc/blacklist_bloc.dart';
 import 'ban_duration_dialog.dart';
 import 'room_strings.dart';
 
@@ -15,7 +16,8 @@ Future<void> showUserProfileSheet(
   required String localUserId,
   required bool isOwner,
   required int roomId,
-  required RoomManagementBloc roomManagementBloc,
+  required AdminBloc adminBloc,
+  required BlacklistBloc blacklistBloc,
 }) {
   return showModalBottomSheet(
     context: context,
@@ -23,8 +25,11 @@ Future<void> showUserProfileSheet(
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
-    builder: (_) => BlocProvider.value(
-      value: roomManagementBloc,
+    builder: (_) => MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: adminBloc),
+        BlocProvider.value(value: blacklistBloc),
+      ],
       child: _UserProfileBody(
         controller: controller,
         seat: seat,
@@ -68,50 +73,16 @@ class _UserProfileBody extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 40,
-            height: 4,
-            decoration: BoxDecoration(
-              color: Colors.white24,
-              borderRadius: BorderRadius.circular(2),
-            ),
+          _ProfileHeader(
+            avatarUrl: _avatar,
+            userName: _userName.isNotEmpty ? _userName : s.user,
+            userId: _userId,
+            role: isTargetAdmin && !_isMyProfile
+                ? (targetRole == 'host' ? s.host : s.admin)
+                : null,
           ),
           const SizedBox(height: 20),
-          _Avatar(url: _avatar),
-          const SizedBox(height: 12),
-          Text(
-            _userName.isNotEmpty ? _userName : s.user,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            'ID: $_userId',
-            style: const TextStyle(color: Colors.white54, fontSize: 13),
-          ),
-          if (isTargetAdmin && !_isMyProfile)
-            Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 3,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.amber.withValues(alpha: 0.2),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  targetRole == 'host' ? s.host : s.admin,
-                  style: const TextStyle(color: Colors.amber, fontSize: 12),
-                ),
-              ),
-            ),
-          const SizedBox(height: 20),
-          if (_isMyProfile) ...[
+          if (_isMyProfile)
             _ActionButton(
               icon: Icons.exit_to_app,
               label: s.leaveSeat,
@@ -119,47 +90,13 @@ class _UserProfileBody extends StatelessWidget {
                 Navigator.of(context).pop();
                 await controller.seatController.leaveSeat(localUserId);
               },
-            ),
-          ] else ...[
+            )
+          else ...[
             if (isAdmin && seat.isOccupied && !isTargetAdmin) ...[
-              ValueListenableBuilder<Set<String>>(
-                valueListenable: controller.mutedParticipants,
-                builder: (context, muted, _) {
-                  final isMuted = muted.contains(_userId);
-                  return _ActionButton(
-                    icon: isMuted ? Icons.mic : Icons.mic_off,
-                    label: isMuted ? s.unmute : s.mute,
-                    onTap: () async {
-                      final seatIndex = controller.seatController
-                          .getSeatIndexByUserId(_userId);
-                      if (seatIndex < 0) return;
-                      final identity = controller.localIdentity ?? localUserId;
-                      bool ok;
-                      if (isMuted) {
-                        ok = await controller.seatController.unmuteSeat(
-                          seatIndex,
-                          identity: identity,
-                        );
-                      } else {
-                        ok = await controller.seatController.muteSeat(
-                          seatIndex,
-                          identity: identity,
-                        );
-                      }
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              ok
-                                  ? (isMuted ? s.userUnmuted : s.userMuted)
-                                  : s.failed,
-                            ),
-                          ),
-                        );
-                      }
-                    },
-                  );
-                },
+              _MuteButton(
+                controller: controller,
+                userId: _userId,
+                localUserId: localUserId,
               ),
               _ActionButton(
                 icon: Icons.person_remove,
@@ -204,12 +141,9 @@ class _UserProfileBody extends StatelessWidget {
     if (result == null || !context.mounted) return;
 
     final durationSeconds = result == -1 ? null : result;
-    final bloc = context.read<RoomManagementBloc>();
-
-    // 1) Backend ban — persists in database
     final userId = int.tryParse(_userId);
     if (userId != null) {
-      bloc.add(
+      context.read<BlacklistBloc>().add(
         BanUserEvent(
           roomId: roomId,
           userId: userId,
@@ -218,7 +152,6 @@ class _UserProfileBody extends StatelessWidget {
       );
     }
 
-    // 2) Kit ban — kicks from LiveKit session immediately
     final ok = await controller.banUser(
       _userId,
       durationSeconds: durationSeconds,
@@ -238,15 +171,15 @@ class _UserProfileBody extends StatelessWidget {
     bool isCurrentlyAdmin,
   ) async {
     final role = isCurrentlyAdmin ? 'audience' : 'admin';
-    final bloc = context.read<RoomManagementBloc>();
     try {
       await controller.changeRole(targetIdentity: _userId, role: role);
       final userId = int.tryParse(_userId);
       if (userId != null) {
+        final adminBloc = context.read<AdminBloc>();
         if (isCurrentlyAdmin) {
-          bloc.add(RemoveAdminEvent(roomId: roomId, userId: userId));
+          adminBloc.add(RemoveAdminEvent(roomId: roomId, userId: userId));
         } else {
-          bloc.add(AddAdminEvent(roomId: roomId, userId: userId));
+          adminBloc.add(AddAdminEvent(roomId: roomId, userId: userId));
         }
       }
       final promoterData = CacheManager.getUserData();
@@ -276,6 +209,124 @@ class _UserProfileBody extends StatelessWidget {
         ).showSnackBar(SnackBar(content: Text(s.roleChangeFailed)));
       }
     }
+  }
+}
+
+class _ProfileHeader extends StatelessWidget {
+  final String? avatarUrl;
+  final String userName;
+  final String userId;
+  final String? role;
+
+  const _ProfileHeader({
+    this.avatarUrl,
+    required this.userName,
+    required this.userId,
+    this.role,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          width: 40,
+          height: 4,
+          decoration: BoxDecoration(
+            color: Colors.white24,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(height: 20),
+        _Avatar(url: avatarUrl),
+        const SizedBox(height: 12),
+        Text(
+          userName,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'ID: $userId',
+          style: const TextStyle(color: Colors.white54, fontSize: 13),
+        ),
+        if (role != null)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                role!,
+                style: const TextStyle(color: Colors.amber, fontSize: 12),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _MuteButton extends StatelessWidget {
+  final UTDRoomController controller;
+  final String userId;
+  final String localUserId;
+
+  const _MuteButton({
+    required this.controller,
+    required this.userId,
+    required this.localUserId,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final s = RoomStrings.of(context);
+
+    return ValueListenableBuilder<Set<String>>(
+      valueListenable: controller.mutedParticipants,
+      builder: (context, muted, _) {
+        final isMuted = muted.contains(userId);
+        return _ActionButton(
+          icon: isMuted ? Icons.mic : Icons.mic_off,
+          label: isMuted ? s.unmute : s.mute,
+          onTap: () async {
+            final seatIndex = controller.seatController
+                .getSeatIndexByUserId(userId);
+            if (seatIndex < 0) return;
+            final identity = controller.localIdentity ?? localUserId;
+            bool ok;
+            if (isMuted) {
+              ok = await controller.seatController.unmuteSeat(
+                seatIndex,
+                identity: identity,
+              );
+            } else {
+              ok = await controller.seatController.muteSeat(
+                seatIndex,
+                identity: identity,
+              );
+            }
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    ok
+                        ? (isMuted ? s.userUnmuted : s.userMuted)
+                        : s.failed,
+                  ),
+                ),
+              );
+            }
+          },
+        );
+      },
+    );
   }
 }
 

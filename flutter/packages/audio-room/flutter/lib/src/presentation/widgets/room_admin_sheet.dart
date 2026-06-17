@@ -3,7 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:utd_app/shared/core/enums.dart';
 
-import '../bloc/room_management_bloc.dart';
+import '../bloc/admin_bloc.dart';
 import 'room/room_strings.dart';
 
 class RoomAdminSheet extends StatelessWidget {
@@ -41,7 +41,7 @@ class RoomAdminSheet extends StatelessWidget {
             ),
             const Divider(height: 1),
             Expanded(
-              child: BlocBuilder<RoomManagementBloc, RoomManagementState>(
+              child: BlocBuilder<AdminBloc, AdminState>(
                 buildWhen: (prev, curr) =>
                     prev.admins != curr.admins ||
                     prev.adminsState != curr.adminsState,
@@ -73,7 +73,7 @@ class RoomAdminSheet extends StatelessWidget {
                           icon: const Icon(Icons.remove_circle_outline,
                               color: Colors.red),
                           onPressed: () {
-                            context.read<RoomManagementBloc>().add(
+                            context.read<AdminBloc>().add(
                                   RemoveAdminEvent(
                                     roomId: roomId,
                                     userId: admin.id,

@@ -5,6 +5,7 @@ import 'package:utd_app/network/models/api_response.dart';
 import 'package:utd_app/shared/core/base_response.dart';
 
 import '../domain/audio_room_repository.dart';
+import '../domain/blacklist_entry_model.dart';
 import '../domain/room_admin_model.dart';
 import '../domain/room_category_model.dart';
 import '../domain/room_model.dart';
@@ -263,13 +264,13 @@ class AudioRoomRemoteDataSourceImpl implements AudioRoomRemoteDataSource {
   // Blacklist management
 
   @override
-  Future<Result<BaseResponse<List<Map<String, dynamic>>>>> getBlacklist(int roomId) async {
+  Future<Result<BaseResponse<List<BlacklistEntryModel>>>> getBlacklist(int roomId) async {
     return apiService.get(
       apiService.blacklistPath(roomId),
-      fromJson: (json) => BaseResponse<List<Map<String, dynamic>>>.fromJson(
+      fromJson: (json) => BaseResponse<List<BlacklistEntryModel>>.fromJson(
         json,
         fromJsonT: (data) => (data as List)
-            .map((e) => e as Map<String, dynamic>)
+            .map((e) => BlacklistEntryModel.fromJson(e as Map<String, dynamic>))
             .toList(),
       ),
     );
@@ -311,6 +312,23 @@ class AudioRoomRemoteDataSourceImpl implements AudioRoomRemoteDataSource {
     return apiService.delete(
       apiService.unbanPath(roomId, userId),
       fromJson: (json) => BaseResponse.fromJson(json),
+    );
+  }
+
+  // Token generation
+
+  @override
+  Future<Result<BaseResponse<Map<String, dynamic>>>> generateToken(
+    int roomId,
+    Map<String, dynamic> data,
+  ) async {
+    return apiService.post(
+      apiService.tokenPath(roomId),
+      data: data,
+      fromJson: (json) => BaseResponse<Map<String, dynamic>>.fromJson(
+        json,
+        fromJsonT: (data) => data as Map<String, dynamic>,
+      ),
     );
   }
 

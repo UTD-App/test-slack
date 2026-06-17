@@ -1,6 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:utd_app/network/models/api_response.dart';
+import 'package:utd_app/shared/core/base_response.dart';
 import 'package:utd_app/shared/core/enums.dart';
 
 import '../../domain/audio_room_repository.dart';
@@ -23,6 +24,31 @@ class RoomListBloc extends Bloc<RoomListEvent, RoomListState> {
     on<LoadMyRoomEvent>(_onLoadMyRoom);
   }
 
+  void _emitRoomsResult(
+    Emitter<RoomListState> emit,
+    Result<BaseResponse<List<RoomModel>>> result, {
+    List<RoomModel> existingRooms = const [],
+    int page = 1,
+  }) {
+    switch (result) {
+      case Success(data: final data):
+        final rooms = <RoomModel>[...existingRooms, ...(data.data ?? [])];
+        final paginates = data.paginates;
+        emit(state.copyWith(
+          rooms: rooms,
+          roomsState: rooms.isEmpty ? RequestState.empty : RequestState.loaded,
+          currentPage: page,
+          hasMore: paginates != null
+              ? paginates.currentPage < paginates.lastPage
+              : false,
+        ));
+      case Failure(message: final message):
+        if (existingRooms.isEmpty) {
+          emit(state.copyWith(roomsState: RequestState.error, message: message));
+        }
+    }
+  }
+
   Future<void> _onLoadRooms(
     LoadRoomsEvent event,
     Emitter<RoomListState> emit,
@@ -35,21 +61,7 @@ class RoomListBloc extends Bloc<RoomListEvent, RoomListState> {
       search: state.searchQuery,
     );
 
-    switch (result) {
-      case Success(data: final data):
-        final rooms = data.data ?? [];
-        final paginates = data.paginates;
-        emit(state.copyWith(
-          rooms: rooms,
-          roomsState: rooms.isEmpty ? RequestState.empty : RequestState.loaded,
-          currentPage: 1,
-          hasMore: paginates != null
-              ? paginates.currentPage < paginates.lastPage
-              : false,
-        ));
-      case Failure(message: final message):
-        emit(state.copyWith(roomsState: RequestState.error, message: message));
-    }
+    _emitRoomsResult(emit, result);
   }
 
   Future<void> _onLoadMore(
@@ -65,20 +77,12 @@ class RoomListBloc extends Bloc<RoomListEvent, RoomListState> {
       search: state.searchQuery,
     );
 
-    switch (result) {
-      case Success(data: final data):
-        final newRooms = data.data ?? [];
-        final paginates = data.paginates;
-        emit(state.copyWith(
-          rooms: [...state.rooms, ...newRooms],
-          currentPage: nextPage,
-          hasMore: paginates != null
-              ? paginates.currentPage < paginates.lastPage
-              : false,
-        ));
-      case Failure():
-        break;
-    }
+    _emitRoomsResult(
+      emit,
+      result,
+      existingRooms: state.rooms,
+      page: nextPage,
+    );
   }
 
   Future<void> _onLoadCategories(
@@ -118,21 +122,7 @@ class RoomListBloc extends Bloc<RoomListEvent, RoomListState> {
       search: event.query.isEmpty ? null : event.query,
     );
 
-    switch (result) {
-      case Success(data: final data):
-        final rooms = data.data ?? [];
-        final paginates = data.paginates;
-        emit(state.copyWith(
-          rooms: rooms,
-          roomsState: rooms.isEmpty ? RequestState.empty : RequestState.loaded,
-          currentPage: 1,
-          hasMore: paginates != null
-              ? paginates.currentPage < paginates.lastPage
-              : false,
-        ));
-      case Failure(message: final message):
-        emit(state.copyWith(roomsState: RequestState.error, message: message));
-    }
+    _emitRoomsResult(emit, result);
   }
 
   Future<void> _onSelectCategory(
@@ -150,21 +140,7 @@ class RoomListBloc extends Bloc<RoomListEvent, RoomListState> {
       search: state.searchQuery,
     );
 
-    switch (result) {
-      case Success(data: final data):
-        final rooms = data.data ?? [];
-        final paginates = data.paginates;
-        emit(state.copyWith(
-          rooms: rooms,
-          roomsState: rooms.isEmpty ? RequestState.empty : RequestState.loaded,
-          currentPage: 1,
-          hasMore: paginates != null
-              ? paginates.currentPage < paginates.lastPage
-              : false,
-        ));
-      case Failure(message: final message):
-        emit(state.copyWith(roomsState: RequestState.error, message: message));
-    }
+    _emitRoomsResult(emit, result);
   }
 
   Future<void> _onToggleFavorite(

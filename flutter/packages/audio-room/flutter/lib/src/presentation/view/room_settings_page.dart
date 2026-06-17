@@ -9,11 +9,11 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:utd_app/shared/core/enums.dart';
 
-import '../../audio_room_feature.dart';
 import '../widgets/audio_room_app_overlay.dart';
 import '../../domain/room_model.dart';
-import '../../plugin_setting_row.dart';
 import '../bloc/room_management_bloc.dart';
+import '../widgets/room/room_edit_text_sheet.dart';
+import '../widgets/room/room_password_dialog.dart';
 
 const _bgDark = Color(0xFF1A1028);
 const _cardBg = Color(0xFF2A1840);
@@ -35,70 +35,19 @@ class RoomSettingsPage extends StatefulWidget {
 
 class _RoomSettingsPageState extends State<RoomSettingsPage> {
   late bool _isCommentsClosed;
-  late bool _freeMic;
   late bool _hasPassword;
   File? _coverImage;
   String? _currentName;
   String? _currentIntro;
   String? _currentRule;
 
-  bool get _canEdit => widget.room.isOwner == true || widget.room.isAdmin == true;
-
-  List<PluginSettingRow> get _pluginSettingRows {
-    final plugins = AudioRoomFeature.registeredPlugins;
-    final rows = <PluginSettingRow>[];
-    for (final plugin in plugins) {
-      rows.addAll(plugin.getSettingRows(context, widget.room.id));
-    }
-    return rows;
-  }
-
-  Widget _buildPluginRow(PluginSettingRow row) {
-    switch (row.type) {
-      case PluginSettingType.toggle:
-        return _SettingRow(
-          title: row.title,
-          trailing: row.isLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : CupertinoSwitch(
-                  value: row.currentValue ?? false,
-                  activeTrackColor: _accent,
-                  onChanged: (v) {
-                    row.onToggle?.call(v);
-                    setState(() {});
-                  },
-                ),
-        );
-      case PluginSettingType.action:
-        return _SettingRow(
-          title: row.title,
-          onTap: row.isLoading
-              ? null
-              : () {
-                  row.onTap?.call();
-                  setState(() {});
-                },
-          trailing: row.isLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Icon(Icons.arrow_forward_ios,
-                  color: _textSecondary, size: 14.r),
-        );
-    }
-  }
+  bool get _canEdit =>
+      widget.room.isOwner == true || widget.room.isAdmin == true;
 
   @override
   void initState() {
     super.initState();
     _isCommentsClosed = widget.room.isCommentsClosed;
-    _freeMic = widget.room.freeMic;
     _hasPassword = widget.room.hasPassword;
     _currentName = widget.room.roomName;
     _currentIntro = widget.room.roomIntro;
@@ -113,15 +62,17 @@ class _RoomSettingsPageState extends State<RoomSettingsPage> {
     bool? freeMic,
     File? cover,
   }) {
-    context.read<RoomManagementBloc>().add(UpdateRoomEvent(
-          roomId: widget.room.id,
-          name: name,
-          intro: intro,
-          rule: rule,
-          isCommentsClosed: isCommentsClosed,
-          freeMic: freeMic,
-          cover: cover,
-        ));
+    context.read<RoomManagementBloc>().add(
+      UpdateRoomEvent(
+        roomId: widget.room.id,
+        name: name,
+        intro: intro,
+        rule: rule,
+        isCommentsClosed: isCommentsClosed,
+        freeMic: freeMic,
+        cover: cover,
+      ),
+    );
   }
 
   Future<void> _pickCover() async {
@@ -137,14 +88,18 @@ class _RoomSettingsPageState extends State<RoomSettingsPage> {
           children: [
             ListTile(
               leading: const Icon(Icons.camera_alt, color: _textPrimary),
-              title: const Text('التقاط صورة',
-                  style: TextStyle(color: _textPrimary)),
+              title: const Text(
+                'التقاط صورة',
+                style: TextStyle(color: _textPrimary),
+              ),
               onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library, color: _textPrimary),
-              title: const Text('اختيار من المعرض',
-                  style: TextStyle(color: _textPrimary)),
+              title: const Text(
+                'اختيار من المعرض',
+                style: TextStyle(color: _textPrimary),
+              ),
               onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
           ],
@@ -161,73 +116,6 @@ class _RoomSettingsPageState extends State<RoomSettingsPage> {
       setState(() => _coverImage = file);
       _save(cover: file);
     }
-  }
-
-  void _editText({
-    required String title,
-    required String initialValue,
-    required ValueChanged<String> onSave,
-    int maxLines = 1,
-    int? maxLength,
-  }) {
-    final controller = TextEditingController(text: initialValue);
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: _cardBg,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16.r)),
-      ),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(ctx).viewInsets.bottom,
-          left: 16.w,
-          right: 16.w,
-          top: 16.h,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(title,
-                    style: TextStyle(
-                        fontSize: 16.sp,
-                        fontWeight: FontWeight.w600,
-                        color: _textPrimary)),
-                TextButton(
-                  onPressed: () {
-                    onSave(controller.text.trim());
-                    Navigator.pop(ctx);
-                  },
-                  child: Text('حفظ', style: TextStyle(color: _accent)),
-                ),
-              ],
-            ),
-            SizedBox(height: 12.h),
-            TextField(
-              controller: controller,
-              maxLines: maxLines,
-              maxLength: maxLength,
-              autofocus: true,
-              style: const TextStyle(color: _textPrimary),
-              decoration: InputDecoration(
-                filled: true,
-                fillColor: _bgDark,
-                counterStyle: const TextStyle(color: _textSecondary),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.r),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-            SizedBox(height: 16.h),
-          ],
-        ),
-      ),
-    );
   }
 
   void _confirmDelete() {
@@ -249,8 +137,8 @@ class _RoomSettingsPageState extends State<RoomSettingsPage> {
             onPressed: () {
               Navigator.pop(ctx);
               context.read<RoomManagementBloc>().add(
-                    DeleteRoomEvent(roomId: widget.room.id),
-                  );
+                DeleteRoomEvent(roomId: widget.room.id),
+              );
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
             child: const Text('حذف'),
@@ -260,90 +148,24 @@ class _RoomSettingsPageState extends State<RoomSettingsPage> {
     );
   }
 
-  void _showPasswordDialog() {
-    final controller = TextEditingController();
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: _cardBg,
-        title: const Text('كلمة مرور الغرفة',
-            style: TextStyle(color: _textPrimary)),
-        content: TextField(
-          controller: controller,
-          keyboardType: TextInputType.number,
-          maxLength: 6,
-          style: const TextStyle(color: _textPrimary),
-          decoration: InputDecoration(
-            hintText: 'ادخل كلمة المرور (6 أرقام)',
-            hintStyle: const TextStyle(color: _textSecondary),
-            counterStyle: const TextStyle(color: _textSecondary),
-            filled: true,
-            fillColor: _bgDark,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8.r),
-              borderSide: BorderSide.none,
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              setState(() => _hasPassword = false);
-            },
-            child: const Text('إلغاء', style: TextStyle(color: _textSecondary)),
-          ),
-          TextButton(
-            onPressed: () {
-              if (controller.text.trim().isNotEmpty) {
-                context.read<RoomManagementBloc>().add(UpdateRoomEvent(
-                      roomId: widget.room.id,
-                      password: controller.text.trim(),
-                    ));
-                Navigator.pop(ctx);
-              }
-            },
-            child: Text('تأكيد', style: TextStyle(color: _accent)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _onPasswordToggle(bool value) {
+  Future<void> _onPasswordToggle(bool value) async {
     if (value) {
       setState(() => _hasPassword = true);
-      _showPasswordDialog();
+      final password = await showRoomPasswordDialog(context);
+      if (password == null) {
+        if (mounted) setState(() => _hasPassword = false);
+        return;
+      }
+      if (!mounted) return;
+      context.read<RoomManagementBloc>().add(
+        UpdateRoomEvent(roomId: widget.room.id, password: password),
+      );
     } else {
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          backgroundColor: _cardBg,
-          title: const Text('إزالة كلمة المرور',
-              style: TextStyle(color: _textPrimary)),
-          content: const Text(
-            'هل تريد إزالة كلمة المرور من الغرفة؟',
-            style: TextStyle(color: _textSecondary),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child:
-                  const Text('إلغاء', style: TextStyle(color: _textSecondary)),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.pop(ctx);
-                setState(() => _hasPassword = false);
-                context.read<RoomManagementBloc>().add(
-                      RemovePasswordEvent(roomId: widget.room.id),
-                    );
-              },
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('إزالة'),
-            ),
-          ],
-        ),
+      final confirmed = await showRemovePasswordDialog(context);
+      if (!confirmed || !mounted) return;
+      setState(() => _hasPassword = false);
+      context.read<RoomManagementBloc>().add(
+        RemovePasswordEvent(roomId: widget.room.id),
       );
     }
   }
@@ -406,7 +228,6 @@ class _RoomSettingsPageState extends State<RoomSettingsPage> {
             children: [
               _strip(),
 
-              // --- صورة الغرفة ---
               _SettingRow(
                 title: 'صورة الغرفة',
                 onTap: _canEdit ? _pickCover : null,
@@ -425,23 +246,22 @@ class _RoomSettingsPageState extends State<RoomSettingsPage> {
                                 fit: BoxFit.cover,
                               )
                             : widget.room.roomCover != null
-                                ? DecorationImage(
-                                    image: CachedNetworkImageProvider(
-                                        widget.room.roomCover!),
-                                    fit: BoxFit.cover,
-                                  )
-                                : null,
+                            ? DecorationImage(
+                                image: CachedNetworkImageProvider(
+                                  widget.room.roomCover!,
+                                ),
+                                fit: BoxFit.cover,
+                              )
+                            : null,
                       ),
                       child:
                           _coverImage == null && widget.room.roomCover == null
-                              ? Icon(Icons.camera_alt,
-                                  size: 20.r, color: _textSecondary)
-                              : null,
+                          ? Icon(Icons.camera_alt, size: 20.r, color: _textSecondary)
+                          : null,
                     ),
                     if (_canEdit) ...[
                       SizedBox(width: 8.w),
-                      Icon(Icons.arrow_forward_ios,
-                          color: _textSecondary, size: 14.r),
+                      Icon(Icons.arrow_forward_ios, color: _textSecondary, size: 14.r),
                     ],
                   ],
                 ),
@@ -449,12 +269,12 @@ class _RoomSettingsPageState extends State<RoomSettingsPage> {
 
               _strip(),
 
-              // --- رقم الغرفة ---
               _SettingRow(
                 title: 'رقم الغرفة',
                 onTap: () {
                   Clipboard.setData(
-                      ClipboardData(text: widget.room.numId.toString()));
+                    ClipboardData(text: widget.room.numId.toString()),
+                  );
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                       content: Text('تم النسخ'),
@@ -467,8 +287,7 @@ class _RoomSettingsPageState extends State<RoomSettingsPage> {
                   children: [
                     Text(
                       '${widget.room.numId}',
-                      style:
-                          TextStyle(color: _textSecondary, fontSize: 14.sp),
+                      style: TextStyle(color: _textSecondary, fontSize: 14.sp),
                     ),
                     SizedBox(width: 4.w),
                     Icon(Icons.copy, size: 16.r, color: _textSecondary),
@@ -478,133 +297,66 @@ class _RoomSettingsPageState extends State<RoomSettingsPage> {
 
               _strip(),
 
-              // --- اسم الغرفة ---
-              _SettingRow(
+              _TextSettingRow(
                 title: 'اسم الغرفة',
-                onTap: _canEdit
-                    ? () => _editText(
-                          title: 'اسم الغرفة',
-                          initialValue: _currentName ?? '',
-                          maxLength: 50,
-                          onSave: (val) {
-                            setState(() => _currentName = val);
-                            _save(name: val);
-                          },
-                        )
-                    : null,
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      width: 150.w,
-                      child: Text(
-                        _currentName ?? '',
-                        style: TextStyle(
-                            color: _textSecondary, fontSize: 14.sp),
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.end,
-                      ),
-                    ),
-                    if (_canEdit) ...[
-                      SizedBox(width: 4.w),
-                      Icon(Icons.arrow_forward_ios,
-                          color: _textSecondary, size: 14.r),
-                    ],
-                  ],
+                value: _currentName,
+                valueWidth: 150,
+                canEdit: _canEdit,
+                onTap: () => showEditTextSheet(
+                  context,
+                  title: 'اسم الغرفة',
+                  initialValue: _currentName ?? '',
+                  maxLength: 50,
+                  onSave: (val) {
+                    setState(() => _currentName = val);
+                    _save(name: val);
+                  },
                 ),
               ),
 
               _divider(),
 
-              // --- إعلان الغرفة ---
-              _SettingRow(
+              _TextSettingRow(
                 title: 'إعلان الغرفة',
-                onTap: _canEdit
-                    ? () => _editText(
-                          title: 'إعلان الغرفة',
-                          initialValue: _currentIntro ?? '',
-                          maxLines: 4,
-                          maxLength: 500,
-                          onSave: (val) {
-                            setState(() => _currentIntro = val);
-                            _save(intro: val);
-                          },
-                        )
-                    : null,
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      width: 100.w,
-                      child: Text(
-                        _currentIntro ?? 'لا يوجد',
-                        style: TextStyle(
-                            color: _textSecondary, fontSize: 14.sp),
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.end,
-                      ),
-                    ),
-                    if (_canEdit) ...[
-                      SizedBox(width: 4.w),
-                      Icon(Icons.arrow_forward_ios,
-                          color: _textSecondary, size: 14.r),
-                    ],
-                  ],
+                value: _currentIntro,
+                placeholder: 'لا يوجد',
+                canEdit: _canEdit,
+                onTap: () => showEditTextSheet(
+                  context,
+                  title: 'إعلان الغرفة',
+                  initialValue: _currentIntro ?? '',
+                  maxLines: 4,
+                  maxLength: 500,
+                  onSave: (val) {
+                    setState(() => _currentIntro = val);
+                    _save(intro: val);
+                  },
                 ),
               ),
 
               _divider(),
 
-              // --- قوانين الغرفة ---
-              _SettingRow(
+              _TextSettingRow(
                 title: 'قوانين الغرفة',
-                onTap: _canEdit
-                    ? () => _editText(
-                          title: 'قوانين الغرفة',
-                          initialValue: _currentRule ?? '',
-                          maxLines: 4,
-                          maxLength: 500,
-                          onSave: (val) {
-                            setState(() => _currentRule = val);
-                            _save(rule: val);
-                          },
-                        )
-                    : null,
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    SizedBox(
-                      width: 100.w,
-                      child: Text(
-                        _currentRule ?? 'لا يوجد',
-                        style: TextStyle(
-                            color: _textSecondary, fontSize: 14.sp),
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.end,
-                      ),
-                    ),
-                    if (_canEdit) ...[
-                      SizedBox(width: 4.w),
-                      Icon(Icons.arrow_forward_ios,
-                          color: _textSecondary, size: 14.r),
-                    ],
-                  ],
+                value: _currentRule,
+                placeholder: 'لا يوجد',
+                canEdit: _canEdit,
+                onTap: () => showEditTextSheet(
+                  context,
+                  title: 'قوانين الغرفة',
+                  initialValue: _currentRule ?? '',
+                  maxLines: 4,
+                  maxLength: 500,
+                  onSave: (val) {
+                    setState(() => _currentRule = val);
+                    _save(rule: val);
+                  },
                 ),
               ),
-
-              // --- Plugin settings ---
-              if (_canEdit && _pluginSettingRows.isNotEmpty) ...[
-                _strip(),
-                for (int i = 0; i < _pluginSettingRows.length; i++) ...[
-                  _buildPluginRow(_pluginSettingRows[i]),
-                  if (i < _pluginSettingRows.length - 1) _divider(),
-                ],
-              ],
 
               if (_canEdit) ...[
                 _strip(),
 
-                // --- كلمة المرور ---
                 _SettingRow(
                   title: 'كلمة المرور',
                   onTap: () => _onPasswordToggle(!_hasPassword),
@@ -617,7 +369,6 @@ class _RoomSettingsPageState extends State<RoomSettingsPage> {
 
                 _divider(),
 
-                // --- إغلاق التعليقات ---
                 _SettingRow(
                   title: 'إغلاق التعليقات',
                   trailing: CupertinoSwitch(
@@ -630,50 +381,36 @@ class _RoomSettingsPageState extends State<RoomSettingsPage> {
                   ),
                 ),
 
-                _divider(),
+                if (widget.room.isOwner == true) ...[
+                  _strip(),
 
-                // --- مايك حر ---
-                _SettingRow(
-                  title: 'مايك حر',
-                  trailing: CupertinoSwitch(
-                    value: _freeMic,
-                    activeTrackColor: _accent,
-                    onChanged: (v) {
-                      setState(() => _freeMic = v);
-                      _save(freeMic: v);
+                  BlocBuilder<RoomManagementBloc, RoomManagementState>(
+                    buildWhen: (prev, curr) =>
+                        prev.deleteState != curr.deleteState,
+                    builder: (context, state) {
+                      final isDeleting =
+                          state.deleteState == RequestState.loading;
+                      return _SettingRow(
+                        title: 'حذف الغرفة',
+                        titleColor: Colors.red,
+                        onTap: isDeleting ? null : _confirmDelete,
+                        trailing: isDeleting
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.red,
+                                ),
+                              )
+                            : Icon(
+                                Icons.arrow_forward_ios,
+                                color: Colors.red.withValues(alpha: 0.5),
+                                size: 14.r,
+                              ),
+                      );
                     },
                   ),
-                ),
-
-                if (widget.room.isOwner == true) ...[
-                _strip(),
-
-                // --- حذف الغرفة ---
-                BlocBuilder<RoomManagementBloc, RoomManagementState>(
-                  buildWhen: (prev, curr) =>
-                      prev.deleteState != curr.deleteState,
-                  builder: (context, state) {
-                    final isDeleting =
-                        state.deleteState == RequestState.loading;
-                    return _SettingRow(
-                      title: 'حذف الغرفة',
-                      titleColor: Colors.red,
-                      onTap: isDeleting ? null : _confirmDelete,
-                      trailing: isDeleting
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Colors.red,
-                              ),
-                            )
-                          : Icon(Icons.arrow_forward_ios,
-                              color: Colors.red.withValues(alpha: 0.5),
-                              size: 14.r),
-                    );
-                  },
-                ),
                 ],
               ],
 
@@ -710,13 +447,60 @@ class _SettingRow extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(title,
-                style: TextStyle(
-                    fontSize: 15.sp,
-                    color: titleColor ?? _textPrimary)),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 15.sp,
+                color: titleColor ?? _textPrimary,
+              ),
+            ),
             if (trailing != null) trailing!,
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _TextSettingRow extends StatelessWidget {
+  final String title;
+  final String? value;
+  final String placeholder;
+  final double valueWidth;
+  final bool canEdit;
+  final VoidCallback? onTap;
+
+  const _TextSettingRow({
+    required this.title,
+    this.value,
+    this.placeholder = '',
+    this.valueWidth = 100,
+    this.canEdit = true,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _SettingRow(
+      title: title,
+      onTap: canEdit ? onTap : null,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            width: valueWidth.w,
+            child: Text(
+              value ?? placeholder,
+              style: TextStyle(color: _textSecondary, fontSize: 14.sp),
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.end,
+            ),
+          ),
+          if (canEdit) ...[
+            SizedBox(width: 4.w),
+            Icon(Icons.arrow_forward_ios, color: _textSecondary, size: 14.r),
+          ],
+        ],
       ),
     );
   }

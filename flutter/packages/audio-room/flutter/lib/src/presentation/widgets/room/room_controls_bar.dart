@@ -6,11 +6,15 @@ import 'room_assets.dart';
 class RoomControlsBar extends StatelessWidget {
   final UTDRoomController controller;
   final VoidCallback? onMessageTap;
+  final VoidCallback? onModeTap;
+  final bool isOwner;
 
   const RoomControlsBar({
     super.key,
     required this.controller,
     this.onMessageTap,
+    this.onModeTap,
+    this.isOwner = false,
   });
 
   @override
@@ -25,15 +29,17 @@ class RoomControlsBar extends StatelessWidget {
           return Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              /* _AssetControlButton(
-                asset: RoomAssets.chatIcon,
-                onTap: onMessageTap,
-              ),*/
-              if (isOnSeat) ...[
+              if (isOwner && onModeTap != null) ...[
+                _IconControlButton(
+                  icon: Icons.grid_view_rounded,
+                  onTap: onModeTap,
+                ),
                 const SizedBox(width: 20),
-                _MicButton(controller: controller),
               ],
-              const SizedBox(width: 20),
+              if (isOnSeat) ...[
+                _MicButton(controller: controller),
+                const SizedBox(width: 20),
+              ],
               _SpeakerButton(controller: controller),
             ],
           );
@@ -81,6 +87,29 @@ class _SpeakerButton extends StatelessWidget {
           onTap: () => controller.mediaController.toggleSpeaker(),
         );
       },
+    );
+  }
+}
+
+class _IconControlButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback? onTap;
+
+  const _IconControlButton({required this.icon, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 44,
+        height: 44,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white.withValues(alpha: 0.12),
+        ),
+        child: Icon(icon, color: Colors.white70, size: 20),
+      ),
     );
   }
 }

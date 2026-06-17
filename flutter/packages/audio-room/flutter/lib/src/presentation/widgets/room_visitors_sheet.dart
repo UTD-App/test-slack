@@ -5,6 +5,8 @@ import 'package:utd_app/cache/cache_manager.dart';
 import 'package:utd_app/shared/core/enums.dart';
 import 'package:utd_audio_room_kit/utd_audio_room_kit.dart';
 
+import '../bloc/admin_bloc.dart';
+import '../bloc/blacklist_bloc.dart';
 import '../bloc/room_management_bloc.dart';
 import 'room/room_strings.dart';
 
@@ -104,13 +106,14 @@ class RoomVisitorsSheet extends StatelessWidget {
                           trailing: (isOwner || isAdmin)
                               ? PopupMenuButton<String>(
                                   onSelected: (value) {
-                                    final bloc = context.read<RoomManagementBloc>();
                                     switch (value) {
                                       case 'admin':
-                                        bloc.add(AddAdminEvent(
-                                          roomId: roomId,
-                                          userId: visitor.id,
-                                        ));
+                                        context.read<AdminBloc>().add(
+                                          AddAdminEvent(
+                                            roomId: roomId,
+                                            userId: visitor.id,
+                                          ),
+                                        );
                                         controller?.changeRole(
                                           targetIdentity: visitor.id.toString(),
                                           role: 'admin',
@@ -126,15 +129,19 @@ class RoomVisitorsSheet extends StatelessWidget {
                                           },
                                         });
                                       case 'kick':
-                                        bloc.add(KickUserEvent(
-                                          roomId: roomId,
-                                          userId: visitor.id,
-                                        ));
+                                        context.read<BlacklistBloc>().add(
+                                          KickUserEvent(
+                                            roomId: roomId,
+                                            userId: visitor.id,
+                                          ),
+                                        );
                                       case 'ban':
-                                        bloc.add(BanUserEvent(
-                                          roomId: roomId,
-                                          userId: visitor.id,
-                                        ));
+                                        context.read<BlacklistBloc>().add(
+                                          BanUserEvent(
+                                            roomId: roomId,
+                                            userId: visitor.id,
+                                          ),
+                                        );
                                         controller?.banUser(visitor.id.toString());
                                     }
                                   },

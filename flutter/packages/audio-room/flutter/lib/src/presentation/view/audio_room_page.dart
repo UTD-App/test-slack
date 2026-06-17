@@ -12,21 +12,25 @@ import '../../audio_room_feature.dart';
 import '../../data/pending_exit_manager.dart';
 import '../../data/pip_manager.dart';
 import '../../domain/audio_room_repository.dart';
-import '../widgets/audio_room_app_overlay.dart';
 import '../../domain/room_model.dart';
+import '../bloc/admin_bloc.dart';
 import '../bloc/room_management_bloc.dart';
+import '../mixins/audio_room_plugin_mixin.dart';
+import '../mixins/audio_room_rtm_mixin.dart';
+import '../widgets/audio_room_app_overlay.dart';
 import '../widgets/room/empty_seat_widget.dart';
 import '../widgets/room/locked_seat_widget.dart';
 import '../widgets/room/room_background_widget.dart';
-import 'room_settings_page.dart';
 import '../widgets/room/room_controls_bar.dart';
 import '../widgets/room/room_header_widget.dart';
 import '../widgets/room/room_messages_widget.dart';
 import '../widgets/room/room_strings.dart';
 import '../widgets/room/seat_avatar_widget.dart';
+import '../widgets/room/seat_mode_sheet.dart';
 import '../widgets/room/seat_options_sheet.dart';
 import '../widgets/room/speaker_invitation_dialog.dart';
 import '../widgets/room_admin_sheet.dart';
+import 'room_settings_page.dart';
 
 class AudioRoomPage extends StatefulWidget {
   final int roomId;
@@ -44,16 +48,23 @@ class AudioRoomPage extends StatefulWidget {
   State<AudioRoomPage> createState() => _AudioRoomPageState();
 }
 
-class _AudioRoomPageState extends State<AudioRoomPage> {
+class _AudioRoomPageState extends State<AudioRoomPage>
+    with AudioRoomRtmMixin, AudioRoomPluginMixin {
   RoomModel? _room;
   bool _isLoading = true;
   String? _error;
   UTDRoomController? _controller;
-  StreamSubscription? _joinSub;
-  StreamSubscription? _leaveSub;
-  StreamSubscription? _dataSub;
-  StreamSubscription? _roleSub;
   bool _isExiting = false;
+  VoidCallback? _commentsWatcher;
+
+  @override
+  RoomModel? get currentRoom => _room;
+
+  @override
+  set currentRoom(RoomModel? value) => _room = value;
+
+  @override
+  UTDRoomController? get roomController => _controller;
 
   @override
   void initState() {
@@ -68,13 +79,17 @@ class _AudioRoomPageState extends State<AudioRoomPage> {
       _controller = feature.activeController;
       _room = feature.activeRoom;
       _isLoading = false;
+      if (_room?.isCommentsClosed == true) {
+        _controller!.commentsLocked.value = true;
+      }
       WidgetsBinding.instance.addPostFrameCallback((_) {
         UTDMiniOverlayMachine.instance.changeState(
           UTDMiniOverlayState.inAudioRoom,
         );
         if (mounted && _controller != null) {
-          _listenParticipantEvents(_controller!);
-          _listenPluginMessages(_controller!);
+          listenParticipantEvents(_controller!);
+          listenPluginMessages(_controller!);
+          _watchCommentsLocked(_controller!);
         }
       });
     } else {
@@ -84,12 +99,12 @@ class _AudioRoomPageState extends State<AudioRoomPage> {
 
   @override
   void dispose() {
-    _joinSub?.cancel();
-    _leaveSub?.cancel();
-    _dataSub?.cancel();
-    if (!UTDMiniOverlayMachine.instance.isMinimizing) {
-      _roleSub?.cancel();
+    if (_commentsWatcher != null) {
+      try {
+        _controller?.commentsLocked.removeListener(_commentsWatcher!);
+      } catch (_) {}
     }
+    disposeRtm();
     super.dispose();
   }
 
@@ -99,7 +114,7 @@ class _AudioRoomPageState extends State<AudioRoomPage> {
         _room = widget.verifiedRoom;
         _isLoading = false;
       });
-      _notifyPluginsEnter(widget.verifiedRoom!);
+      notifyPluginsEnter(widget.verifiedRoom!);
       return;
     }
 
@@ -113,7 +128,7 @@ class _AudioRoomPageState extends State<AudioRoomPage> {
             _room = data.data;
             _isLoading = false;
           });
-          _notifyPluginsEnter(data.data!);
+          notifyPluginsEnter(data.data!);
         } else {
           setState(() {
             _error = data.message;
@@ -128,21 +143,6 @@ class _AudioRoomPageState extends State<AudioRoomPage> {
     }
   }
 
-  void _notifyPluginsEnter(RoomModel room) {
-    final userId = CacheManager.getUserData()?['id']?.toString() ?? '';
-    for (final plugin in AudioRoomFeature.registeredPlugins) {
-      plugin.onRoomEnter(room.id, userId);
-    }
-  }
-
-  void _notifyPluginsExit() {
-    if (_room == null) return;
-    final userId = CacheManager.getUserData()?['id']?.toString() ?? '';
-    for (final plugin in AudioRoomFeature.registeredPlugins) {
-      plugin.onRoomExit(_room!.id, userId);
-    }
-  }
-
   void _minimizeRoom() {
     if (_controller == null || !_controller!.isConnected) return;
     UTDMiniOverlayMachine.instance.changeState(UTDMiniOverlayState.minimizing);
@@ -151,7 +151,7 @@ class _AudioRoomPageState extends State<AudioRoomPage> {
   Future<void> _exitRoom() async {
     if (_isExiting) return;
     _isExiting = true;
-    _notifyPluginsExit();
+    notifyPluginsExit();
     PipManager.instance.disableAutoPip();
     UTDMiniOverlayMachine.instance.changeState(UTDMiniOverlayState.idle);
     AudioRoomFeature.instance?.clearActiveRoom();
@@ -174,94 +174,17 @@ class _AudioRoomPageState extends State<AudioRoomPage> {
     AudioRoomAppOverlay.closeRoom();
   }
 
-  void _listenPluginMessages(UTDRoomController controller) {
-    _dataSub = controller.dataStream.listen((data) {
-      final type = data['type'] as String?;
-      if (type == null) return;
-
-      if (type == 'roleChange') {
-        _handleRoleChangeRtm(data['data'] as Map<String, dynamic>? ?? data);
-        return;
-      }
-
-      if (type == 'roomSettingsUpdate') {
-        _handleRoomSettingsUpdateRtm(
-          data['data'] as Map<String, dynamic>? ?? data,
-        );
-        return;
-      }
-
-      for (final plugin in AudioRoomFeature.registeredPlugins) {
-        if (plugin.rtmMessageTypes.contains(type)) {
-          plugin.onRtmMessage(
-            type,
-            data['data'] as Map<String, dynamic>? ?? data,
-          );
+  void _watchCommentsLocked(UTDRoomController controller) {
+    _commentsWatcher = () {
+      if (!mounted || !controller.isConnected) return;
+      try {
+        final expected = _room?.isCommentsClosed ?? false;
+        if (controller.commentsLocked.value != expected) {
+          controller.commentsLocked.value = expected;
         }
-      }
-    });
-  }
-
-  void _handleRoleChangeRtm(Map<String, dynamic> data) {
-    if (!mounted) return;
-    final targetUserId = data['user_id']?.toString();
-    final role = data['role']?.toString();
-    final userName = data['user_name']?.toString() ?? '';
-    final promoterName = data['promoter_name']?.toString() ?? '';
-    if (targetUserId == null || role == null || _controller == null) return;
-
-    final localUserId = CacheManager.getUserData()?['id']?.toString() ?? '';
-    final s = RoomStrings.of(context);
-    final isPromotion = role == 'admin';
-
-    final chatText = isPromotion
-        ? s.userPromotedToAdmin(userName, promoterName)
-        : s.userDemotedFromAdmin(userName, promoterName);
-    _controller!.chatController.addDisplayMessage(
-      UTDChatMessage(
-        senderUserId: 'system',
-        senderName: '',
-        text: chatText,
-        timestamp: DateTime.now(),
-      ),
-    );
-
-    if (targetUserId == localUserId) {
-      setState(() {
-        _room = _room?.copyWith(isAdmin: isPromotion);
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(isPromotion ? s.youAreNowAdmin : s.youAreNoLongerAdmin),
-        ),
-      );
-    }
-  }
-
-  void _listenParticipantEvents(UTDRoomController controller) {
-    final s = RoomStrings.of(context);
-    _joinSub = controller.roomManager.participantJoinedStream.listen((p) {
-      final name = p.name.isNotEmpty ? p.name : p.identity;
-      controller.chatController.addDisplayMessage(
-        UTDChatMessage(
-          senderUserId: 'system',
-          senderName: '',
-          text: s.userJoined(name),
-          timestamp: DateTime.now(),
-        ),
-      );
-    });
-    _leaveSub = controller.roomManager.participantLeftStream.listen((p) {
-      final name = p.name.isNotEmpty ? p.name : p.identity;
-      controller.chatController.addDisplayMessage(
-        UTDChatMessage(
-          senderUserId: 'system',
-          senderName: '',
-          text: s.userLeft(name),
-          timestamp: DateTime.now(),
-        ),
-      );
-    });
+      } catch (_) {}
+    };
+    controller.commentsLocked.addListener(_commentsWatcher!);
   }
 
   Future<void> _flushPendingExits() async {
@@ -300,7 +223,7 @@ class _AudioRoomPageState extends State<AudioRoomPage> {
                   );
                 });
               }
-              _broadcastRoomSettingsUpdate(updated);
+              broadcastRoomSettingsUpdate(updated);
             },
           ),
         ),
@@ -308,48 +231,30 @@ class _AudioRoomPageState extends State<AudioRoomPage> {
     );
   }
 
-  void _broadcastRoomSettingsUpdate(RoomModel room) {
-    _controller?.sendRoomMessage({
-      'type': 'roomSettingsUpdate',
-      'data': {
-        'room_name': room.roomName,
-        'room_cover': room.roomCover,
-        'room_intro': room.roomIntro,
-        'room_rule': room.roomRule,
-        'room_background': room.roomBackground,
-        'free_mic': room.freeMic,
-        'is_comment_closed': room.isCommentsClosed,
-        'has_password': room.hasPassword,
-      },
-    });
-  }
-
-  void _handleRoomSettingsUpdateRtm(Map<String, dynamic> data) {
-    if (!mounted || _room == null) return;
-    setState(() {
-      _room = _room!.copyWith(
-        roomName: data['room_name']?.toString(),
-        roomCover: data['room_cover']?.toString(),
-        roomIntro: data['room_intro']?.toString(),
-        roomRule: data['room_rule']?.toString(),
-        roomBackground: data['room_background']?.toString(),
-        freeMic: data['free_mic'] as bool?,
-        isCommentsClosed: data['is_comment_closed'] as bool?,
-        hasPassword: data['has_password'] as bool?,
-      );
-    });
-  }
-
   void _showAdmins() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (_) => BlocProvider.value(
-        value: context.read<RoomManagementBloc>()
+        value: context.read<AdminBloc>()
           ..add(LoadAdminsEvent(roomId: widget.roomId)),
         child: RoomAdminSheet(roomId: widget.roomId),
       ),
     );
+  }
+
+  List<UTDRoomMode> _buildModes() {
+    return const [
+      UTDRoomMode(
+        id: '9',
+        seatCount: 9,
+        rows: [
+          [0],
+          [1, 2, 3, 4],
+          [5, 6, 7, 8],
+        ],
+      ),
+    ];
   }
 
   @override
@@ -383,18 +288,16 @@ class _AudioRoomPageState extends State<AudioRoomPage> {
     final config = AppConfigProvider.instance;
 
     final streamAppId = streamConfig?['app_id']?.toString() ?? '';
-    final streamSecret = streamConfig?['server_secret']?.toString() ?? '';
     final appId = streamAppId.isNotEmpty ? streamAppId : config.utdStreamAppId;
-    final serverSecret = streamSecret.isNotEmpty
-        ? streamSecret
-        : config.utdStreamServerSecret;
 
-    if (appId.isEmpty || serverSecret.isEmpty) {
+    if (appId.isEmpty) {
       return Scaffold(
         appBar: AppBar(),
         body: Center(child: Text(RoomStrings.of(context).streamConfigMissing)),
       );
     }
+
+    final repository = context.read<AudioRoomRepository>();
 
     final userData = CacheManager.getUserData();
     final userId = userData?['id']?.toString() ?? '';
@@ -405,10 +308,23 @@ class _AudioRoomPageState extends State<AudioRoomPage> {
     final kitStrings = locale == 'ar'
         ? UTDRoomStrings.ar()
         : UTDRoomStrings.en();
+    final modes = _buildModes();
 
     Widget audioRoomWidget = UTDAudioRoom(
       appId: appId,
-      serverSecret: serverSecret,
+      tokenProvider: (request) async {
+        final result = await repository.generateToken(room.id, {
+          'identity': request.identity,
+          'service': request.service,
+          'room_owner_id': request.roomOwnerId,
+          if (request.metadata != null) 'metadata': request.metadata,
+        });
+        return switch (result) {
+          Success(data: final data) =>
+            UTDTokenBundle.fromEngineJson(data.data ?? {}),
+          Failure(message: final msg) => throw Exception(msg),
+        };
+      },
       userId: userId,
       userName: userName,
       roomId: room.id.toString(),
@@ -426,7 +342,18 @@ class _AudioRoomPageState extends State<AudioRoomPage> {
                 onExit: _exitRoom,
                 onMinimize: _minimizeRoom,
                 onAdminsTap: _showAdmins,
+                onModeTap: () => showSeatModeSheet(
+                  context,
+                  currentMode: room.mode,
+                  modes: modes,
+                ),
                 onSettingsTap: () => _openSettings(room),
+                onLockCommentsToggled: (locked) {
+                  setState(() {
+                    _room = _room!.copyWith(isCommentsClosed: locked);
+                  });
+                  broadcastRoomSettingsUpdate(_room!);
+                },
               )
             : const SizedBox.shrink(),
         controlsBarWidget: _controller != null
@@ -437,7 +364,17 @@ class _AudioRoomPageState extends State<AudioRoomPage> {
                       .map((p) => p.buildControlsWidget(context, room.id))
                       .where((w) => w != null)
                       .cast<Widget>(),
-                  Expanded(child: RoomControlsBar(controller: _controller!)),
+                  Expanded(
+                    child: RoomControlsBar(
+                      controller: _controller!,
+                      isOwner: room.isOwner == true,
+                      onModeTap: () => showSeatModeSheet(
+                        context,
+                        currentMode: room.mode,
+                        modes: modes,
+                      ),
+                    ),
+                  ),
                 ],
               )
             : const SizedBox.shrink(),
@@ -509,8 +446,12 @@ class _AudioRoomPageState extends State<AudioRoomPage> {
           _room!,
           widget.roomId,
         );
-        _listenParticipantEvents(controller);
-        _listenPluginMessages(controller);
+        if (_room?.isCommentsClosed == true) {
+          controller.commentsLocked.value = true;
+        }
+        listenParticipantEvents(controller);
+        listenPluginMessages(controller);
+        _watchCommentsLocked(controller);
         for (final plugin in AudioRoomFeature.registeredPlugins) {
           plugin.onControllerReady(controller);
         }
@@ -527,7 +468,7 @@ class _AudioRoomPageState extends State<AudioRoomPage> {
           _exitRoom();
         }
       },
-      modes: _buildModes(),
+      modes: modes,
     );
 
     if (_controller != null) {
@@ -543,75 +484,5 @@ class _AudioRoomPageState extends State<AudioRoomPage> {
     }
 
     return audioRoomWidget;
-  }
-
-  List<UTDRoomMode> _buildModes() {
-    return const [
-      UTDRoomMode(
-        id: '9',
-        seatCount: 9,
-        rows: [
-          [0],
-          [1, 2, 3, 4],
-          [5, 6, 7, 8],
-        ],
-      ),
-      UTDRoomMode(
-        id: '7',
-        seatCount: 7,
-        rows: [
-          [0],
-          [1, 2, 3],
-          [4, 5, 6],
-        ],
-      ),
-      UTDRoomMode(
-        id: '8',
-        seatCount: 8,
-        rows: [
-          [0, 1],
-          [2, 3, 4],
-          [5, 6, 7],
-        ],
-      ),
-      UTDRoomMode(
-        id: '12',
-        seatCount: 12,
-        rows: [
-          [0, 1, 2],
-          [3, 4, 5],
-          [6, 7, 8],
-          [9, 10, 11],
-        ],
-      ),
-      UTDRoomMode(
-        id: '16',
-        seatCount: 16,
-        rows: [
-          [0, 1, 2, 3],
-          [4, 5, 6, 7],
-          [8, 9, 10, 11],
-          [12, 13, 14, 15],
-        ],
-      ),
-      UTDRoomMode(
-        id: '22',
-        seatCount: 22,
-        rows: [
-          [0, 1, 2, 3, 4],
-          [5, 6, 7, 8, 9],
-          [10, 11, 12, 13, 14],
-          [15, 16, 17, 18, 19],
-          [20, 21],
-        ],
-      ),
-      UTDRoomMode(
-        id: '2',
-        seatCount: 2,
-        rows: [
-          [0, 1],
-        ],
-      ),
-    ];
   }
 }

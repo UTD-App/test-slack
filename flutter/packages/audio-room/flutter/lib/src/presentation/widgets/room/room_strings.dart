@@ -86,6 +86,10 @@ class RoomStrings {
   String get admins => _isAr ? 'المشرفين' : 'Admins';
   String get blacklist => _isAr ? 'القائمة السوداء' : 'Blacklist';
   String get settings => _isAr ? 'الإعدادات' : 'Settings';
+  String get lockComments => _isAr ? 'قفل التعليقات' : 'Lock Comments';
+  String get unlockComments => _isAr ? 'فتح التعليقات' : 'Unlock Comments';
+  String get commentsLocked =>
+      _isAr ? 'التعليقات مقفلة من قبل المضيف' : 'Comments are locked by the host';
 
   // ── Management Sheets (Visitors / Admins / Blacklist) ──
   String get visitors => _isAr ? 'الزوار' : 'Visitors';
@@ -132,6 +136,18 @@ class RoomStrings {
       _isAr ? 'جاري التحقق...' : 'Checking...';
   String get enterRoom => _isAr ? 'دخول الغرفة' : 'Enter Room';
   String seats(String count) => _isAr ? '$count مقعد' : '$count seats';
+  String get roomNameRequired =>
+      _isAr ? 'اسم الغرفة مطلوب' : 'Room name is required';
+  String get roomNameTooShort =>
+      _isAr ? 'اسم الغرفة قصير جداً' : 'Room name is too short';
+  String get passwordTooShort =>
+      _isAr ? 'كلمة المرور قصيرة جداً' : 'Password is too short';
+  String get passwordRequired =>
+      _isAr ? 'أدخل كلمة المرور' : 'Password is required';
+  String get loadingDots =>
+      _isAr ? 'جاري التحميل...' : 'Loading...';
+  String get changeSeatMode => _isAr ? 'تغيير المقاعد' : 'Change Seat Mode';
+  String get currentMode => _isAr ? 'الحالي' : 'Current';
 
   // ── Room Page ──
   String get bannedFromRoom =>

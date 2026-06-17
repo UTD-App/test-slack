@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:utd_audio_room_kit/utd_audio_room_kit.dart';
 
-import '../../bloc/room_management_bloc.dart';
+import '../../bloc/admin_bloc.dart';
+import '../../bloc/blacklist_bloc.dart';
 import 'invite_to_mic_sheet.dart';
 import 'room_strings.dart';
 import 'user_profile_sheet.dart';
@@ -50,7 +51,8 @@ void handleSeatTap(
       localUserId: localUserId,
       isOwner: isOwner,
       roomId: roomId,
-      roomManagementBloc: context.read<RoomManagementBloc>(),
+      adminBloc: context.read<AdminBloc>(),
+      blacklistBloc: context.read<BlacklistBloc>(),
     );
     return;
   }
@@ -73,7 +75,8 @@ void handleSeatTap(
       isAdmin: isAdmin,
       isLocked: isLocked,
       roomId: roomId,
-      roomManagementBloc: context.read<RoomManagementBloc>(),
+      adminBloc: context.read<AdminBloc>(),
+      blacklistBloc: context.read<BlacklistBloc>(),
     ),
   );
 }
@@ -89,7 +92,8 @@ class _SeatOptionsBody extends StatelessWidget {
   final bool isAdmin;
   final bool isLocked;
   final int roomId;
-  final RoomManagementBloc roomManagementBloc;
+  final AdminBloc adminBloc;
+  final BlacklistBloc blacklistBloc;
 
   const _SeatOptionsBody({
     required this.controller,
@@ -102,7 +106,8 @@ class _SeatOptionsBody extends StatelessWidget {
     required this.isAdmin,
     required this.isLocked,
     required this.roomId,
-    required this.roomManagementBloc,
+    required this.adminBloc,
+    required this.blacklistBloc,
   });
 
   @override
@@ -204,7 +209,8 @@ class _SeatOptionsBody extends StatelessWidget {
                   localUserId: localUserId,
                   isOwner: isOwner,
                   roomId: roomId,
-                  roomManagementBloc: roomManagementBloc,
+                  adminBloc: adminBloc,
+                  blacklistBloc: blacklistBloc,
                 );
               },
             ),

@@ -9,6 +9,7 @@ import 'package:utd_app/config/theme_notifier.dart';
 import 'package:utd_app/shared/core/color_manager.dart';
 import 'package:utd_app/shared/notifiers/user_data_notifier.dart';
 import 'package:utd_app/shared/services/user_session_service.dart';
+import 'package:audio_room/audio_room.dart';
 import 'addons/addons.dart';
 import 'config/router.dart';
 import 'localization/localization.dart';
@@ -227,12 +228,16 @@ class _AddonPlatformAppState extends State<AddonPlatformApp> {
                       GlobalWidgetsLocalizations.delegate,
                       GlobalCupertinoLocalizations.delegate,
                     ],
-                    // Dark-purple "lumia" theme applied to both slots so the
-                    // look holds regardless of the light/dark toggle.
                     theme: _lumiaTheme(),
                     darkTheme: _lumiaTheme(),
                     themeMode: themeNotifier.themeMode,
                     routerConfig: router,
+                    builder: (context, child) {
+                      return AudioRoomAppOverlay(
+                        router: router,
+                        child: child!,
+                      );
+                    },
                   );
                 },
               );

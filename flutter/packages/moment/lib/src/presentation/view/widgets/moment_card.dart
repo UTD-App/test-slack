@@ -142,7 +142,7 @@ class MomentCard extends StatelessWidget {
                       contextType: 'moment',
                       contextId: moment.id,
                       receiverName: moment.userName,
-                      onSent: onGiftSent,
+            //          onSent: onGiftSent,
                     ),
                     icon: const Icon(Icons.card_giftcard, color: Colors.grey, size: 20),
                     label: Text('${moment.giftsCount}', style: const TextStyle(color: Colors.grey)),
