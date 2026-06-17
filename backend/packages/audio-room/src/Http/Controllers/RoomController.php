@@ -225,9 +225,9 @@ class RoomController extends Controller
 
         $payload = [
             'identity' => $request->identity,
-            'room_name' => $room->id,
+            'room_name' => (string) $room->id,
             'service' => $request->service,
-            'room_owner_id' => $request->room_owner_id ?? $room->user_id,
+            'room_owner_id' => (string) ($request->room_owner_id ?? $room->user_id),
             'role' => $role,
         ];
 
