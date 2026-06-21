@@ -13,6 +13,12 @@
  * (flutter/lib/src/stac/profile_stac_sources.dart). Keys map 1:1 — no extra
  * mapping. UTD Studio discovers this via GET /api/utd/manifest and seeds the
  * Craft tree below into the app's Stac screens on Sync.
+ *
+ * DESIGN: mirrors the REAL native profile (the "Lumia" centered identity block
+ * on a deep-purple screen — circular avatar, name + country flag, UID, bio,
+ * country). Solid purple colours approximate the native gradient (the gradient
+ * ring / level badges are bespoke Flutter flourishes primitives can't express),
+ * so pulling this back into the app produces no visual change.
  */
 
 // ── Craft node helper (same shape the Studio design scripts emit) ──────────
@@ -32,25 +38,30 @@ $node = function (string $name, bool $canvas, array $props, array $kids = [], ?s
     return $n;
 };
 
-// user_profile — avatar + name + uid + bio + country bound to profile.user (Scope)
+// ── Lumia palette (solid approximations of the native gradient theme) ──────
+$C = [
+    'bg'       => '#4A2E8C', // profile screen (≈ lumiaBgGradient mid #583C9E)
+    'white'    => '#FFFFFF',
+    'muted'    => '#CDBFEE', // lumiaTextSecondary
+    'bioText'  => '#E3D8FB',
+];
+
+// user_profile — CENTERED identity block bound to profile.user (Scope):
+// circular avatar, name + country flag, UID, bio, country. Matches the native
+// "Me"/profile landing (no cover banner in the main view).
 $profileWidgets = [
-    'ROOT'    => $node('Container', true, ['background' => '#ffffff', 'padding' => 16, 'gap' => 12, 'align' => 'stretch', 'flex' => 0], ['scope'], null),
-    'scope'   => $node('Scope', true, ['source' => 'profile.user'], ['cover', 'row', 'bio', 'country'], 'ROOT'),
+    'ROOT'    => $node('Container', true, ['background' => $C['bg'], 'padding' => 20, 'gap' => 10, 'align' => 'center', 'flex' => 0], ['scope'], null),
+    'scope'   => $node('Scope', true, ['source' => 'profile.user'], ['avatar', 'nameRow', 'uid', 'bio', 'country'], 'ROOT'),
 
-    // Cover banner — hidden when the user has no cover image.
-    'cover'   => $node('Image', false, ['src' => '', 'binding' => 'profile.user.cover', 'visibleBinding' => 'profile.user.cover', 'height' => 160, 'fit' => 'cover', 'radius' => 12], [], 'scope'),
+    'avatar'  => $node('Image', false, ['src' => '', 'binding' => 'profile.user.avatar', 'width' => 96, 'height' => 96, 'fit' => 'cover', 'shape' => 'circle', 'radius' => 0], [], 'scope'),
 
-    // Header row: circular avatar + (name+flag / uid) column.
-    'row'     => $node('Row', true, ['gap' => 12, 'align' => 'center'], ['avatar', 'idcol'], 'scope'),
-    'avatar'  => $node('Image', false, ['src' => '', 'binding' => 'profile.user.avatar', 'width' => 88, 'height' => 88, 'fit' => 'cover', 'shape' => 'circle', 'radius' => 0], [], 'row'),
-    'idcol'   => $node('Container', true, ['flex' => 1, 'gap' => 4, 'align' => 'flex-start'], ['nameRow', 'uid'], 'row'),
-    'nameRow' => $node('Row', true, ['gap' => 6, 'align' => 'center'], ['name', 'flag'], 'idcol'),
-    'name'    => $node('Text', false, ['text' => 'الاسم', 'binding' => 'profile.user.name', 'fontSize' => 18, 'fontWeight' => 600, 'color' => '#0F172A', 'align' => 'right', 'maxLines' => 0], [], 'nameRow'),
-    'flag'    => $node('Image', false, ['src' => '', 'binding' => 'profile.user.flag', 'visibleBinding' => 'profile.user.flag', 'width' => 20, 'height' => 14, 'fit' => 'cover', 'radius' => 2], [], 'nameRow'),
-    'uid'     => $node('Text', false, ['text' => '', 'binding' => 'profile.user.uid', 'fontSize' => 12, 'fontWeight' => 400, 'color' => '#94A3B8', 'align' => 'right', 'maxLines' => 0], [], 'idcol'),
+    'nameRow' => $node('Row', true, ['gap' => 6, 'align' => 'center'], ['name', 'flag'], 'scope'),
+    'name'    => $node('Text', false, ['text' => 'الاسم', 'binding' => 'profile.user.name', 'fontSize' => 20, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'maxLines' => 1], [], 'nameRow'),
+    'flag'    => $node('Image', false, ['src' => '', 'binding' => 'profile.user.flag', 'visibleBinding' => 'profile.user.flag', 'width' => 22, 'height' => 15, 'fit' => 'cover', 'radius' => 3], [], 'nameRow'),
 
-    'bio'     => $node('Text', false, ['text' => 'نبذة', 'binding' => 'profile.user.bio', 'fontSize' => 14, 'fontWeight' => 400, 'color' => '#334155', 'align' => 'right', 'maxLines' => 0], [], 'scope'),
-    'country' => $node('Text', false, ['text' => '', 'binding' => 'profile.user.country', 'fontSize' => 13, 'fontWeight' => 400, 'color' => '#64748B', 'align' => 'right', 'maxLines' => 0], [], 'scope'),
+    'uid'     => $node('Text', false, ['text' => '', 'binding' => 'profile.user.uid', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'maxLines' => 1], [], 'scope'),
+    'bio'     => $node('Text', false, ['text' => '', 'binding' => 'profile.user.bio', 'visibleBinding' => 'profile.user.bio', 'fontSize' => 14, 'fontWeight' => 400, 'color' => $C['bioText'], 'align' => 'center', 'maxLines' => 0], [], 'scope'),
+    'country' => $node('Text', false, ['text' => '', 'binding' => 'profile.user.country', 'visibleBinding' => 'profile.user.country', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'maxLines' => 0], [], 'scope'),
 ];
 
 return [
@@ -116,7 +127,7 @@ return [
             'requiresAuth' => true,
             'showOnce'     => false,
             'opens'        => null,
-            'chrome'       => ['appBar' => ['enabled' => true, 'title' => 'الملف الشخصي', 'bg' => '#ffffff', 'actions' => []]],
+            'chrome'       => ['appBar' => ['enabled' => false, 'title' => 'الملف الشخصي', 'bg' => $C['bg'], 'actions' => []]],
             'widgets'      => $profileWidgets,
         ],
     ],

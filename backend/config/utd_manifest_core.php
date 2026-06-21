@@ -28,6 +28,15 @@
  * `default_screens` ships ready-to-edit Craft trees (login / home / profile /
  * settings) so UTD Studio seeds a working core app on first Sync. Shape matches
  * what the editor saves (version.widgets) — see utdStack docs/default-screens-sync.
+ *
+ * DESIGN: these trees mirror the REAL native screens as closely as the Stac
+ * primitives allow, so that what UTD Studio shows (and pushes back to the app)
+ * matches the app's own design — a designer pulling these into the app sees no
+ * visual change. The native theme is the "Lumia" dark purple / pink-accent
+ * palette (auth + profile + settings on deep purple; home on light surface).
+ * Gradients/frosted-glass/level-badges are bespoke Flutter flourishes that
+ * primitives can't express — they are approximated with the dominant SOLID
+ * colour (the only fill proven to survive the Craft→Stac transform).
  */
 
 // ── Craft node helper (mirrors the Studio design scripts) ──────────────
@@ -53,59 +62,98 @@ $style = [
     'onTapAction' => 'none', 'onTapTarget' => '', 'onTapParams' => [],
 ];
 
+// ── Lumia palette (solid approximations of the native gradient theme) ──────
+// Gradients aren't proven to render through the Studio transform, so each token
+// is the dominant solid colour of its native gradient/token.
+$C = [
+    'bg'         => '#3A2A7E', // deep purple screen (≈ authBgGradient mid #4226A6→#2A1556)
+    'bgProfile'  => '#4A2E8C', // profile screen (≈ lumiaBgGradient mid #583C9E)
+    'card'       => '#5B4399', // card surface (≈ lumiaCardGradient #6E50B2→#513B98)
+    'cardBorder' => '#8E72D2', // lumiaCardBorder
+    'accent'     => '#BE4AFF', // lumiaAccent
+    'accentLt'   => '#D9A0FF', // lumiaAccentLight (links)
+    'pink'       => '#EC4899', // pinkCtaGradient (primary CTA)
+    'red'        => '#FF5A6E', // destructive (logout / delete)
+    'white'      => '#FFFFFF',
+    'muted'      => '#CDBFEE', // lumiaTextSecondary
+    'bioText'    => '#E3D8FB',
+    'field'      => '#ECE7FB', // light input fill → default dark field text stays legible
+    // Home rides the light surface (native home is ColorScheme.surface, not the
+    // purple gradient), so it keeps light fills + dark text.
+    'homeBg'     => '#FFFFFF',
+    'homeText'   => '#0F172A',
+    'homeMuted'  => '#64748B',
+    'homeField'  => '#F1F5F9',
+];
+
 // login — email/password + core.login submit (successRoute → home '/') +
-// recover-password and register links (mirrors the real login screen).
+// recover-password and register links. Deep-purple screen, pink CTA pill,
+// accent-light links — mirrors the real auth design.
 $loginWidgets = [
-    'ROOT'    => $node('Container', true, array_merge(['background' => '#ffffff', 'padding' => 24, 'gap' => 16, 'align' => 'stretch', 'flex' => 0], $style), ['t1', 't2', 'fEmail', 'fPass', 'btn', 'recover', 'regRow'], null),
-    't1'      => $node('Text', false, ['text' => 'أهلاً بك 👋', 'fontSize' => 24, 'fontWeight' => 600, 'color' => '#0F172A', 'align' => 'right', 'binding' => '', 'maxLines' => 0], [], 'ROOT'),
-    't2'      => $node('Text', false, ['text' => 'سجّل دخولك للمتابعة', 'fontSize' => 16, 'fontWeight' => 400, 'color' => '#64748B', 'align' => 'right', 'binding' => '', 'maxLines' => 0], [], 'ROOT'),
-    'fEmail'  => $node('TextField', false, ['fieldId' => 'email', 'placeholder' => 'البريد الإلكتروني', 'live' => true, 'keyboard' => 'email', 'fillColor' => '#f1f5f9', 'radius' => 10, 'flex' => 0], [], 'ROOT'),
-    'fPass'   => $node('TextField', false, ['fieldId' => 'password', 'placeholder' => 'كلمة المرور', 'live' => true, 'obscure' => true, 'fillColor' => '#f1f5f9', 'radius' => 10, 'flex' => 0], [], 'ROOT'),
-    'btn'     => $node('Button', false, array_merge(['label' => 'دخول', 'background' => '#2563eb', 'color' => '#ffffff', 'radius' => 12, 'flex' => 0, 'onTapAction' => 'core.login', 'onTapParams' => ['emailField' => 'email', 'passwordField' => 'password', 'successRoute' => '/']], ['onTapTarget' => '']), [], 'ROOT'),
-    'recover' => $node('Button', false, array_merge(['label' => 'نسيت كلمة المرور؟', 'background' => '#00000000', 'color' => '#2563eb', 'radius' => 0, 'flex' => 0, 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/forgot_password', 'mode' => 'push']], ['onTapTarget' => '']), [], 'ROOT'),
+    'ROOT'    => $node('Container', true, array_merge($style, ['background' => $C['bg'], 'padding' => 22, 'gap' => 16, 'align' => 'stretch', 'flex' => 0]), ['t1', 't2', 'fEmail', 'fPass', 'recover', 'btn', 'regRow'], null),
+    't1'      => $node('Text', false, ['text' => 'أهلاً بك 👋', 'fontSize' => 28, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'binding' => '', 'maxLines' => 0], [], 'ROOT'),
+    't2'      => $node('Text', false, ['text' => 'سجّل دخولك للمتابعة', 'fontSize' => 15, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => '', 'maxLines' => 0], [], 'ROOT'),
+    'fEmail'  => $node('TextField', false, ['fieldId' => 'email', 'placeholder' => 'البريد الإلكتروني', 'live' => true, 'keyboard' => 'email', 'fillColor' => $C['field'], 'radius' => 16, 'flex' => 0], [], 'ROOT'),
+    'fPass'   => $node('TextField', false, ['fieldId' => 'password', 'placeholder' => 'كلمة المرور', 'live' => true, 'obscure' => true, 'fillColor' => $C['field'], 'radius' => 16, 'flex' => 0], [], 'ROOT'),
+    'recover' => $node('Button', false, array_merge($style, ['label' => 'نسيت كلمة المرور؟', 'background' => '#00000000', 'color' => $C['accentLt'], 'radius' => 0, 'flex' => 0, 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/forgot_password', 'mode' => 'push']]), [], 'ROOT'),
+    'btn'     => $node('Button', false, array_merge($style, ['label' => 'دخول', 'background' => $C['pink'], 'color' => $C['white'], 'radius' => 28, 'flex' => 0, 'onTapAction' => 'core.login', 'onTapParams' => ['emailField' => 'email', 'passwordField' => 'password', 'successRoute' => '/']]), [], 'ROOT'),
     'regRow'  => $node('Row', true, ['gap' => 6, 'align' => 'center'], ['regText', 'regBtn'], 'ROOT'),
-    'regText' => $node('Text', false, ['text' => 'ليس لديك حساب؟', 'fontSize' => 13, 'fontWeight' => 400, 'color' => '#64748B', 'align' => 'center', 'binding' => '', 'maxLines' => 0], [], 'regRow'),
-    'regBtn'  => $node('Button', false, array_merge(['label' => 'سجّل الآن', 'background' => '#00000000', 'color' => '#2563eb', 'radius' => 0, 'flex' => 0, 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/register', 'mode' => 'push']], ['onTapTarget' => '']), [], 'ROOT'),
+    'regText' => $node('Text', false, ['text' => 'ليس لديك حساب؟', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => '', 'maxLines' => 0], [], 'regRow'),
+    'regBtn'  => $node('Button', false, array_merge($style, ['label' => 'سجّل الآن', 'background' => '#00000000', 'color' => $C['accentLt'], 'radius' => 0, 'flex' => 0, 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/register', 'mode' => 'push']]), [], 'regRow'),
 ];
 
-// home — search bar + welcome (mirrors the light native home; client redesigns).
+// home — top row (title + notifications) + search + welcome. Native home rides
+// the LIGHT surface (not the purple gradient), so it stays light with dark text.
 $homeWidgets = [
-    'ROOT'   => $node('Container', true, array_merge(['background' => '#ffffff', 'padding' => 16, 'gap' => 12, 'align' => 'stretch', 'flex' => 0], $style), ['search', 'h1', 'h2'], null),
-    'search' => $node('TextField', false, ['fieldId' => 'home_search', 'placeholder' => 'بحث', 'live' => false, 'fillColor' => '#f1f5f9', 'radius' => 12, 'flex' => 0], [], 'ROOT'),
-    'h1'     => $node('Text', false, ['text' => 'الرئيسية', 'fontSize' => 22, 'fontWeight' => 700, 'color' => '#0F172A', 'align' => 'right', 'binding' => '', 'maxLines' => 0], [], 'ROOT'),
-    'h2'     => $node('Text', false, ['text' => 'أهلاً بك في تطبيقك', 'fontSize' => 15, 'fontWeight' => 400, 'color' => '#64748B', 'align' => 'right', 'binding' => '', 'maxLines' => 0], [], 'ROOT'),
+    'ROOT'    => $node('Container', true, array_merge($style, ['background' => $C['homeBg'], 'padding' => 16, 'gap' => 14, 'align' => 'stretch', 'flex' => 0]), ['topRow', 'search', 'welcome'], null),
+    'topRow'  => $node('Row', true, ['gap' => 8, 'align' => 'center'], ['appName', 'bell'], 'ROOT'),
+    'appName' => $node('Text', false, ['text' => 'الرئيسية', 'fontSize' => 20, 'fontWeight' => 700, 'color' => $C['homeText'], 'align' => 'right', 'binding' => '', 'maxLines' => 1, 'flex' => 1], [], 'topRow'),
+    'bell'    => $node('Icon', false, ['name' => 'notifications_none', 'size' => 24, 'color' => $C['homeMuted'], 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/notifications', 'mode' => 'push']], [], 'topRow'),
+    'search'  => $node('TextField', false, ['fieldId' => 'home_search', 'placeholder' => 'بحث', 'live' => false, 'fillColor' => $C['homeField'], 'radius' => 14, 'flex' => 0], [], 'ROOT'),
+    'welcome' => $node('Text', false, ['text' => 'أهلاً بك في تطبيقك', 'fontSize' => 15, 'fontWeight' => 400, 'color' => $C['homeMuted'], 'align' => 'right', 'binding' => '', 'maxLines' => 0], [], 'ROOT'),
 ];
 
-// profile — mirrors the real profile design (cover banner + circular avatar +
-// name/flag + UID + bio + country) bound to core.currentUser (Scope). Primitives
-// only; bespoke flourishes (gradient ring, level badges) stay in Flutter / are
-// refined in Studio.
+// profile — CENTERED identity block on the deep-purple screen: circular avatar
+// (tap → change), name + country flag, UID, bio, country — bound to
+// core.currentUser (Scope). Mirrors the native "Me" landing (no cover banner;
+// the gradient ring / level badges are bespoke Flutter and stay there).
 $profileWidgets = [
-    'ROOT'    => $node('Container', true, array_merge(['background' => '#ffffff', 'padding' => 16, 'gap' => 12, 'align' => 'stretch', 'flex' => 0], $style), ['scope'], null),
-    'scope'   => $node('Scope', true, ['source' => 'core.currentUser'], ['cover', 'row', 'bio', 'country'], 'ROOT'),
-    'cover'   => $node('Image', false, ['src' => '', 'height' => 160, 'fit' => 'cover', 'radius' => 12, 'binding' => 'core.currentUser.cover', 'visibleBinding' => 'core.currentUser.cover'], [], 'scope'),
-    'row'     => $node('Row', true, ['gap' => 12, 'align' => 'center'], ['avatar', 'idcol'], 'scope'),
-    'avatar'  => $node('Image', false, ['src' => '', 'width' => 88, 'height' => 88, 'fit' => 'cover', 'shape' => 'circle', 'radius' => 0, 'binding' => 'core.currentUser.avatar', 'onTapAction' => 'core.changeAvatar', 'onTapTarget' => '', 'onTapParams' => ['source' => 'gallery']], [], 'row'),
-    'idcol'   => $node('Container', true, ['gap' => 4, 'align' => 'stretch', 'flex' => 1], ['nameRow', 'uid'], 'row'),
-    'nameRow' => $node('Row', true, ['gap' => 6, 'align' => 'center'], ['name', 'flag'], 'idcol'),
-    'name'    => $node('Text', false, ['text' => 'الاسم', 'fontSize' => 18, 'fontWeight' => 600, 'color' => '#0F172A', 'align' => 'right', 'binding' => 'core.currentUser.name', 'maxLines' => 0], [], 'nameRow'),
-    'flag'    => $node('Image', false, ['src' => '', 'width' => 20, 'height' => 14, 'fit' => 'cover', 'radius' => 2, 'binding' => 'core.currentUser.flag', 'visibleBinding' => 'core.currentUser.flag'], [], 'nameRow'),
-    'uid'     => $node('Text', false, ['text' => '', 'fontSize' => 12, 'fontWeight' => 400, 'color' => '#94A3B8', 'align' => 'right', 'binding' => 'core.currentUser.uid', 'maxLines' => 0], [], 'idcol'),
-    'bio'     => $node('Text', false, ['text' => 'نبذة', 'fontSize' => 14, 'fontWeight' => 400, 'color' => '#334155', 'align' => 'right', 'binding' => 'core.currentUser.bio', 'maxLines' => 0], [], 'scope'),
-    'country' => $node('Text', false, ['text' => '', 'fontSize' => 13, 'fontWeight' => 400, 'color' => '#64748B', 'align' => 'right', 'binding' => 'core.currentUser.country', 'maxLines' => 0], [], 'scope'),
+    'ROOT'    => $node('Container', true, array_merge($style, ['background' => $C['bgProfile'], 'padding' => 20, 'gap' => 10, 'align' => 'center', 'flex' => 0]), ['scope'], null),
+    'scope'   => $node('Scope', true, ['source' => 'core.currentUser'], ['avatar', 'nameRow', 'uid', 'bio', 'country'], 'ROOT'),
+    'avatar'  => $node('Image', false, ['src' => '', 'width' => 96, 'height' => 96, 'fit' => 'cover', 'shape' => 'circle', 'radius' => 0, 'binding' => 'core.currentUser.avatar', 'onTapAction' => 'core.changeAvatar', 'onTapTarget' => '', 'onTapParams' => ['source' => 'gallery']], [], 'scope'),
+    'nameRow' => $node('Row', true, ['gap' => 6, 'align' => 'center'], ['name', 'flag'], 'scope'),
+    'name'    => $node('Text', false, ['text' => 'الاسم', 'fontSize' => 20, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'binding' => 'core.currentUser.name', 'maxLines' => 1], [], 'nameRow'),
+    'flag'    => $node('Image', false, ['src' => '', 'width' => 22, 'height' => 15, 'fit' => 'cover', 'radius' => 3, 'binding' => 'core.currentUser.flag', 'visibleBinding' => 'core.currentUser.flag'], [], 'nameRow'),
+    'uid'     => $node('Text', false, ['text' => '', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => 'core.currentUser.uid', 'maxLines' => 1], [], 'scope'),
+    'bio'     => $node('Text', false, ['text' => '', 'fontSize' => 14, 'fontWeight' => 400, 'color' => $C['bioText'], 'align' => 'center', 'binding' => 'core.currentUser.bio', 'visibleBinding' => 'core.currentUser.bio', 'maxLines' => 0], [], 'scope'),
+    'country' => $node('Text', false, ['text' => '', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => 'core.currentUser.country', 'visibleBinding' => 'core.currentUser.country', 'maxLines' => 0], [], 'scope'),
 ];
 
-// settings — item list (language / privacy / about / account) + logout, mirrors
-// the native settings rows. Each item is a tappable button with a core action.
-$settingsWidgets = [
-    'ROOT'      => $node('Container', true, array_merge(['background' => '#ffffff', 'padding' => 16, 'gap' => 8, 'align' => 'stretch', 'flex' => 0], $style), ['sTitle', 'iLang', 'iPrivacy', 'iAbout', 'iAccount', 'btnLogout'], null),
-    'sTitle'    => $node('Text', false, ['text' => 'الإعدادات', 'fontSize' => 20, 'fontWeight' => 700, 'color' => '#0F172A', 'align' => 'right', 'binding' => '', 'maxLines' => 0], [], 'ROOT'),
-    'iLang'     => $node('Button', false, array_merge(['label' => 'اللغة', 'background' => '#f1f5f9', 'color' => '#0F172A', 'radius' => 10, 'flex' => 0, 'onTapAction' => 'core.setLocale', 'onTapParams' => ['code' => 'ar']], ['onTapTarget' => '']), [], 'ROOT'),
-    'iPrivacy'  => $node('Button', false, array_merge(['label' => 'سياسة الخصوصية', 'background' => '#f1f5f9', 'color' => '#0F172A', 'radius' => 10, 'flex' => 0, 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/page/privacy', 'mode' => 'push']], ['onTapTarget' => '']), [], 'ROOT'),
-    'iAbout'    => $node('Button', false, array_merge(['label' => 'عن التطبيق', 'background' => '#f1f5f9', 'color' => '#0F172A', 'radius' => 10, 'flex' => 0, 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/page/about', 'mode' => 'push']], ['onTapTarget' => '']), [], 'ROOT'),
-    'iAccount'  => $node('Button', false, array_merge(['label' => 'الحساب', 'background' => '#f1f5f9', 'color' => '#0F172A', 'radius' => 10, 'flex' => 0, 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/profile', 'mode' => 'push']], ['onTapTarget' => '']), [], 'ROOT'),
-    'btnLogout' => $node('Button', false, array_merge(['label' => 'تسجيل الخروج', 'background' => '#ef4444', 'color' => '#ffffff', 'radius' => 12, 'flex' => 0, 'onTapAction' => 'core.logout', 'onTapParams' => ['confirm' => true]], ['onTapTarget' => '']), [], 'ROOT'),
-];
+// settings — purple cards, each a tappable row (tinted icon + label + chevron)
+// over the deep-purple screen, then a destructive logout card. Mirrors the
+// native settings list (lumiaCardGradient cards with per-row icon tints).
+$mkSettingsTile = function (string $id, string $icon, string $tint, string $label, string $tapAction, array $tapParams) use ($node, $style, $C): array {
+    return [
+        $id           => $node('Container', true, array_merge($style, ['background' => $C['card'], 'radius' => 14, 'padding' => 14, 'borderWidth' => 1, 'borderColor' => $C['cardBorder'], 'gap' => 0, 'align' => 'stretch', 'onTapAction' => $tapAction, 'onTapParams' => $tapParams]), [$id . 'Row'], 'ROOT'),
+        $id . 'Row'   => $node('Row', true, ['gap' => 12, 'align' => 'center'], [$id . 'Ic', $id . 'Lb', $id . 'Ch'], $id),
+        $id . 'Ic'    => $node('Icon', false, ['name' => $icon, 'size' => 20, 'color' => $tint], [], $id . 'Row'),
+        $id . 'Lb'    => $node('Text', false, ['text' => $label, 'fontSize' => 14, 'fontWeight' => 500, 'color' => $C['white'], 'align' => 'right', 'binding' => '', 'maxLines' => 1, 'flex' => 1], [], $id . 'Row'),
+        $id . 'Ch'    => $node('Icon', false, ['name' => 'chevron_left', 'size' => 18, 'color' => $C['muted']], [], $id . 'Row'),
+    ];
+};
+
+$settingsWidgets = array_merge(
+    [
+        'ROOT' => $node('Container', true, array_merge($style, ['background' => $C['bg'], 'padding' => 16, 'gap' => 12, 'align' => 'stretch', 'flex' => 0]), ['tLang', 'tPrivacy', 'tAbout', 'tAccount', 'btnLogout'], null),
+    ],
+    $mkSettingsTile('tLang', 'language', '#26C6DA', 'اللغة', 'core.setLocale', ['code' => 'ar']),
+    $mkSettingsTile('tPrivacy', 'privacy_tip', '#66BB6A', 'سياسة الخصوصية', 'core.navigate', ['route' => '/page/privacy', 'mode' => 'push']),
+    $mkSettingsTile('tAbout', 'info', '#7C4DFF', 'عن التطبيق', 'core.navigate', ['route' => '/page/about', 'mode' => 'push']),
+    $mkSettingsTile('tAccount', 'person', '#42A5F5', 'الحساب', 'core.navigate', ['route' => '/profile', 'mode' => 'push']),
+    [
+        'btnLogout' => $node('Button', false, array_merge($style, ['label' => 'تسجيل الخروج', 'background' => $C['card'], 'color' => $C['red'], 'radius' => 14, 'flex' => 0, 'onTapAction' => 'core.logout', 'onTapParams' => ['confirm' => true]]), [], 'ROOT'),
+    ]
+);
 
 return [
     'key'     => 'core',
@@ -244,7 +292,7 @@ return [
             'requiresAuth' => false,
             'showOnce'     => false,
             'opens'        => null,
-            'chrome'       => ['appBar' => ['enabled' => false, 'title' => 'تسجيل الدخول', 'bg' => '#ffffff', 'actions' => []]],
+            'chrome'       => ['appBar' => ['enabled' => false, 'title' => 'تسجيل الدخول', 'bg' => $C['bg'], 'actions' => []]],
             'widgets'      => $loginWidgets,
         ],
         [
@@ -259,7 +307,7 @@ return [
             'requiresAuth' => true,
             'showOnce'     => false,
             'opens'        => null,
-            'chrome'       => ['appBar' => ['enabled' => true, 'title' => 'الرئيسية', 'bg' => '#2563eb', 'actions' => []]],
+            'chrome'       => ['appBar' => ['enabled' => false, 'title' => 'الرئيسية', 'bg' => $C['homeBg'], 'actions' => []]],
             'widgets'      => $homeWidgets,
         ],
         [
@@ -274,7 +322,7 @@ return [
             'requiresAuth' => true,
             'showOnce'     => false,
             'opens'        => null,
-            'chrome'       => ['appBar' => ['enabled' => true, 'title' => 'الملف الشخصي', 'bg' => '#ffffff', 'actions' => []]],
+            'chrome'       => ['appBar' => ['enabled' => false, 'title' => 'الملف الشخصي', 'bg' => $C['bgProfile'], 'actions' => []]],
             'widgets'      => $profileWidgets,
         ],
         [
@@ -289,7 +337,7 @@ return [
             'requiresAuth' => true,
             'showOnce'     => false,
             'opens'        => null,
-            'chrome'       => ['appBar' => ['enabled' => true, 'title' => 'الإعدادات', 'bg' => '#ffffff', 'actions' => []]],
+            'chrome'       => ['appBar' => ['enabled' => true, 'title' => 'الإعدادات', 'bg' => $C['bg'], 'actions' => []]],
             'widgets'      => $settingsWidgets,
         ],
     ],
