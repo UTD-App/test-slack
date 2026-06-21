@@ -107,20 +107,31 @@ $homeWidgets = [
     'cardSub'   => $node('Text', false, ['text' => 'ابدأ استكشاف كل المميزات', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => '', 'maxLines' => 0], [], 'card'),
 ];
 
-// profile — "Me hub": centered identity header (bound to core.currentUser) +
-// pink Edit CTA + tappable menu cards. Stays full even when fields are empty.
+// profile — "Me hub": centered identity header (bound to core.currentUser) with
+// inline EDIT affordances — tap avatar OR the "تغيير الصورة" link to change the
+// photo; pencils beside the name and bio open the edit screen — then tappable
+// menu cards. Stays full + editable even when fields are empty (bio falls back
+// to a "أضف نبذة" placeholder in the data source).
 $profileWidgets = array_merge(
     [
-        'ROOT'     => $node('Container', true, array_merge($style, ['background' => $C['screen'], 'padding' => 20, 'gap' => 14, 'align' => 'stretch', 'flex' => 0]), ['scope', 'editBtn', 'mSettings', 'mContact', 'mAbout'], null),
-        'scope'    => $node('Scope', true, ['source' => 'core.currentUser'], ['header'], 'ROOT'),
-        'header'   => $node('Container', true, ['background' => '#00000000', 'padding' => 8, 'gap' => 8, 'align' => 'center', 'flex' => 0], ['avatar', 'nameRow', 'uid', 'bio'], 'scope'),
-        'avatar'   => $node('Image', false, ['src' => '', 'width' => 116, 'height' => 116, 'fit' => 'cover', 'shape' => 'circle', 'radius' => 0, 'binding' => 'core.currentUser.avatar', 'onTapAction' => 'core.changeAvatar', 'onTapTarget' => '', 'onTapParams' => ['source' => 'gallery']], [], 'header'),
-        'nameRow'  => $node('Row', true, ['gap' => 6, 'align' => 'center'], ['name', 'flag'], 'header'),
-        'name'     => $node('Text', false, ['text' => 'الملف الشخصي', 'fontSize' => 22, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'binding' => 'core.currentUser.name', 'maxLines' => 1], [], 'nameRow'),
-        'flag'     => $node('Image', false, ['src' => '', 'width' => 24, 'height' => 16, 'fit' => 'cover', 'radius' => 3, 'binding' => 'core.currentUser.flag', 'visibleBinding' => 'core.currentUser.flag'], [], 'nameRow'),
-        'uid'      => $node('Text', false, ['text' => '', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => 'core.currentUser.uid', 'visibleBinding' => 'core.currentUser.uid', 'maxLines' => 1], [], 'header'),
-        'bio'      => $node('Text', false, ['text' => '', 'fontSize' => 14, 'fontWeight' => 400, 'color' => $C['bioText'], 'align' => 'center', 'binding' => 'core.currentUser.bio', 'visibleBinding' => 'core.currentUser.bio', 'maxLines' => 0], [], 'header'),
-        'editBtn'  => $node('Button', false, array_merge($style, ['label' => 'تعديل الملف الشخصي', 'background' => $C['pink'], 'color' => $C['white'], 'radius' => 24, 'flex' => 0, 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/profile', 'mode' => 'push']]), [], 'ROOT'),
+        'ROOT'       => $node('Container', true, array_merge($style, ['background' => $C['screen'], 'padding' => 20, 'gap' => 14, 'align' => 'stretch', 'flex' => 0]), ['scope', 'mSettings', 'mContact', 'mAbout'], null),
+        'scope'      => $node('Scope', true, ['source' => 'core.currentUser'], ['header'], 'ROOT'),
+        'header'     => $node('Container', true, ['background' => '#00000000', 'padding' => 8, 'gap' => 8, 'align' => 'center', 'flex' => 0], ['avatar', 'photoLink', 'nameRow', 'uid', 'bioRow'], 'scope'),
+        'avatar'     => $node('Image', false, ['src' => '', 'width' => 116, 'height' => 116, 'fit' => 'cover', 'shape' => 'circle', 'radius' => 0, 'binding' => 'core.currentUser.avatar', 'onTapAction' => 'core.changeAvatar', 'onTapTarget' => '', 'onTapParams' => ['source' => 'gallery']], [], 'header'),
+        // "change photo" affordance (a camera badge on the avatar needs overlap,
+        // which primitives can't do — this link is the substitute).
+        'photoLink'  => $node('Container', true, array_merge($style, ['background' => '#00000000', 'padding' => 2, 'gap' => 0, 'align' => 'center', 'onTapAction' => 'core.changeAvatar', 'onTapParams' => ['source' => 'gallery']]), ['photoRow'], 'header'),
+        'photoRow'   => $node('Row', true, ['gap' => 4, 'align' => 'center'], ['camIcon', 'camText'], 'photoLink'),
+        'camIcon'    => $node('Icon', false, ['name' => 'photo_camera', 'size' => 15, 'color' => $C['accentLt']], [], 'photoRow'),
+        'camText'    => $node('Text', false, ['text' => 'تغيير الصورة', 'fontSize' => 13, 'fontWeight' => 500, 'color' => $C['accentLt'], 'align' => 'center', 'binding' => '', 'maxLines' => 1], [], 'photoRow'),
+        'nameRow'    => $node('Row', true, ['gap' => 6, 'align' => 'center'], ['name', 'flag', 'namePencil'], 'header'),
+        'name'       => $node('Text', false, ['text' => 'الملف الشخصي', 'fontSize' => 22, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'binding' => 'core.currentUser.name', 'maxLines' => 1], [], 'nameRow'),
+        'flag'       => $node('Image', false, ['src' => '', 'width' => 24, 'height' => 16, 'fit' => 'cover', 'radius' => 3, 'binding' => 'core.currentUser.flag', 'visibleBinding' => 'core.currentUser.flag'], [], 'nameRow'),
+        'namePencil' => $node('Icon', false, ['name' => 'edit', 'size' => 16, 'color' => $C['accentLt'], 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/profile', 'mode' => 'push']], [], 'nameRow'),
+        'uid'        => $node('Text', false, ['text' => '', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => 'core.currentUser.uid', 'visibleBinding' => 'core.currentUser.uid', 'maxLines' => 1], [], 'header'),
+        'bioRow'     => $node('Row', true, ['gap' => 6, 'align' => 'center'], ['bio', 'bioPencil'], 'header'),
+        'bio'        => $node('Text', false, ['text' => '', 'fontSize' => 14, 'fontWeight' => 400, 'color' => $C['bioText'], 'align' => 'center', 'binding' => 'core.currentUser.bio', 'maxLines' => 0], [], 'bioRow'),
+        'bioPencil'  => $node('Icon', false, ['name' => 'edit', 'size' => 14, 'color' => $C['accentLt'], 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/profile', 'mode' => 'push']], [], 'bioRow'),
     ],
     $mkTile('mSettings', 'settings', '#42A5F5', 'الإعدادات', 'core.navigate', ['route' => '/settings', 'mode' => 'push']),
     $mkTile('mContact', 'support_agent', '#26C6DA', 'تواصل معنا', 'core.navigate', ['route' => '/contact-us', 'mode' => 'push']),
@@ -281,7 +292,7 @@ return [
             'name'         => 'login',
             'label'        => 'تسجيل الدخول',
             'icon'         => '🔑',
-            'version'      => '1.3.0',
+            'version'      => '1.4.0',
             'nav'          => false,
             'navIcon'      => 'person',
             'order'        => 1,
@@ -296,7 +307,7 @@ return [
             'name'         => 'home',
             'label'        => 'الرئيسية',
             'icon'         => '🏠',
-            'version'      => '1.3.0',
+            'version'      => '1.4.0',
             'nav'          => true,
             'navIcon'      => 'home',
             'order'        => 2,
@@ -311,7 +322,7 @@ return [
             'name'         => 'audio',
             'label'        => 'الغرف الصوتية',
             'icon'         => '🎧',
-            'version'      => '1.3.0',
+            'version'      => '1.4.0',
             'nav'          => true,
             'navIcon'      => 'mic',
             'order'        => 20,
@@ -326,7 +337,7 @@ return [
             'name'         => 'profile',
             'label'        => 'الملف الشخصي',
             'icon'         => '👤',
-            'version'      => '1.3.0',
+            'version'      => '1.4.0',
             'nav'          => true,
             'navIcon'      => 'person',
             'order'        => 30,
@@ -341,7 +352,7 @@ return [
             'name'         => 'settings',
             'label'        => 'الإعدادات',
             'icon'         => '⚙️',
-            'version'      => '1.3.0',
+            'version'      => '1.4.0',
             'nav'          => true,
             'navIcon'      => 'settings',
             'order'        => 40,

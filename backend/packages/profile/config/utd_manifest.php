@@ -14,11 +14,13 @@
  * mapping. UTD Studio discovers this via GET /api/utd/manifest and seeds the
  * Craft tree below into the app's Stac screens on Sync.
  *
- * DESIGN: a "Me hub" — centered identity header (avatar/name/flag/uid/bio bound
- * to the live profile) + a pink Edit CTA + tappable menu cards — so the screen
- * stays full and intentional even when the profile fields are empty. Renders
- * inside the AppShell, so its ROOT is TRANSPARENT (the purple shell Scaffold
- * fills the screen). Gradient ring / level badges are bespoke Flutter flourishes.
+ * DESIGN: a "Me hub" — centered identity header (avatar/name/flag/uid/bio) with
+ * inline EDIT affordances (tap avatar / "تغيير الصورة" to change photo; pencils
+ * by name + bio open the edit screen) + tappable menu cards. Renders inside the
+ * AppShell, so its ROOT is TRANSPARENT (the purple shell Scaffold fills the
+ * screen). bio falls back to a "أضف نبذة" placeholder in the data source so the
+ * bio + pencil row stays meaningful. Gradient ring / camera badge overlapping
+ * the avatar / level badges are bespoke Flutter flourishes primitives can't do.
  */
 
 // ── Craft node helper (same shape the Studio design scripts emit) ──────────
@@ -43,7 +45,7 @@ $C = [
     'screen'     => '#00000000', // transparent → inherit the AppShell's purple Scaffold
     'card'       => '#5B4399',
     'cardBorder' => '#8E72D2',
-    'pink'       => '#EC4899',
+    'accentLt'   => '#D9A0FF', // links / edit pencils
     'white'      => '#FFFFFF',
     'muted'      => '#CDBFEE',
     'bioText'    => '#E3D8FB',
@@ -60,19 +62,25 @@ $mkTile = function (string $id, string $icon, string $tint, string $label, array
     ];
 };
 
-// user_profile — "Me hub" bound to profile.user.
+// user_profile — "Me hub" bound to profile.user, with inline edit affordances.
 $profileWidgets = array_merge(
     [
-        'ROOT'    => $node('Container', true, ['background' => $C['screen'], 'padding' => 20, 'gap' => 14, 'align' => 'stretch', 'flex' => 0], ['scope', 'editBtn', 'mSettings', 'mContact', 'mAbout'], null),
-        'scope'   => $node('Scope', true, ['source' => 'profile.user'], ['header'], 'ROOT'),
-        'header'  => $node('Container', true, ['background' => '#00000000', 'padding' => 8, 'gap' => 8, 'align' => 'center', 'flex' => 0], ['avatar', 'nameRow', 'uid', 'bio'], 'scope'),
-        'avatar'  => $node('Image', false, ['src' => '', 'binding' => 'profile.user.avatar', 'width' => 116, 'height' => 116, 'fit' => 'cover', 'shape' => 'circle', 'radius' => 0], [], 'header'),
-        'nameRow' => $node('Row', true, ['gap' => 6, 'align' => 'center'], ['name', 'flag'], 'header'),
-        'name'    => $node('Text', false, ['text' => 'الملف الشخصي', 'binding' => 'profile.user.name', 'fontSize' => 22, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'maxLines' => 1], [], 'nameRow'),
-        'flag'    => $node('Image', false, ['src' => '', 'binding' => 'profile.user.flag', 'visibleBinding' => 'profile.user.flag', 'width' => 24, 'height' => 16, 'fit' => 'cover', 'radius' => 3], [], 'nameRow'),
-        'uid'     => $node('Text', false, ['text' => '', 'binding' => 'profile.user.uid', 'visibleBinding' => 'profile.user.uid', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'maxLines' => 1], [], 'header'),
-        'bio'     => $node('Text', false, ['text' => '', 'binding' => 'profile.user.bio', 'visibleBinding' => 'profile.user.bio', 'fontSize' => 14, 'fontWeight' => 400, 'color' => $C['bioText'], 'align' => 'center', 'maxLines' => 0], [], 'header'),
-        'editBtn' => $node('Button', false, ['label' => 'تعديل الملف الشخصي', 'background' => $C['pink'], 'color' => $C['white'], 'radius' => 24, 'flex' => 0, 'onTapAction' => 'core.navigate', 'onTapTarget' => '', 'onTapParams' => ['route' => '/profile', 'mode' => 'push']], [], 'ROOT'),
+        'ROOT'       => $node('Container', true, ['background' => $C['screen'], 'padding' => 20, 'gap' => 14, 'align' => 'stretch', 'flex' => 0], ['scope', 'mSettings', 'mContact', 'mAbout'], null),
+        'scope'      => $node('Scope', true, ['source' => 'profile.user'], ['header'], 'ROOT'),
+        'header'     => $node('Container', true, ['background' => '#00000000', 'padding' => 8, 'gap' => 8, 'align' => 'center', 'flex' => 0], ['avatar', 'photoLink', 'nameRow', 'uid', 'bioRow'], 'scope'),
+        'avatar'     => $node('Image', false, ['src' => '', 'binding' => 'profile.user.avatar', 'width' => 116, 'height' => 116, 'fit' => 'cover', 'shape' => 'circle', 'radius' => 0, 'onTapAction' => 'core.changeAvatar', 'onTapTarget' => '', 'onTapParams' => ['source' => 'gallery']], [], 'header'),
+        'photoLink'  => $node('Container', true, ['background' => '#00000000', 'padding' => 2, 'gap' => 0, 'align' => 'center', 'onTapAction' => 'core.changeAvatar', 'onTapTarget' => '', 'onTapParams' => ['source' => 'gallery']], ['photoRow'], 'header'),
+        'photoRow'   => $node('Row', true, ['gap' => 4, 'align' => 'center'], ['camIcon', 'camText'], 'photoLink'),
+        'camIcon'    => $node('Icon', false, ['name' => 'photo_camera', 'size' => 15, 'color' => $C['accentLt']], [], 'photoRow'),
+        'camText'    => $node('Text', false, ['text' => 'تغيير الصورة', 'fontSize' => 13, 'fontWeight' => 500, 'color' => $C['accentLt'], 'align' => 'center', 'binding' => '', 'maxLines' => 1], [], 'photoRow'),
+        'nameRow'    => $node('Row', true, ['gap' => 6, 'align' => 'center'], ['name', 'flag', 'namePencil'], 'header'),
+        'name'       => $node('Text', false, ['text' => 'الملف الشخصي', 'binding' => 'profile.user.name', 'fontSize' => 22, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'maxLines' => 1], [], 'nameRow'),
+        'flag'       => $node('Image', false, ['src' => '', 'binding' => 'profile.user.flag', 'visibleBinding' => 'profile.user.flag', 'width' => 24, 'height' => 16, 'fit' => 'cover', 'radius' => 3], [], 'nameRow'),
+        'namePencil' => $node('Icon', false, ['name' => 'edit', 'size' => 16, 'color' => $C['accentLt'], 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/profile', 'mode' => 'push']], [], 'nameRow'),
+        'uid'        => $node('Text', false, ['text' => '', 'binding' => 'profile.user.uid', 'visibleBinding' => 'profile.user.uid', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'maxLines' => 1], [], 'header'),
+        'bioRow'     => $node('Row', true, ['gap' => 6, 'align' => 'center'], ['bio', 'bioPencil'], 'header'),
+        'bio'        => $node('Text', false, ['text' => '', 'binding' => 'profile.user.bio', 'fontSize' => 14, 'fontWeight' => 400, 'color' => $C['bioText'], 'align' => 'center', 'maxLines' => 0], [], 'bioRow'),
+        'bioPencil'  => $node('Icon', false, ['name' => 'edit', 'size' => 14, 'color' => $C['accentLt'], 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/profile', 'mode' => 'push']], [], 'bioRow'),
     ],
     $mkTile('mSettings', 'settings', '#42A5F5', 'الإعدادات', ['route' => '/settings', 'mode' => 'push']),
     $mkTile('mContact', 'support_agent', '#26C6DA', 'تواصل معنا', ['route' => '/contact-us', 'mode' => 'push']),
@@ -132,7 +140,7 @@ return [
             'name'         => 'user_profile',
             'label'        => 'الملف الشخصي',
             'icon'         => '👤',
-            'version'      => '1.3.0',
+            'version'      => '1.4.0',
             'nav'          => false,
             'navIcon'      => 'person',
             'order'        => 31,
