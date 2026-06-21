@@ -38,6 +38,8 @@ class RoomController extends Controller
         $sortBy = $request->input('sort_by', 'visitors');
         if ($sortBy === 'newest') {
             $query->orderByDesc('created_at');
+        } elseif ($sortBy === 'oldest') {
+            $query->orderBy('created_at');
         } else {
             $query->orderByDesc('visitors_count')->orderByDesc('created_at');
         }
