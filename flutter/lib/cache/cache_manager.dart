@@ -84,6 +84,22 @@ class CacheManager {
     return Map<String, dynamic>.from(raw as Map);
   }
 
+  // ── App config (branding) ──────────────────────────────────────────────────
+  // Cached app-level config (app_logo / app_name / …) fetched from /configs, so
+  // the server-driven splash can resolve `core.app` bindings offline on warm
+  // launches. Set by the base/web admin; the Studio only reads the attributes.
+
+  static const String _appConfigKey = 'app_config';
+
+  static Future<void> saveAppConfig(Map<String, dynamic> json) =>
+      _box.put(_appConfigKey, json);
+
+  static Map<String, dynamic>? getAppConfig() {
+    final raw = _box.get(_appConfigKey);
+    if (raw == null) return null;
+    return Map<String, dynamic>.from(raw as Map);
+  }
+
   // ── Generic flags ─────────────────────────────────────────────────────────
   // Small bool flags for packages that gate UI on a startup capability check
   // (e.g. Gifts caches whether a Wallet package is installed) so a transient

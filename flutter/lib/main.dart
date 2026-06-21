@@ -1,34 +1,24 @@
-import 'package:audio_room/audio_room.dart';
 import 'package:authentication/authentication.dart';
 import 'package:profile/profile.dart';
-// TEMP: audio_room excluded from the build — the package is committed in an
-// incomplete state (≈14 source files never committed: AdminBloc/BlacklistBloc,
-// RTM/plugin mixins, seat-mode/edit-text/password sheets, mini-overlay, PiP
-// view) so it does not compile. Re-enable the import + AudioRoomFeature() below
-// once those files are restored by the package owner.
-// import 'package:audio_room/audio_room.dart';
+import 'package:audio_room/audio_room.dart';
 import 'package:moment/moment.dart';
 import 'package:flutter/material.dart';
-import 'package:stac/stac.dart' hide StacService;
+import 'package:google_fonts/google_fonts.dart';
 import 'package:utd_app/cache/cache_manager.dart';
 import 'package:utd_app/config/theme_notifier.dart';
 import 'package:utd_app/services/firebase_service.dart';
 import 'package:utd_app/services/notification_service.dart';
-import 'package:utd_app/shared/services/stac_service.dart';
 import 'package:utd_app/shared/services/translation_service.dart';
-import 'package:utd_app/shared/stac/actions/core_actions.dart';
-import 'package:utd_app/shared/stac/core_stac_sources.dart';
-import 'package:utd_app/shared/stac/parsers/stac_list_parser.dart';
-import 'package:utd_app/shared/stac/parsers/stac_object_parser.dart';
-import 'package:utd_app/shared/stac/parsers/utd_text_field_parser.dart';
-import 'package:utd_app/shared/stac/parsers/utd_sized_parser.dart';
+import 'package:utd_app/shared/stac/parsers/self_profile_card_parser.dart';
 
 import 'addons/app_feature.dart';
 import 'app.dart';
 import 'config/app_config.dart';
 import 'config/app_layout_service.dart';
+import 'features/notifications/notifications_feature.dart';
 import 'localization/localization.dart';
 import 'network/network.dart';
+import 'studio_glue/studio_bootstrap.dart';
 import 'shared/media/app_cache_manager.dart';
 
 final _restartNotifier = ValueNotifier<int>(0);
@@ -37,26 +27,44 @@ void restartApp() {
   _restartNotifier.value++;
 }
 
+// عائلات الخطوط المنسّقة (Google Fonts) — لازم تطابق FONTS في الـ Studio.
+// Stac بيمرّر textStyle.fontFamily كاسم نصّي خام لـ TextStyle، وده مايشغّلش
+// google_fonts لوحده — فلازم نطلب كل عائلة/وزن مرة عشان يتسجّل تحت اسمه العادي
+// (مثلاً 'Cairo') ويُحَلّ الاسم النصّي وقت الرندر. fire-and-forget، يتكاش على القرص.
+const _kStudioFontFamilies = [
+  'Cairo', 'Tajawal', 'Almarai', 'IBM Plex Sans Arabic', 'Changa',
+  'Inter', 'Poppins', 'Roboto', 'Montserrat', 'Lora',
+];
+
+void _preloadStudioFonts() {
+  const weights = [
+    FontWeight.w400, FontWeight.w500, FontWeight.w600, FontWeight.w700,
+  ];
+  GoogleFonts.pendingFonts([
+    for (final family in _kStudioFontFamilies)
+      for (final w in weights) GoogleFonts.getFont(family, fontWeight: w),
+  ]);
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
 
   await FirebaseService.initialize();
   await CacheManager.init();
   AppCacheManager.instance.init();
 
   // Build features once up-front so packages can contribute custom Stac
-  // widget/action parsers to Stac.initialize. (Parsers are stateless and
-  // resolve their deps from context at parse time, so building here — before
-  // feature.initialize() — is safe.) The widget tree builds its own feature
-  // instances below for providers/routes.
+  // widget/action parsers. (Parsers are stateless and resolve their deps from
+  // context at parse time, so building here — before feature.initialize() — is
+  // safe.) The widget tree builds its own feature instances below.
   List<AppFeature> buildFeatures() {
     // Add your purchased packages here — see README for instructions
     return [
       AuthFeature(),
+      NotificationsFeature(),
       ProfileFeature(),
       MomentFeature(),
-       AudioRoomFeature(), // TEMP: see note on the audio_room import above.
+      AudioRoomFeature(),
     ];
   }
 
@@ -65,23 +73,6 @@ void main() async {
   final featureActionParsers = [
     for (final f in parserFeatures) ...f.getStacActionParsers(),
   ];
-
-  // Initialize Stac server-driven UI + UTD custom parsers (data-bound list +
-  // single-object) + package-contributed parsers, and the core actions.
-  await Stac.initialize(
-    parsers: [
-      const StacUtdListParser(),
-      const StacUtdObjectParser(),
-      const StacUtdTextFieldParser(),
-      const StacUtdSizedParser(),
-      ...featureParsers,
-    ],
-    actionParsers: [...coreStacActionParsers, ...featureActionParsers],
-  );
-  await StacService.instance.init();
-
-  // Register the base app's own core data sources (e.g. core.currentUser).
-  registerCoreStacSources();
 
   // Initialize Translation service
   await TranslationService.instance.init();
@@ -120,14 +111,30 @@ void main() async {
     ),
   );
 
+  // Boot UTD Studio (server-driven UI) now that the API client is ready:
+  // UtdStudio.init runs Stac.initialize → screen-store init → background sync,
+  // then registers the base's core data sources (core.currentUser + core.app).
+  // featureParsers includes the test-specific SelfProfileCardParser. Must
+  // precede AppLayoutService (reads a server-driven document) and runApp.
+  await bootstrapStudio(
+    themeNotifier: themeNotifier,
+    localeNotifier: localeNotifier,
+    featureParsers: [const SelfProfileCardParser(), ...featureParsers],
+    featureActionParsers: featureActionParsers,
+  );
+
   // Apply the server-delivered app layout (flow + bottom nav) BEFORE runApp so
   // the router guard, boot resolver and home shell all read the customer flow.
   // Cache-backed + short-timeout → no startup hang; falls back to AppFlow.fallback.
   await AppLayoutService.instance.applyIfPresent();
 
-  // Sync Stac screens and translations in background after API is ready
-  StacService.instance.syncAll();
+  // Sync translations in background (Stac screens already sync inside
+  // bootstrapStudio → UtdStudio.init).
   TranslationService.instance.sync(localeNotifier.locale.languageCode);
+
+  // Preload curated Google Fonts so server-driven screens that set a custom
+  // textStyle.fontFamily render the real font (non-blocking; cached on disk).
+  _preloadStudioFonts();
 
   runApp(
     ValueListenableBuilder<int>(

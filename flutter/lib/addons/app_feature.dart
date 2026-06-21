@@ -1,6 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'package:provider/single_child_widget.dart';
-import 'package:stac/stac.dart' show StacParser, StacActionParser;
+import 'package:utd_studio_sdk/utd_studio_sdk.dart' show StacParser, StacActionParser;
 import 'role_registry.dart';
 import 'settings_registry.dart';
 import 'ui_contribution.dart';

@@ -132,6 +132,8 @@ Route::prefix(config('app.api_prefix'))->group(function () {
         function () {
             Route::get('my-data', [AuthController::class, 'myData']);
             Route::post('profile/update', [AuthController::class, 'updateProfile']);
+            // Dedicated avatar upload for the server-driven core.changeAvatar action.
+            Route::post('profile/avatar', [AuthController::class, 'updateAvatar']);
 
             // Batch online-status lookup for a list of users.
             Route::post('users/online-status', [PresenceController::class, 'onlineStatus']);

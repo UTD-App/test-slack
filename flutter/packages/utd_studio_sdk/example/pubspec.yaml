@@ -1,0 +1,32 @@
+name: utd_studio_sdk_example
+description: "Minimal example wiring UtdStudio.init with stub adapters."
+publish_to: "none"
+version: 0.1.0
+
+environment:
+  sdk: ^3.9.2
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  utd_studio_sdk:
+    path: ../
+
+dev_dependencies:
+  flutter_lints: ^5.0.0
+
+# The vendored stac overrides must also live here (entrypoint) if this example
+# is ever run on its own. See ../UPSTREAM.md.
+dependency_overrides:
+  stac:
+    path: ../vendor/stac
+  stac_core:
+    path: ../vendor/stac_core
+  stac_framework:
+    path: ../vendor/stac_framework
+  stac_logger:
+    path: ../vendor/stac_logger
+
+flutter:
+  uses-material-design: true

@@ -1,4 +1,9 @@
 vendor/
+# Exception: the vendored stac fork bundled inside the Flutter SDUI SDK must be
+# tracked (it replaces the pub.dev `stac` dependency). The bare `vendor/` rule
+# above is for Composer's backend/vendor + node vendors.
+!flutter/packages/utd_studio_sdk/vendor
+!flutter/packages/utd_studio_sdk/vendor/**
 node_modules/
 .env
 .env.backup

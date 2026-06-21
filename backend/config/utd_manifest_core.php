@@ -202,6 +202,20 @@ return [
                 ['key' => 'uid',     'label' => 'المعرّف',    'type' => 'string'],
             ],
         ],
+        // App-level branding (logo / name / tagline) for server-driven screens
+        // such as the splash. Resolved on the client by `registerCoreAppSource()`
+        // (flutter/lib/studio_glue/sources/core_stac_sources.dart). The VALUES are
+        // owned by the base/web admin (Config: app_logo / app_name / app_tagline);
+        // the Studio only reads these attributes for its binding picker.
+        [
+            'key'      => 'core.app',
+            'label'    => 'بيانات التطبيق',
+            'provides' => [
+                ['key' => 'logo',    'label' => 'الشعار',     'type' => 'image_url'],
+                ['key' => 'name',    'label' => 'اسم التطبيق', 'type' => 'string'],
+                ['key' => 'tagline', 'label' => 'الشعار النصّي', 'type' => 'string'],
+            ],
+        ],
     ],
 
     'action_elements' => [
@@ -284,6 +298,31 @@ return [
                 ['key' => 'route', 'label' => 'الشاشة', 'type' => 'route'],
                 ['key' => 'mode',  'label' => 'النمط (go/push/replace)', 'type' => 'string'],
             ],
+        ],
+        // الرجوع للخلف (يدعمه محرّك الـ SDK: core.back).
+        [
+            'key' => 'back', 'label' => 'رجوع',
+            'produces' => 'core.back', 'default_shape' => 'button', 'screen' => '*',
+            'params' => [
+                ['key' => 'fallback', 'label' => 'لو مفيش رجوع روح لـ', 'type' => 'route'],
+            ],
+        ],
+        // ── dialogs (any screen) — يدعمها محرّك الـ SDK ──
+        // فتح شاشة UTD Studio كـ dialog/sheet/full فوق الشاشة الحالية (مش navigation).
+        [
+            'key' => 'open_dialog', 'label' => 'فتح نافذة (Dialog)',
+            'produces' => 'core.openDialog', 'default_shape' => 'button', 'screen' => '*',
+            'params' => [
+                ['key' => 'screen',            'label' => 'الشاشة',                  'type' => 'route'],
+                ['key' => 'style',             'label' => 'النمط (center/sheet/full)', 'type' => 'string'],
+                ['key' => 'height',            'label' => 'الارتفاع % (للـ sheet)',    'type' => 'int'],
+                ['key' => 'expandable',        'label' => 'قابلة للتمدد (sheet)',      'type' => 'bool'],
+                ['key' => 'barrierDismissible', 'label' => 'تُغلق باللمس بالخارج',      'type' => 'bool'],
+            ],
+        ],
+        [
+            'key' => 'close_dialog', 'label' => 'إغلاق النافذة',
+            'produces' => 'core.closeDialog', 'default_shape' => 'button', 'screen' => '*',
         ],
     ],
 

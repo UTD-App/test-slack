@@ -30,8 +30,10 @@ class GenerateIntegrationDocs extends Command
         // نماذج ستايل/قيم متداخلة (مش widgets لكنها أنواع Stac صحيحة):
         'textStyle', 'edgeInsets', 'boxDecoration', 'gradient', 'linearGradient',
         'border', 'borderRadius', 'boxShadow',
-        // UTD custom parsers (see flutter/lib/shared/stac):
-        'utdList',
+        // UTD custom parsers (utd_studio_sdk: lib/src/parsers + the base's
+        // test-specific core.selfProfile):
+        'utdList', 'utdObject', 'utdScroll', 'utdTabs', 'utdTextField',
+        'utdSized', 'utdLoading', 'core.selfProfile',
     ];
 
     public function handle(): int

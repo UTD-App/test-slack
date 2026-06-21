@@ -1,0 +1,43 @@
+name: utd_studio_sdk
+description: "UTD Studio — Server-Driven UI runtime for Flutter. A vendored fork of the stac SDUI framework bundled with the UTD parsers, actions, data-binding registry, injectable ports, and a single UtdStudio.init() facade."
+publish_to: "none"
+version: 0.1.0
+
+environment:
+  sdk: ^3.9.2
+  flutter: ">=1.17.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # The vendored SDUI engine. Resolved to vendor/stac via dependency_overrides.
+  stac: any
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+# ---------------------------------------------------------------------------
+# Vendored fork: the 4 stac packages live UNMODIFIED under vendor/. These
+# overrides redirect their published coordinates to the local copies so the
+# whole build graph compiles against our vendored source, never pub.dev.
+#
+# ⚠️  pub honours `dependency_overrides` ONLY from the ENTRYPOINT pubspec.
+#     This exact block MUST be duplicated in every APP that depends on
+#     utd_studio_sdk (utd_app, chatPackageV2) — otherwise pub fetches the
+#     real stac from pub.dev and you end up with TWO copies (parser-type
+#     identity breaks, registration silently no-ops). See UPSTREAM.md.
+# ---------------------------------------------------------------------------
+dependency_overrides:
+  stac:
+    path: vendor/stac
+  stac_core:
+    path: vendor/stac_core
+  stac_framework:
+    path: vendor/stac_framework
+  stac_logger:
+    path: vendor/stac_logger
+
+flutter:
+  uses-material-design: true

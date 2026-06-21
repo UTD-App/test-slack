@@ -1,0 +1,18 @@
+UTD Studio SDK — License  (DRAFT / PLACEHOLDER — confirm before distribution)
+============================================================================
+
+Copyright (c) 2026 UTD Company.
+
+This file covers ONLY the original source code authored by UTD Company,
+located under lib/ (the UTD Studio SDUI runtime: data-binding registry,
+parsers, generic actions, injectable interfaces, the screen store, and the
+UtdStudio facade).
+
+>>> The licensing TERMS for this original code are TO BE CONFIRMED by UTD
+    (e.g. MIT for a freely-installable package, or a commercial/proprietary
+    license for a paid product). Replace this placeholder accordingly.
+
+This file does NOT cover the third-party code vendored under vendor/, which
+remains licensed under its own upstream MIT terms. Each vendor/<package>/
+directory keeps its original LICENSE file, and the aggregated attributions
+are reproduced in NOTICE.

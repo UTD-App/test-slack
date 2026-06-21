@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import '../addons/feature_registry.dart';
 import '../addons/ui_contribution.dart';
 import '../addons/ui_slot.dart';
+import '../addons/widget_registry.dart';
 import '../config/app_layout.dart';
 import '../config/nav_icons.dart';
-import '../shared/stac/stac_dynamic_screen.dart';
+import 'package:utd_studio_sdk/utd_studio_sdk.dart';
+import 'self_profile_fallback.dart';
 
 /// The server-driven home shell: builds the bottom navigation and tab bodies
 /// from the [BottomNavConfig] delivered in the `app_layout` document, replacing
@@ -46,9 +48,15 @@ class _AppShellState extends State<AppShell> {
 
     return Scaffold(
       backgroundColor: style.bg,
-      body: IndexedStack(
-        index: _selected,
-        children: [for (final t in tabs) _tabBody(t)],
+      // SafeArea (top only) so server-driven tab bodies don't render under the
+      // status bar — their Stac scaffolds have no AppBar, so without this the
+      // first widget (e.g. the profile avatar) jams into the status bar.
+      body: SafeArea(
+        bottom: false,
+        child: IndexedStack(
+          index: _selected,
+          children: [for (final t in tabs) _tabBody(t)],
+        ),
       ),
       bottomNavigationBar: BottomAppBar(
         color: style.bg,
@@ -105,6 +113,24 @@ class _AppShellState extends State<AppShell> {
       if (builder != null) return Builder(builder: builder);
       return Center(
         child: Text('تبويب native غير متاح: ${tab.featureId ?? tab.screen}'),
+      );
+    }
+    // The self-profile screen is too rich for Stac primitives (gradient avatar
+    // ring, camera badge, gender/level badges, feature grid, avatar→full-profile,
+    // copy-ID). Render the package's NATIVE landing via the WidgetRegistry seam —
+    // identical to the standalone app, same /users/{id}/profile data + behaviours
+    // — falling back to the base placeholder when the Profile package is absent.
+    if (tab.screen == 'user_profile' || tab.screen == 'profile') {
+      // Server-driven (Studio composes the screen and places the rich
+      // `profile.card` widget — see ProfileCardParser), with the package's native
+      // landing as a FALLBACK until the screen is published / if offline.
+      return StacDynamicScreen(
+        screenName: tab.screen,
+        fallback: Builder(
+          builder: (context) =>
+              widget.registry.widgetRegistry.build(kSelfProfileWidget, context) ??
+                  const SelfProfileFallback(),
+        ),
       );
     }
     return StacDynamicScreen(screenName: tab.screen);

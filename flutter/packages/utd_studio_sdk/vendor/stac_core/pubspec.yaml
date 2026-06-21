@@ -1,0 +1,24 @@
+name: stac_core
+description: A pure Dart package that provides the core functionalities and common interfaces for the Stac server-driven UI framework.
+version: 1.5.0
+repository: https://github.com/StacDev/stac
+homepage: https://stac.dev/
+
+environment:
+  sdk: ^3.8.1
+
+topics:
+  - ui
+  - widget
+  - server-driven-ui
+  - dynamic-widgets
+
+dependencies:
+  json_annotation: ^4.9.0
+  stac_logger: ^1.1.0
+
+dev_dependencies:
+  test: ^1.24.0
+  lints: ^6.0.0
+  build_runner: ^2.5.4
+  json_serializable: ^6.9.5

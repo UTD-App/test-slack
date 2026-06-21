@@ -1,0 +1,8 @@
+# Lint ONLY our original code (lib/). Never lint the vendored upstream fork.
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - vendor/**          # unmodified upstream stac fork — not ours to lint
+    - example/**
+    - "**/*.g.dart"

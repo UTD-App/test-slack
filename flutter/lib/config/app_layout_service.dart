@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
-import 'package:utd_app/shared/services/stac_service.dart';
+import 'package:utd_studio_sdk/utd_studio_sdk.dart';
 
 import 'app_flow.dart';
 import 'app_layout.dart';
@@ -31,13 +31,13 @@ class AppLayoutService {
   Future<void> applyIfPresent() async {
     Map<String, dynamic>? json;
     try {
-      json = await StacService.instance
+      json = await StudioRuntime.instance.screenSource
           .getScreen(documentName)
           .timeout(_startupTimeout);
     } on TimeoutException {
-      json = StacService.instance.getScreenCached(documentName);
+      json = StudioRuntime.instance.screenSource.getScreenCached(documentName);
     } catch (_) {
-      json = StacService.instance.getScreenCached(documentName);
+      json = StudioRuntime.instance.screenSource.getScreenCached(documentName);
     }
 
     final layout = AppLayout.fromJson(json);

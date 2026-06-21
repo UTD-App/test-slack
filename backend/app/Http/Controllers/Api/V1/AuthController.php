@@ -211,6 +211,34 @@ class AuthController extends Controller
         }
     }
 
+    /**
+     * Dedicated avatar upload for the server-driven `core.changeAvatar` action
+     * (POST /profile/avatar, field `image`). Stores through the Media seam
+     * (provider-agnostic, same as updateProfile) and returns the RESOLVED
+     * absolute URL in `data.url`, which the Flutter action writes straight into
+     * the user cache so the photo updates in place. Validates via the app's 422
+     * convention (a plain $request->validate would 500 on api/* routes).
+     */
+    public function updateAvatar(Request $request)
+    {
+        $validator = \Illuminate\Support\Facades\Validator::make(
+            ['image' => $request->file('image')],
+            ['image' => 'required|image|mimes:jpeg,jpg,png,webp|max:5120'],
+        );
+        if ($validator->fails()) {
+            throw new \App\Exceptions\CValidationException($validator->errors()->first());
+        }
+
+        $user = $request->user();
+        $path = \App\Facades\Media::upload($request->file('image'), 'avatars')->path;
+        $user->profile()->updateOrCreate(['user_id' => $user->id], ['avatar' => $path]);
+
+        return Common::apiResponse(true, 'Avatar updated', [
+            'url'  => \App\Facades\Media::url($path),
+            'user' => app(UserDataService::class)->aggregateUserData($user->fresh()),
+        ]);
+    }
+
     public function getSettings(Request $request)
     {
         $settings = app(\App\Services\UserSettingService::class)->getAll($request->user());

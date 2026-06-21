@@ -24,7 +24,11 @@ dependencies:
   loading_animation_widget: ^1.3.0
   flutter_svg: ^2.0.9
   flutter_svga: ^0.0.13
-  stac: ^1.5.0
+  # UTD Studio — the SDUI runtime (vendored fork of stac). Replaces the direct
+  # `stac` dependency; import only `package:utd_studio_sdk/utd_studio_sdk.dart`.
+  utd_studio_sdk:
+    path: packages/utd_studio_sdk
+  google_fonts: ^6.2.1
   flutter_cache_manager: ^3.3.0
   path_provider: ^2.1.0
   lottie: ^3.3.3
@@ -61,7 +65,17 @@ dependency_overrides:
   connectivity_plus: ^6.0.0
   flutter_bloc: ^8.1.6
   bloc: ^8.1.4
-  
+  # Vendored stac fork lives inside utd_studio_sdk. pub honours overrides ONLY
+  # from the entrypoint (this) pubspec — see packages/utd_studio_sdk/UPSTREAM.md.
+  stac:
+    path: packages/utd_studio_sdk/vendor/stac
+  stac_core:
+    path: packages/utd_studio_sdk/vendor/stac_core
+  stac_framework:
+    path: packages/utd_studio_sdk/vendor/stac_framework
+  stac_logger:
+    path: packages/utd_studio_sdk/vendor/stac_logger
+
 flutter:
   generate: true
   uses-material-design: true
