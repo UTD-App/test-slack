@@ -119,7 +119,7 @@ return [
             'name'         => 'user_profile',
             'label'        => 'الملف الشخصي',
             'icon'         => '👤',
-            'version'      => '1.0.0',
+            'version'      => '1.1.0',
             'nav'          => false,
             'navIcon'      => 'person',
             'order'        => 31,
