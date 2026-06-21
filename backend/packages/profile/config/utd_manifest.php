@@ -40,11 +40,13 @@ $profileWidgets = [
     // Cover banner — hidden when the user has no cover image.
     'cover'   => $node('Image', false, ['src' => '', 'binding' => 'profile.user.cover', 'visibleBinding' => 'profile.user.cover', 'height' => 160, 'fit' => 'cover', 'radius' => 12], [], 'scope'),
 
-    // Header row: circular avatar + (name / uid) column.
+    // Header row: circular avatar + (name+flag / uid) column.
     'row'     => $node('Row', true, ['gap' => 12, 'align' => 'center'], ['avatar', 'idcol'], 'scope'),
     'avatar'  => $node('Image', false, ['src' => '', 'binding' => 'profile.user.avatar', 'width' => 88, 'height' => 88, 'fit' => 'cover', 'shape' => 'circle', 'radius' => 0], [], 'row'),
-    'idcol'   => $node('Container', true, ['flex' => 1, 'gap' => 4, 'align' => 'flex-start'], ['name', 'uid'], 'row'),
-    'name'    => $node('Text', false, ['text' => 'الاسم', 'binding' => 'profile.user.name', 'fontSize' => 18, 'fontWeight' => 600, 'color' => '#0F172A', 'align' => 'right', 'maxLines' => 0], [], 'idcol'),
+    'idcol'   => $node('Container', true, ['flex' => 1, 'gap' => 4, 'align' => 'flex-start'], ['nameRow', 'uid'], 'row'),
+    'nameRow' => $node('Row', true, ['gap' => 6, 'align' => 'center'], ['name', 'flag'], 'idcol'),
+    'name'    => $node('Text', false, ['text' => 'الاسم', 'binding' => 'profile.user.name', 'fontSize' => 18, 'fontWeight' => 600, 'color' => '#0F172A', 'align' => 'right', 'maxLines' => 0], [], 'nameRow'),
+    'flag'    => $node('Image', false, ['src' => '', 'binding' => 'profile.user.flag', 'visibleBinding' => 'profile.user.flag', 'width' => 20, 'height' => 14, 'fit' => 'cover', 'radius' => 2], [], 'nameRow'),
     'uid'     => $node('Text', false, ['text' => '', 'binding' => 'profile.user.uid', 'fontSize' => 12, 'fontWeight' => 400, 'color' => '#94A3B8', 'align' => 'right', 'maxLines' => 0], [], 'idcol'),
 
     'bio'     => $node('Text', false, ['text' => 'نبذة', 'binding' => 'profile.user.bio', 'fontSize' => 14, 'fontWeight' => 400, 'color' => '#334155', 'align' => 'right', 'maxLines' => 0], [], 'scope'),
@@ -62,9 +64,10 @@ return [
         ['key' => 'name',    'label' => 'الاسم',    'type' => 'string',    'screen' => 'user_profile'],
         ['key' => 'bio',     'label' => 'نبذة',     'type' => 'string',    'screen' => 'user_profile'],
         ['key' => 'avatar',  'label' => 'الصورة',   'type' => 'image_url', 'screen' => 'user_profile'],
-        ['key' => 'cover',   'label' => 'الغلاف',   'type' => 'image_url', 'screen' => 'user_profile'],
-        ['key' => 'country', 'label' => 'الدولة',   'type' => 'string',    'screen' => 'user_profile'],
-        ['key' => 'uid',     'label' => 'المعرّف',  'type' => 'string',    'screen' => 'user_profile'],
+        ['key' => 'cover',   'label' => 'الغلاف',     'type' => 'image_url', 'screen' => 'user_profile'],
+        ['key' => 'country', 'label' => 'الدولة',     'type' => 'string',    'screen' => 'user_profile'],
+        ['key' => 'flag',    'label' => 'علم الدولة', 'type' => 'image_url', 'screen' => 'user_profile'],
+        ['key' => 'uid',     'label' => 'المعرّف',    'type' => 'string',    'screen' => 'user_profile'],
     ],
 
     // Single-object source: the signed-in user's profile. A `Scope` (utdObject)
@@ -78,9 +81,10 @@ return [
                 ['key' => 'name',    'label' => 'الاسم',   'type' => 'string'],
                 ['key' => 'bio',     'label' => 'نبذة',    'type' => 'string'],
                 ['key' => 'avatar',  'label' => 'الصورة',  'type' => 'image_url'],
-                ['key' => 'cover',   'label' => 'الغلاف',  'type' => 'image_url'],
-                ['key' => 'country', 'label' => 'الدولة',  'type' => 'string'],
-                ['key' => 'uid',     'label' => 'المعرّف', 'type' => 'string'],
+                ['key' => 'cover',   'label' => 'الغلاف',     'type' => 'image_url'],
+                ['key' => 'country', 'label' => 'الدولة',     'type' => 'string'],
+                ['key' => 'flag',    'label' => 'علم الدولة', 'type' => 'image_url'],
+                ['key' => 'uid',     'label' => 'المعرّف',    'type' => 'string'],
             ],
         ],
     ],

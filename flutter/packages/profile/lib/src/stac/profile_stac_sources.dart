@@ -38,6 +38,7 @@ void registerProfileStacSources() {
       'avatar': p.avatar ?? '',
       'cover': p.covers.isNotEmpty ? p.covers.first : '',
       'country': p.countryName ?? '',
+      'flag': p.countryFlag ?? '',
       'uid': p.uuid ?? '',
     };
   });

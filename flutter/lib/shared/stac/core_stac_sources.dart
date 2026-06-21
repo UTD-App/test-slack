@@ -30,11 +30,25 @@ void registerCoreStacSources() {
     }
 
     final user = CacheManager.getUserData() ?? const <String, dynamic>{};
+    final covers = user['covers'];
     return {
       'name': user['name'] ?? '',
       'email': user['email'] ?? '',
       'bio': user['bio'] ?? '',
       'avatar': user['avatar'] ?? user['image'] ?? '',
+      // Extra fields so the profile screen can mirror the real design. Resolved
+      // defensively from whatever /my-data returns; missing → '' (the manifest
+      // hides them via visibleBinding). Keys MUST match the core manifest
+      // object_source `core.currentUser`.
+      'cover': (covers is List && covers.isNotEmpty)
+          ? covers.first.toString()
+          : (user['cover']?.toString() ?? ''),
+      'country': user['country_name'] ?? user['country'] ?? '',
+      'flag': user['country_flag'] ?? user['flag'] ?? '',
+      'uid': user['uuid']?.toString() ??
+          user['uid']?.toString() ??
+          user['id']?.toString() ??
+          '',
     };
   });
 }

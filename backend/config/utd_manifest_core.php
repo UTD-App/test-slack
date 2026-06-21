@@ -53,36 +53,57 @@ $style = [
     'onTapAction' => 'none', 'onTapTarget' => '', 'onTapParams' => [],
 ];
 
-// login — email/password + core.login submit (successRoute → home '/')
+// login — email/password + core.login submit (successRoute → home '/') +
+// recover-password and register links (mirrors the real login screen).
 $loginWidgets = [
-    'ROOT'   => $node('Container', true, array_merge(['background' => '#ffffff', 'padding' => 24, 'gap' => 16, 'align' => 'stretch', 'flex' => 0], $style), ['t1', 't2', 'fEmail', 'fPass', 'btn'], null),
-    't1'     => $node('Text', false, ['text' => 'أهلاً بك 👋', 'fontSize' => 24, 'fontWeight' => 600, 'color' => '#0F172A', 'align' => 'right', 'binding' => '', 'maxLines' => 0], [], 'ROOT'),
-    't2'     => $node('Text', false, ['text' => 'سجّل دخولك للمتابعة', 'fontSize' => 16, 'fontWeight' => 400, 'color' => '#64748B', 'align' => 'right', 'binding' => '', 'maxLines' => 0], [], 'ROOT'),
-    'fEmail' => $node('TextField', false, ['fieldId' => 'email', 'placeholder' => 'البريد الإلكتروني', 'live' => true, 'keyboard' => 'email', 'fillColor' => '#f1f5f9', 'radius' => 10, 'flex' => 0], [], 'ROOT'),
-    'fPass'  => $node('TextField', false, ['fieldId' => 'password', 'placeholder' => 'كلمة المرور', 'live' => true, 'obscure' => true, 'fillColor' => '#f1f5f9', 'radius' => 10, 'flex' => 0], [], 'ROOT'),
-    'btn'    => $node('Button', false, array_merge(['label' => 'دخول', 'background' => '#2563eb', 'color' => '#ffffff', 'radius' => 12, 'flex' => 0, 'onTapAction' => 'core.login', 'onTapParams' => ['emailField' => 'email', 'passwordField' => 'password', 'successRoute' => '/']], ['onTapTarget' => '']), [], 'ROOT'),
+    'ROOT'    => $node('Container', true, array_merge(['background' => '#ffffff', 'padding' => 24, 'gap' => 16, 'align' => 'stretch', 'flex' => 0], $style), ['t1', 't2', 'fEmail', 'fPass', 'btn', 'recover', 'regRow'], null),
+    't1'      => $node('Text', false, ['text' => 'أهلاً بك 👋', 'fontSize' => 24, 'fontWeight' => 600, 'color' => '#0F172A', 'align' => 'right', 'binding' => '', 'maxLines' => 0], [], 'ROOT'),
+    't2'      => $node('Text', false, ['text' => 'سجّل دخولك للمتابعة', 'fontSize' => 16, 'fontWeight' => 400, 'color' => '#64748B', 'align' => 'right', 'binding' => '', 'maxLines' => 0], [], 'ROOT'),
+    'fEmail'  => $node('TextField', false, ['fieldId' => 'email', 'placeholder' => 'البريد الإلكتروني', 'live' => true, 'keyboard' => 'email', 'fillColor' => '#f1f5f9', 'radius' => 10, 'flex' => 0], [], 'ROOT'),
+    'fPass'   => $node('TextField', false, ['fieldId' => 'password', 'placeholder' => 'كلمة المرور', 'live' => true, 'obscure' => true, 'fillColor' => '#f1f5f9', 'radius' => 10, 'flex' => 0], [], 'ROOT'),
+    'btn'     => $node('Button', false, array_merge(['label' => 'دخول', 'background' => '#2563eb', 'color' => '#ffffff', 'radius' => 12, 'flex' => 0, 'onTapAction' => 'core.login', 'onTapParams' => ['emailField' => 'email', 'passwordField' => 'password', 'successRoute' => '/']], ['onTapTarget' => '']), [], 'ROOT'),
+    'recover' => $node('Button', false, array_merge(['label' => 'نسيت كلمة المرور؟', 'background' => '#00000000', 'color' => '#2563eb', 'radius' => 0, 'flex' => 0, 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/forgot_password', 'mode' => 'push']], ['onTapTarget' => '']), [], 'ROOT'),
+    'regRow'  => $node('Row', true, ['gap' => 6, 'align' => 'center'], ['regText', 'regBtn'], 'ROOT'),
+    'regText' => $node('Text', false, ['text' => 'ليس لديك حساب؟', 'fontSize' => 13, 'fontWeight' => 400, 'color' => '#64748B', 'align' => 'center', 'binding' => '', 'maxLines' => 0], [], 'regRow'),
+    'regBtn'  => $node('Button', false, array_merge(['label' => 'سجّل الآن', 'background' => '#00000000', 'color' => '#2563eb', 'radius' => 0, 'flex' => 0, 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/register', 'mode' => 'push']], ['onTapTarget' => '']), [], 'ROOT'),
 ];
 
-// home — simple landing (client redesigns freely)
+// home — search bar + welcome (mirrors the light native home; client redesigns).
 $homeWidgets = [
-    'ROOT' => $node('Container', true, array_merge(['background' => '#ffffff', 'padding' => 24, 'gap' => 12, 'align' => 'center', 'flex' => 0], $style), ['h1', 'h2'], null),
-    'h1'   => $node('Text', false, ['text' => 'الرئيسية', 'fontSize' => 24, 'fontWeight' => 700, 'color' => '#0F172A', 'align' => 'center', 'binding' => '', 'maxLines' => 0], [], 'ROOT'),
-    'h2'   => $node('Text', false, ['text' => 'أهلاً بك في تطبيقك', 'fontSize' => 15, 'fontWeight' => 400, 'color' => '#64748B', 'align' => 'center', 'binding' => '', 'maxLines' => 0], [], 'ROOT'),
+    'ROOT'   => $node('Container', true, array_merge(['background' => '#ffffff', 'padding' => 16, 'gap' => 12, 'align' => 'stretch', 'flex' => 0], $style), ['search', 'h1', 'h2'], null),
+    'search' => $node('TextField', false, ['fieldId' => 'home_search', 'placeholder' => 'بحث', 'live' => false, 'fillColor' => '#f1f5f9', 'radius' => 12, 'flex' => 0], [], 'ROOT'),
+    'h1'     => $node('Text', false, ['text' => 'الرئيسية', 'fontSize' => 22, 'fontWeight' => 700, 'color' => '#0F172A', 'align' => 'right', 'binding' => '', 'maxLines' => 0], [], 'ROOT'),
+    'h2'     => $node('Text', false, ['text' => 'أهلاً بك في تطبيقك', 'fontSize' => 15, 'fontWeight' => 400, 'color' => '#64748B', 'align' => 'right', 'binding' => '', 'maxLines' => 0], [], 'ROOT'),
 ];
 
-// profile — avatar + name + email bound to core.currentUser (Scope)
+// profile — mirrors the real profile design (cover banner + circular avatar +
+// name/flag + UID + bio + country) bound to core.currentUser (Scope). Primitives
+// only; bespoke flourishes (gradient ring, level badges) stay in Flutter / are
+// refined in Studio.
 $profileWidgets = [
-    'ROOT'   => $node('Container', true, array_merge(['background' => '#ffffff', 'padding' => 24, 'gap' => 16, 'align' => 'center', 'flex' => 0], $style), ['scope'], null),
-    'scope'  => $node('Scope', true, ['source' => 'core.currentUser'], ['avatar', 'name', 'email'], 'ROOT'),
-    'avatar' => $node('Image', false, ['src' => '', 'width' => 120, 'height' => 120, 'fit' => 'cover', 'shape' => 'circle', 'radius' => 0, 'binding' => 'core.currentUser.avatar', 'onTapAction' => 'core.changeAvatar', 'onTapTarget' => '', 'onTapParams' => ['source' => 'gallery']], [], 'scope'),
-    'name'   => $node('Text', false, ['text' => 'الاسم', 'fontSize' => 20, 'fontWeight' => 600, 'color' => '#0F172A', 'align' => 'center', 'binding' => 'core.currentUser.name', 'maxLines' => 0], [], 'scope'),
-    'email'  => $node('Text', false, ['text' => 'name@email.com', 'fontSize' => 14, 'fontWeight' => 400, 'color' => '#64748B', 'align' => 'center', 'binding' => 'core.currentUser.email', 'maxLines' => 0], [], 'scope'),
+    'ROOT'    => $node('Container', true, array_merge(['background' => '#ffffff', 'padding' => 16, 'gap' => 12, 'align' => 'stretch', 'flex' => 0], $style), ['scope'], null),
+    'scope'   => $node('Scope', true, ['source' => 'core.currentUser'], ['cover', 'row', 'bio', 'country'], 'ROOT'),
+    'cover'   => $node('Image', false, ['src' => '', 'height' => 160, 'fit' => 'cover', 'radius' => 12, 'binding' => 'core.currentUser.cover', 'visibleBinding' => 'core.currentUser.cover'], [], 'scope'),
+    'row'     => $node('Row', true, ['gap' => 12, 'align' => 'center'], ['avatar', 'idcol'], 'scope'),
+    'avatar'  => $node('Image', false, ['src' => '', 'width' => 88, 'height' => 88, 'fit' => 'cover', 'shape' => 'circle', 'radius' => 0, 'binding' => 'core.currentUser.avatar', 'onTapAction' => 'core.changeAvatar', 'onTapTarget' => '', 'onTapParams' => ['source' => 'gallery']], [], 'row'),
+    'idcol'   => $node('Container', true, ['gap' => 4, 'align' => 'stretch', 'flex' => 1], ['nameRow', 'uid'], 'row'),
+    'nameRow' => $node('Row', true, ['gap' => 6, 'align' => 'center'], ['name', 'flag'], 'idcol'),
+    'name'    => $node('Text', false, ['text' => 'الاسم', 'fontSize' => 18, 'fontWeight' => 600, 'color' => '#0F172A', 'align' => 'right', 'binding' => 'core.currentUser.name', 'maxLines' => 0], [], 'nameRow'),
+    'flag'    => $node('Image', false, ['src' => '', 'width' => 20, 'height' => 14, 'fit' => 'cover', 'radius' => 2, 'binding' => 'core.currentUser.flag', 'visibleBinding' => 'core.currentUser.flag'], [], 'nameRow'),
+    'uid'     => $node('Text', false, ['text' => '', 'fontSize' => 12, 'fontWeight' => 400, 'color' => '#94A3B8', 'align' => 'right', 'binding' => 'core.currentUser.uid', 'maxLines' => 0], [], 'idcol'),
+    'bio'     => $node('Text', false, ['text' => 'نبذة', 'fontSize' => 14, 'fontWeight' => 400, 'color' => '#334155', 'align' => 'right', 'binding' => 'core.currentUser.bio', 'maxLines' => 0], [], 'scope'),
+    'country' => $node('Text', false, ['text' => '', 'fontSize' => 13, 'fontWeight' => 400, 'color' => '#64748B', 'align' => 'right', 'binding' => 'core.currentUser.country', 'maxLines' => 0], [], 'scope'),
 ];
 
-// settings — logout (core.logout)
+// settings — item list (language / privacy / about / account) + logout, mirrors
+// the native settings rows. Each item is a tappable button with a core action.
 $settingsWidgets = [
-    'ROOT'      => $node('Container', true, array_merge(['background' => '#ffffff', 'padding' => 16, 'gap' => 12, 'align' => 'stretch', 'flex' => 0], $style), ['sTitle', 'btnLogout'], null),
+    'ROOT'      => $node('Container', true, array_merge(['background' => '#ffffff', 'padding' => 16, 'gap' => 8, 'align' => 'stretch', 'flex' => 0], $style), ['sTitle', 'iLang', 'iPrivacy', 'iAbout', 'iAccount', 'btnLogout'], null),
     'sTitle'    => $node('Text', false, ['text' => 'الإعدادات', 'fontSize' => 20, 'fontWeight' => 700, 'color' => '#0F172A', 'align' => 'right', 'binding' => '', 'maxLines' => 0], [], 'ROOT'),
+    'iLang'     => $node('Button', false, array_merge(['label' => 'اللغة', 'background' => '#f1f5f9', 'color' => '#0F172A', 'radius' => 10, 'flex' => 0, 'onTapAction' => 'core.setLocale', 'onTapParams' => ['code' => 'ar']], ['onTapTarget' => '']), [], 'ROOT'),
+    'iPrivacy'  => $node('Button', false, array_merge(['label' => 'سياسة الخصوصية', 'background' => '#f1f5f9', 'color' => '#0F172A', 'radius' => 10, 'flex' => 0, 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/page/privacy', 'mode' => 'push']], ['onTapTarget' => '']), [], 'ROOT'),
+    'iAbout'    => $node('Button', false, array_merge(['label' => 'عن التطبيق', 'background' => '#f1f5f9', 'color' => '#0F172A', 'radius' => 10, 'flex' => 0, 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/page/about', 'mode' => 'push']], ['onTapTarget' => '']), [], 'ROOT'),
+    'iAccount'  => $node('Button', false, array_merge(['label' => 'الحساب', 'background' => '#f1f5f9', 'color' => '#0F172A', 'radius' => 10, 'flex' => 0, 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/profile', 'mode' => 'push']], ['onTapTarget' => '']), [], 'ROOT'),
     'btnLogout' => $node('Button', false, array_merge(['label' => 'تسجيل الخروج', 'background' => '#ef4444', 'color' => '#ffffff', 'radius' => 12, 'flex' => 0, 'onTapAction' => 'core.logout', 'onTapParams' => ['confirm' => true]], ['onTapTarget' => '']), [], 'ROOT'),
 ];
 
@@ -94,10 +115,14 @@ return [
 
     // Display bindings (profile screen ⇄ current user)
     'elements' => [
-        ['key' => 'name',   'label' => 'الاسم',        'type' => 'string',    'screen' => 'profile'],
-        ['key' => 'email',  'label' => 'البريد',       'type' => 'string',    'screen' => 'profile'],
-        ['key' => 'bio',    'label' => 'نبذة',         'type' => 'string',    'screen' => 'profile'],
-        ['key' => 'avatar', 'label' => 'الصورة',       'type' => 'image_url', 'screen' => 'profile'],
+        ['key' => 'name',    'label' => 'الاسم',         'type' => 'string',    'screen' => 'profile'],
+        ['key' => 'email',   'label' => 'البريد',        'type' => 'string',    'screen' => 'profile'],
+        ['key' => 'bio',     'label' => 'نبذة',          'type' => 'string',    'screen' => 'profile'],
+        ['key' => 'avatar',  'label' => 'الصورة',        'type' => 'image_url', 'screen' => 'profile'],
+        ['key' => 'cover',   'label' => 'الغلاف',        'type' => 'image_url', 'screen' => 'profile'],
+        ['key' => 'country', 'label' => 'الدولة',        'type' => 'string',    'screen' => 'profile'],
+        ['key' => 'flag',    'label' => 'علم الدولة',    'type' => 'image_url', 'screen' => 'profile'],
+        ['key' => 'uid',     'label' => 'المعرّف',       'type' => 'string',    'screen' => 'profile'],
     ],
 
     // Single-object source: the signed-in user. A `Scope` (utdObject) bound to
@@ -109,10 +134,14 @@ return [
             'key'      => 'core.currentUser',
             'label'    => 'المستخدم الحالي',
             'provides' => [
-                ['key' => 'name',   'label' => 'الاسم',  'type' => 'string'],
-                ['key' => 'email',  'label' => 'البريد', 'type' => 'string'],
-                ['key' => 'bio',    'label' => 'نبذة',   'type' => 'string'],
-                ['key' => 'avatar', 'label' => 'الصورة', 'type' => 'image_url'],
+                ['key' => 'name',    'label' => 'الاسم',      'type' => 'string'],
+                ['key' => 'email',   'label' => 'البريد',     'type' => 'string'],
+                ['key' => 'bio',     'label' => 'نبذة',       'type' => 'string'],
+                ['key' => 'avatar',  'label' => 'الصورة',     'type' => 'image_url'],
+                ['key' => 'cover',   'label' => 'الغلاف',     'type' => 'image_url'],
+                ['key' => 'country', 'label' => 'الدولة',     'type' => 'string'],
+                ['key' => 'flag',    'label' => 'علم الدولة', 'type' => 'image_url'],
+                ['key' => 'uid',     'label' => 'المعرّف',    'type' => 'string'],
             ],
         ],
     ],

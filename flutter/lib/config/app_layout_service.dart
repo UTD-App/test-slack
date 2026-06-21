@@ -20,7 +20,10 @@ class AppLayoutService {
   AppLayoutService._();
 
   static const String documentName = 'app_layout';
-  static const Duration _startupTimeout = Duration(seconds: 4);
+  // 9s (not 4s): on a fresh install the cold-cache fetch of app_layout from a
+  // cold server often exceeds 4s, so the app fell back to native nav on first
+  // launch and only showed the server-driven shell on the 2nd launch.
+  static const Duration _startupTimeout = Duration(seconds: 9);
 
   /// The active bottom-nav config (null → fall back to the native nav).
   final ValueNotifier<BottomNavConfig?> navConfig = ValueNotifier(null);
