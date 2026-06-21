@@ -14,6 +14,7 @@ class Room extends Model
         'room_rule', 'room_background', 'room_pass', 'room_type',
         'room_class', 'type', 'mode', 'room_status', 'is_afk',
         'is_comment_closed', 'free_mic', 'max_admin',
+        'empty_seat_icon', 'locked_seat_icon',
     ];
 
     protected $casts = [

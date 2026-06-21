@@ -91,6 +91,8 @@ class RoomController extends Controller
             'room_type' => 'nullable|integer|exists:room_categories,id',
             'room_class' => 'nullable|integer|exists:room_categories,id',
             'room_pass' => 'nullable|string|max:20',
+            'empty_seat_icon' => 'nullable',
+            'locked_seat_icon' => 'nullable',
         ]);
 
         $existing = Room::where('user_id', Auth::id())->where('type', 'audio')->first();
@@ -114,6 +116,8 @@ class RoomController extends Controller
             'room_pass' => $request->room_pass,
             'mode' => $request->mode,
             'free_mic' => $request->boolean('free_mic', false),
+            'empty_seat_icon' => $this->processSeatIcon($request, 'empty_seat_icon'),
+            'locked_seat_icon' => $this->processSeatIcon($request, 'locked_seat_icon'),
         ]);
 
         $room->load(['owner.profile', 'owner.country', 'categoryType']);
@@ -150,6 +154,8 @@ class RoomController extends Controller
             'room_class' => 'nullable|integer|exists:room_categories,id',
             'is_comment_closed' => 'nullable|boolean',
             'free_mic' => 'nullable|boolean',
+            'empty_seat_icon' => 'nullable',
+            'locked_seat_icon' => 'nullable',
         ]);
 
         $data = $request->only([
@@ -163,6 +169,13 @@ class RoomController extends Controller
                 Storage::delete($room->room_cover);
             }
             $data['room_cover'] = $request->file('room_cover')->store('rooms/covers');
+        }
+
+        foreach (['empty_seat_icon', 'locked_seat_icon'] as $field) {
+            $icon = $this->processSeatIcon($request, $field, $room->$field);
+            if ($icon !== null || $request->has($field)) {
+                $data[$field] = $icon;
+            }
         }
 
         $room->update(array_filter($data, fn ($v) => $v !== null));
@@ -542,6 +555,37 @@ class RoomController extends Controller
             'owner_avatar' => ($owner?->profile?->avatar) ? $storage->url($owner->profile->avatar) : null,
             'owner_country_flag' => $owner?->country?->flag ?? null,
             'created_at' => $room->created_at,
+            'empty_seat_icon' => $this->formatSeatIconUrl($room->empty_seat_icon, $storage),
+            'locked_seat_icon' => $this->formatSeatIconUrl($room->locked_seat_icon, $storage),
         ];
+    }
+
+    private function formatSeatIconUrl(?string $value, StorageConfigService $storage): ?string
+    {
+        if ($value === null) return null;
+        if (str_starts_with($value, 'preset:')) return $value;
+        return $storage->url($value);
+    }
+
+    private function processSeatIcon(Request $request, string $field, ?string $oldValue = null): ?string
+    {
+        if ($request->hasFile($field)) {
+            if ($oldValue && !str_starts_with($oldValue, 'preset:')) {
+                Storage::delete($oldValue);
+            }
+            return $request->file($field)->store('rooms/seats');
+        }
+
+        $stringValue = $request->input($field);
+        if ($stringValue !== null) {
+            if (str_starts_with($stringValue, 'preset:')) {
+                if ($oldValue && !str_starts_with($oldValue, 'preset:')) {
+                    Storage::delete($oldValue);
+                }
+                return $stringValue;
+            }
+        }
+
+        return null;
     }
 }
