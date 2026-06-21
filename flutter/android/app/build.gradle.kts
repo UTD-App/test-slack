@@ -11,6 +11,8 @@ android {
     ndkVersion = "29.0.13846066"
 
     compileOptions {
+        // Required by flutter_local_notifications (uses a java.time backport).
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -38,6 +40,12 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+}
+
+dependencies {
+    // Backport of java.time etc. required when isCoreLibraryDesugaringEnabled is on
+    // (pulled in by flutter_local_notifications).
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }
 
 flutter {

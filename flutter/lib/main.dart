@@ -1,6 +1,11 @@
 import 'package:authentication/authentication.dart';
 import 'package:profile/profile.dart';
-import 'package:audio_room/audio_room.dart';
+// TEMP: audio_room excluded from the build — the package is committed in an
+// incomplete state (≈14 source files never committed: AdminBloc/BlacklistBloc,
+// RTM/plugin mixins, seat-mode/edit-text/password sheets, mini-overlay, PiP
+// view) so it does not compile. Re-enable the import + AudioRoomFeature() below
+// once those files are restored by the package owner.
+// import 'package:audio_room/audio_room.dart';
 import 'package:moment/moment.dart';
 import 'package:flutter/material.dart';
 import 'package:stac/stac.dart' hide StacService;
@@ -50,7 +55,7 @@ void main() async {
       AuthFeature(),
       ProfileFeature(),
       MomentFeature(),
-      AudioRoomFeature(),
+      // AudioRoomFeature(), // TEMP: see note on the audio_room import above.
     ];
   }
 

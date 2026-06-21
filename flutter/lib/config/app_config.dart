@@ -22,6 +22,11 @@ class AppConfig {
   /// Privacy policy URL
   final String privacyPolicyUrl;
 
+  /// Internal build number, set at compile time via
+  /// `--dart-define=APP_BUILD_NUMBER=<n>`; used by the launch gate. Bump it on
+  /// every release.
+  final int appBuildNumber;
+
   /// Whether to use device locale as initial locale
   final bool useDeviceLocale;
 
@@ -45,6 +50,7 @@ class AppConfig {
     required this.privacyPolicyUrl,
     required this.environment,
     this.utdStreamAppId = '',
+    this.appBuildNumber = 1,
     this.useDeviceLocale = true,
     this.enableDebugFeatures = false,
     this.apiTimeout = const Duration(seconds: 30),
@@ -60,6 +66,7 @@ class AppConfig {
       domainUrl: 'http://192.168.1.5:8000',
       privacyPolicyUrl: 'http://192.168.1.5:8000/api/privacy-policy',
       utdStreamAppId: '3019100698',
+      appBuildNumber: int.fromEnvironment('APP_BUILD_NUMBER', defaultValue: 1),
       environment: Environment.development,
       enableDebugFeatures: true,
     );
@@ -75,6 +82,7 @@ class AppConfig {
       domainUrl: 'https://project-x.utdsoftware.com',
       privacyPolicyUrl: 'https://project-x.utdsoftware.com/api/privacy-policy',
       utdStreamAppId: '4602085317',
+      appBuildNumber: int.fromEnvironment('APP_BUILD_NUMBER', defaultValue: 1),
       environment: Environment.production,
       enableDebugFeatures: false,
     );
@@ -106,6 +114,7 @@ class AppConfig {
     String? storageBucketUrl,
     String? domainUrl,
     String? privacyPolicyUrl,
+    int? appBuildNumber,
     bool? useDeviceLocale,
     Environment? environment,
     bool? enableDebugFeatures,
@@ -119,6 +128,7 @@ class AppConfig {
       storageBucketUrl: storageBucketUrl ?? this.storageBucketUrl,
       domainUrl: domainUrl ?? this.domainUrl,
       privacyPolicyUrl: privacyPolicyUrl ?? this.privacyPolicyUrl,
+      appBuildNumber: appBuildNumber ?? this.appBuildNumber,
       useDeviceLocale: useDeviceLocale ?? this.useDeviceLocale,
       environment: environment ?? this.environment,
       enableDebugFeatures: enableDebugFeatures ?? this.enableDebugFeatures,
