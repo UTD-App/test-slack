@@ -16,7 +16,12 @@ class AppLocalizationsDelegate extends LocalizationsDelegate<AppTranslations> {
 
   @override
   bool isSupported(Locale locale) {
-    return translations.containsKey(locale.languageCode);
+    // Support ANY locale: AppTranslations.translate() has its own fallback chain
+    // (current locale → English → raw key), so a language the admin added (fr,
+    // hi, …) never crashes even before its strings are loaded. Returning false
+    // here would leave AppTranslations absent from the tree → every context.tr()
+    // would throw and the whole screen breaks.
+    return true;
   }
 
   @override

@@ -1,0 +1,22 @@
+{
+    "name": "utd/profile",
+    "description": "UTD Profile package — view a user's profile (aggregated user data + contributed sections).",
+    "type": "library",
+    "license": "proprietary",
+    "version": "1.0.0",
+    "require": {
+        "php": "^8.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Utd\\Profile\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Utd\\Profile\\Providers\\ProfileServiceProvider"
+            ]
+        }
+    }
+}

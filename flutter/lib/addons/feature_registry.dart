@@ -140,30 +140,43 @@ class FeatureRegistry extends ChangeNotifier {
 
     for (final feature in features) {
       final contributions = feature.getUiContributions();
-      if (contributions.length <= 1) {
-        // Single or no contribution — no filtering needed
-        for (var i = 0; i < contributions.length; i++) {
-          final contribution = contributions[i];
-          if (contribution.slot != slot) continue;
-          final key = _buildContributionKey(feature.id, slot, i);
-          descriptors.add(
-            UiContributionDescriptor(
-              key: key,
-              slot: slot,
-              featureId: feature.id,
-              featureName: feature.displayName,
-              contribution: contribution,
-            ),
-          );
-        }
+
+      // This feature's contributions that target THIS slot. Keep each original
+      // index so contribution keys stay stable across slots.
+      final slotIndices = <int>[
+        for (var i = 0; i < contributions.length; i++)
+          if (contributions[i].slot == slot) i,
+      ];
+      if (slotIndices.isEmpty) continue;
+
+      // A single contribution for this slot always renders. The selection
+      // mechanism only disambiguates when a feature offers MULTIPLE ALTERNATIVE
+      // contributions for the SAME slot; it must never hide a feature's
+      // contributions to OTHER slots (e.g. a drawer entry AND a profile card).
+      if (slotIndices.length == 1) {
+        final i = slotIndices.first;
+        descriptors.add(
+          UiContributionDescriptor(
+            key: _buildContributionKey(feature.id, slot, i),
+            slot: slot,
+            featureId: feature.id,
+            featureName: feature.displayName,
+            contribution: contributions[i],
+          ),
+        );
         continue;
       }
-      // Multiple contributions — use selection or default to first
-      final selectedKey = _selectedContributions[feature.id] ??
-          _buildContributionKey(feature.id, contributions.first.slot, 0);
-      for (var i = 0; i < contributions.length; i++) {
-        final contribution = contributions[i];
-        if (contribution.slot != slot) continue;
+
+      // Multiple contributions for this slot: honor a per-feature selection only
+      // when it targets this slot, otherwise default to the first one here.
+      final defaultKey =
+          _buildContributionKey(feature.id, slot, slotIndices.first);
+      final selected = _selectedContributions[feature.id];
+      final selectedKey =
+          (selected != null && selected.startsWith('${slot.name}::'))
+              ? selected
+              : defaultKey;
+      for (final i in slotIndices) {
         final key = _buildContributionKey(feature.id, slot, i);
         if (key != selectedKey) continue;
         descriptors.add(
@@ -172,7 +185,7 @@ class FeatureRegistry extends ChangeNotifier {
             slot: slot,
             featureId: feature.id,
             featureName: feature.displayName,
-            contribution: contribution,
+            contribution: contributions[i],
           ),
         );
       }

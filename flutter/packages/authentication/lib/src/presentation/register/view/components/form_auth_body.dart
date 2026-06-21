@@ -22,9 +22,9 @@ class _FormAuthBodyState extends State<_FormAuthBody> {
   InputBorder _outlineBorder() {
     return OutlineInputBorder(
       borderRadius: 30.radius,
-      borderSide: BorderSide(
+      borderSide: const BorderSide(
         width: 1.5,
-        color: ColorManager.lightGray.withValues(alpha: 0.7),
+        color: ColorManager.frostedBorder,
       ),
     );
   }
@@ -48,7 +48,12 @@ class _FormAuthBodyState extends State<_FormAuthBody> {
               // ── Email ──
               TextInputWidget(
                 context.tr(AuthStrings.email),
-                fillColor: ColorManager.lightGray.withValues(alpha: 0.7),
+                fillColor: ColorManager.frostedFill,
+                textColor: ColorManager.white,
+                cursorColor: ColorManager.white,
+                hintStyle: context.bodyLarge
+                    .size(14)
+                    .colorExt(ColorManager.white.withValues(alpha: 0.5)),
                 border: _outlineBorder(),
                 enabledBorder: _outlineBorder(),
                 focusedBorder: _outlineBorder(),
@@ -81,13 +86,18 @@ class _FormAuthBodyState extends State<_FormAuthBody> {
               // ── Password ──
               TextInputWidget(
                 context.tr(AuthStrings.password),
-                fillColor: ColorManager.lightGray.withValues(alpha: 0.7),
+                fillColor: ColorManager.frostedFill,
+                textColor: ColorManager.white,
+                cursorColor: ColorManager.white,
+                hintStyle: context.bodyLarge
+                    .size(14)
+                    .colorExt(ColorManager.white.withValues(alpha: 0.5)),
                 border: _outlineBorder(),
                 enabledBorder: _outlineBorder(),
                 focusedBorder: _outlineBorder(),
                 focusedErrorBorder: _outlineBorder(),
                 errorBorder: _outlineBorder(),
-                suffixColor: ColorManager.grey,
+                suffixColor: ColorManager.white.withValues(alpha: 0.7),
                 suffixIcon: state.suffixIcon,
                 isPassword: state.isPassword,
                 controller: state.passwordController,
@@ -118,9 +128,9 @@ class _FormAuthBodyState extends State<_FormAuthBody> {
                 title: context.tr(AuthStrings.next),
                 height: 52.h,
                 radius: 30.r,
-                backgroundColor: state.isFormValid
-                    ? ColorManager.primary
-                    : Colors.grey.shade400,
+                backgroundColors: state.isFormValid
+                    ? ColorManager.pinkCtaGradient
+                    : [Colors.grey.shade600, Colors.grey.shade700],
                 isLoading: state.reqState.isLoading,
                 onPressed: () {
                   if (state.reqState.isLoading) return;

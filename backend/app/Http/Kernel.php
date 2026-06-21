@@ -50,5 +50,6 @@ class Kernel extends HttpKernel
         'stac.auth'        => \App\Http\Middleware\StacAuthMiddleware::class,
         'auth.rate.limit' => \App\Http\Middleware\AuthRateLimiter::class,
         'package.enabled' => \App\Http\Middleware\EnsurePackageEnabled::class,
+        'utd.secret' => \App\Http\Middleware\VerifyUtdSecret::class,
     ];
 }

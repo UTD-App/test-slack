@@ -1,5 +1,14 @@
 import 'package:flutter/material.dart';
 
+/// Well-known [WidgetRegistry] key: a package's builder for the *current user's*
+/// own profile page, rendered as the home screen's last ("Me") tab.
+///
+/// The base renders this contribution when a package registers it and falls back
+/// to the built-in Settings screen otherwise. This keeps the base self-contained:
+/// it never imports any feature package — packages depend on the base, never the
+/// reverse. The Profile package registers a builder under this key.
+const String kSelfProfileWidget = 'profile.self';
+
 /// Registry for custom widgets provided by features.
 ///
 /// This allows features to register named widget builders that can be

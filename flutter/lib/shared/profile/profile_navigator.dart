@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:utd_app/addons/feature_registry.dart';
-import 'package:utd_app/localization/localization.dart';
 import 'package:utd_app/shared/notifiers/user_data_notifier.dart';
 
 /// Opens the best available profile screen, keeping the package gating in ONE
@@ -11,9 +10,11 @@ import 'package:utd_app/shared/notifiers/user_data_notifier.dart';
 ///
 /// - Profile package installed (FeatureRegistry has `com.utd.profile`) → the
 ///   rich package view at `/user-profile/:id`.
-/// - Not installed → the base edit screen `/profile` for the current user.
-///   (The base has no view for OTHER users, so opening someone else's profile
-///   without the package shows a short "unavailable" notice.)
+/// - Not installed, OWN profile → the base edit screen `/profile`.
+/// - Not installed, ANOTHER user → the base read-only [VisitedProfileFallback]
+///   at `/user/:id` (a basic profile built from the always-available
+///   `GET /users/{id}` endpoint), so visiting a profile still works without the
+///   package.
 class ProfileNavigator {
   ProfileNavigator._();
 
@@ -34,9 +35,8 @@ class ProfileNavigator {
     if (userId == null || userId == myId) {
       context.push('/profile');
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(context.tr('app.profile_unavailable'))),
-      );
+      // No Profile package → show the base basic-profile fallback for the user.
+      context.push('/user/$userId');
     }
   }
 }

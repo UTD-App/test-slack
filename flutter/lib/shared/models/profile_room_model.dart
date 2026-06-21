@@ -18,4 +18,17 @@ class ProfileRoomModel extends ProfileRoomEntity {
       age: (map['age'] as int?) ?? 0,
     );
   }
+
+  /// Mirrors [fromJson] so the profile (incl. the avatar URL) survives a cache
+  /// round-trip. Without this, MyDataModel.toJson dropped the profile entirely
+  /// and the avatar was lost whenever the app loaded the user from cache.
+  Map<String, dynamic> toJson() {
+    return {
+      'image': image,
+      'gender': gender,
+      'image_id': imageId,
+      'birthday': birthday,
+      'age': age,
+    };
+  }
 }

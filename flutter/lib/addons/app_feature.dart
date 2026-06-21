@@ -71,6 +71,17 @@ abstract class AppFeature {
   /// Used by the core app to validate that required features are installed.
   List<String> get dependencies => const [];
 
+  /// The backend package slug this feature is gated by (the `packages.slug`
+  /// column / the `packages/<slug>` directory). When set, the app auto-disables
+  /// this feature whenever the backend reports the package as disabled
+  /// (`GET /packages/installed`), so an admin turning a package off from the
+  /// dashboard makes the app behave as if it weren't installed — no calls to the
+  /// package's (now-unloaded) routes.
+  ///
+  /// `null` (default) = a base / always-on feature (e.g. Auth, Notifications)
+  /// with no backend package to gate it; it is never auto-disabled.
+  String? get packageSlug => null;
+
   /// Returns all navigation routes this feature provides.
   ///
   /// Routes from all features are merged into a single GoRouter.
@@ -136,21 +147,18 @@ abstract class AppFeature {
   /// Default implementation returns an empty list.
   List<UserSettingDefinition> getSettingDefinitions() => const [];
 
-  /// Returns custom Stac **widget** parsers this feature contributes
-  /// (a `type` string → a Flutter widget). Registered in [Stac.initialize].
+  /// Returns custom Stac **widget** parsers this feature contributes.
   ///
-  /// Parsers MUST be stateless and resolve any dependencies (BLoCs, repos)
-  /// from the [BuildContext] at parse time — they are collected at startup,
-  /// before features are initialized.
+  /// Each parser maps a Stac `type` (e.g. a package widget like `chat.messages`)
+  /// to a Flutter widget. Collected at startup and passed to `Stac.initialize`.
+  /// Parsers MUST be stateless `const` and pull dependencies from the
+  /// `BuildContext` at parse time.
   ///
   /// Default implementation returns an empty list.
   List<StacParser> getStacParsers() => const [];
 
   /// Returns custom Stac **action** parsers this feature contributes
-  /// (an `actionType` string → a handler). Registered in [Stac.initialize].
-  ///
-  /// The base passes the tapped list row to the action JSON under `item`
-  /// (see the `utdList` `onItemTap`), so an action can read the row's id.
+  /// (an `actionType` → handler, e.g. `chat.openConversation`).
   ///
   /// Default implementation returns an empty list.
   List<StacActionParser> getStacActionParsers() => const [];

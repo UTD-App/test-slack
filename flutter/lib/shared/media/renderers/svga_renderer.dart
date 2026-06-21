@@ -11,12 +11,26 @@ class SvgaRenderer extends StatefulWidget {
   final double? height;
   final BoxFit fit;
 
+  /// Shown when the SVGA fails to decode (e.g. a corrupt/legacy-format file).
+  /// Without it a failed decode would render nothing (a silent blank).
+  final Widget? errorWidget;
+
+  /// Loop the animation forever (true, default) or play it once (false).
+  /// One-shot is used for things like a gift played full-screen on send.
+  final bool repeat;
+
+  /// Called once a one-shot animation (repeat == false) finishes playing.
+  final VoidCallback? onFinished;
+
   const SvgaRenderer.file(
     this.file, {
     super.key,
     this.width,
     this.height,
     this.fit = BoxFit.contain,
+    this.errorWidget,
+    this.repeat = true,
+    this.onFinished,
   })  : assetPath = null,
         networkUrl = null;
 
@@ -26,6 +40,9 @@ class SvgaRenderer extends StatefulWidget {
     this.width,
     this.height,
     this.fit = BoxFit.contain,
+    this.errorWidget,
+    this.repeat = true,
+    this.onFinished,
   })  : file = null,
         networkUrl = null;
 
@@ -35,6 +52,9 @@ class SvgaRenderer extends StatefulWidget {
     this.width,
     this.height,
     this.fit = BoxFit.contain,
+    this.errorWidget,
+    this.repeat = true,
+    this.onFinished,
   })  : file = null,
         assetPath = null;
 
@@ -45,6 +65,7 @@ class SvgaRenderer extends StatefulWidget {
 class _SvgaRendererState extends State<SvgaRenderer>
     with SingleTickerProviderStateMixin {
   SVGAAnimationController? _controller;
+  bool _failed = false;
 
   @override
   void initState() {
@@ -59,6 +80,7 @@ class _SvgaRendererState extends State<SvgaRenderer>
     if (oldWidget.networkUrl != widget.networkUrl ||
         oldWidget.assetPath != widget.assetPath ||
         oldWidget.file?.path != widget.file?.path) {
+      _failed = false;
       _decode();
     }
   }
@@ -79,14 +101,20 @@ class _SvgaRendererState extends State<SvgaRenderer>
       }
 
       if (mounted && _controller != null) {
-        _controller!
-          ..videoItem = videoItem
-          ..repeat();
+        _controller!.videoItem = videoItem;
+        if (widget.repeat) {
+          _controller!.repeat();
+        } else {
+          _controller!.forward().whenComplete(() {
+            if (mounted) widget.onFinished?.call();
+          });
+        }
       } else {
         videoItem.dispose();
       }
     } catch (e) {
       debugPrint('SvgaRenderer: failed to decode: $e');
+      if (mounted) setState(() => _failed = true);
     }
   }
 
@@ -99,6 +127,9 @@ class _SvgaRendererState extends State<SvgaRenderer>
 
   @override
   Widget build(BuildContext context) {
+    if (_failed) {
+      return widget.errorWidget ?? const SizedBox.shrink();
+    }
     if (_controller == null) return const SizedBox.shrink();
 
     return SizedBox(

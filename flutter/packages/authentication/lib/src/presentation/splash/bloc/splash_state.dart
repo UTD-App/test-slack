@@ -11,12 +11,10 @@ final class SplashInitial extends SplashState {
   const SplashInitial();
 }
 
-/// The splash finished and resolved which route to enter first (home / landing
-/// / login), per the active [AppFlow].
-final class SplashResolved extends SplashState {
-  final String route;
-  const SplashResolved(this.route);
+final class SplashAuthenticated extends SplashState {
+  const SplashAuthenticated();
+}
 
-  @override
-  List<Object?> get props => [route];
+final class SplashUnauthenticated extends SplashState {
+  const SplashUnauthenticated();
 }

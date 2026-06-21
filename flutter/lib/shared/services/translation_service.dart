@@ -18,6 +18,13 @@ class TranslationService {
   static const String _boxName = 'translations';
   static const String _versionPrefix = 'version_';
   static const String _dataPrefix = 'data_';
+  static const String _supportedKey = 'supported_languages';
+
+  /// Offline seed used before the first successful fetch.
+  static const List<Map<String, dynamic>> _seedLanguages = [
+    {'code': 'en', 'native_name': 'English', 'is_rtl': false},
+    {'code': 'ar', 'native_name': 'العربية', 'is_rtl': true},
+  ];
 
   Box? _box;
 
@@ -54,6 +61,50 @@ class TranslationService {
     } catch (_) {
       return key;
     }
+  }
+
+  /// Fetch the backend's active languages and cache them (for the NEXT launch).
+  /// Best-effort: returns the cached list on any failure. Call in the background
+  /// after the API client is ready (like [sync]).
+  Future<List<Map<String, dynamic>>> fetchSupportedLanguages() async {
+    try {
+      final response =
+          await ApiClient.instance.dio.get('/translations/supported');
+      final data = response.data['data'];
+      if (data is List) {
+        final list = data
+            .whereType<Map>()
+            .map((e) => e.cast<String, dynamic>())
+            .toList();
+        if (list.isNotEmpty) {
+          await _box?.put(_supportedKey, jsonEncode(list));
+          return list;
+        }
+      }
+    } catch (_) {
+      // Network error — fall back to whatever is cached.
+    }
+    return cachedSupportedLanguages();
+  }
+
+  /// The cached active languages (synchronous; safe before the API is ready).
+  /// Falls back to the en/ar seed on first launch. Each entry has
+  /// `code`, `native_name`, `is_rtl`.
+  List<Map<String, dynamic>> cachedSupportedLanguages() {
+    final raw = _box?.get(_supportedKey) as String?;
+    if (raw != null) {
+      try {
+        final list = jsonDecode(raw) as List;
+        final parsed = list
+            .whereType<Map>()
+            .map((e) => e.cast<String, dynamic>())
+            .toList();
+        if (parsed.isNotEmpty) return parsed;
+      } catch (_) {
+        // Corrupt cache — fall through to the seed.
+      }
+    }
+    return _seedLanguages;
   }
 
   /// Get all translations for a locale as a map.

@@ -36,6 +36,8 @@ dependencies:
 
   authentication:
     path: packages/authentication
+  profile:
+    path: packages/profile
   moment:
     path: packages/moment
   audio_room:

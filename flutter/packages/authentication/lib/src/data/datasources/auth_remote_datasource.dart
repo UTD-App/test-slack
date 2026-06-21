@@ -6,6 +6,7 @@ import 'package:utd_app/shared/models/my_data_model.dart';
 import '../../domain/params/auth_parameter.dart';
 import '../../domain/params/forget_password_parameter.dart';
 import '../../domain/params/information_parameter.dart';
+import '../../domain/params/recover_otp_parameter.dart';
 import '../../domain/params/register_parameter.dart';
 import 'auth_api_service.dart';
 
@@ -23,6 +24,13 @@ abstract class AuthRemoteDataSource {
   Future<Result<BaseResponse<String>>> forgetPassword({
     required ForgetPasswordParameter params,
   });
+
+  // Email-OTP recovery.
+  Future<Result<BaseResponse<String>>> sendOtp(String email);
+
+  Future<Result<BaseResponse<String>>> verifyOtp(VerifyOtpParameter params);
+
+  Future<Result<BaseResponse<String>>> resetWithOtp(ResetWithOtpParameter params);
 
   Future<Result<BaseResponse<MyDataModel>>> addInfo({
     required InformationParameter params,
@@ -97,29 +105,80 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }
 
   @override
+  Future<Result<BaseResponse<String>>> sendOtp(String email) async {
+    return apiService.post(
+      apiService.sendOtpPath,
+      data: {'email': email},
+      fromJson: (json) => BaseResponse<String>.fromJson(json),
+    );
+  }
+
+  @override
+  Future<Result<BaseResponse<String>>> verifyOtp(
+    VerifyOtpParameter params,
+  ) async {
+    return apiService.post(
+      apiService.verifyOtpPath,
+      data: {'email': params.email, 'code': params.code},
+      fromJson: (json) => BaseResponse<String>.fromJson(json),
+    );
+  }
+
+  @override
+  Future<Result<BaseResponse<String>>> resetWithOtp(
+    ResetWithOtpParameter params,
+  ) async {
+    return apiService.post(
+      apiService.resetWithOtpPath,
+      data: {
+        'email': params.email,
+        'code': params.code,
+        'password': params.password,
+      },
+      fromJson: (json) => BaseResponse<String>.fromJson(json),
+    );
+  }
+
+  @override
   Future<Result<BaseResponse<MyDataModel>>> addInfo({
     required InformationParameter params,
   }) async {
-    final Map<String, dynamic> data = {};
+    // String-valued fields (FormData requires strings; JSON tolerates them too).
+    final Map<String, dynamic> fields = {};
 
     if (params.isUpdateOnlyUid == true) {
-      if (params.uuid?.isNotEmpty == true) data['uuid'] = params.uuid;
+      if (params.uuid?.isNotEmpty == true) fields['uuid'] = params.uuid!;
     } else {
-      data['bio'] = params.bio;
-      data['name'] = params.name;
-      data['birthday'] = params.date;
-      data['gender'] = params.gender ?? 1;
-      data['old_multi_image'] = (params.oldMultiImages ?? []).join(',');
-      if (params.uuid?.isNotEmpty == true) data['uuid'] = params.uuid;
+      if (params.bio != null) fields['bio'] = params.bio!;
+      if (params.name != null) fields['name'] = params.name!;
+      if (params.date != null) fields['birthday'] = params.date!;
+      fields['gender'] = (params.gender ?? 1).toString();
+      fields['old_multi_image'] = (params.oldMultiImages ?? []).join(',');
+      if (params.uuid?.isNotEmpty == true) fields['uuid'] = params.uuid!;
+    }
+
+    fromJson(json) => BaseResponse<MyDataModel>.fromJson(
+          json,
+          fromJsonT: (data) => MyDataModel.fromJson(data),
+        );
+
+    // When a new avatar was picked, send the raw file as `avatar` (the field the
+    // backend's updateProfile reads via $request->hasFile('avatar')) using a
+    // multipart upload; otherwise a plain JSON post is enough.
+    if (params.image != null) {
+      return apiService.uploadFile(
+        apiService.addInfoPath,
+        filePath: params.image!.path,
+        fieldName: 'avatar',
+        additionalFields: fields,
+        fromJson: fromJson,
+      );
     }
 
     return apiService.post(
       apiService.addInfoPath,
-      data: data,
-      fromJson: (json) => BaseResponse<MyDataModel>.fromJson(
-        json,
-        fromJsonT: (data) => MyDataModel.fromJson(data),
-      ),
+      data: fields,
+      fromJson: fromJson,
     );
   }
 }

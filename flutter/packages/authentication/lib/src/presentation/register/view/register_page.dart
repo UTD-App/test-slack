@@ -30,7 +30,8 @@ class RegisterPage extends StatelessWidget {
         }
       },
       child: Scaffold(
-        backgroundColor: ColorManager.white,
+        backgroundColor: ColorManager.authBgGradient.last,
+        extendBodyBehindAppBar: true,
         appBar: AppBarWidget(
           onLeadingPressed: () async {
             final exit = await showExitDialog(context);
@@ -39,12 +40,21 @@ class RegisterPage extends StatelessWidget {
             }
           },
           title: context.tr(AuthStrings.registration),
-          backgroundColor: ColorManager.white,
+          backgroundColor: ColorManager.transparent,
+          iconColor: ColorManager.white,
+          titleStyle: context.bodyLarge.w600
+              .size(16)
+              .colorExt(ColorManager.white),
         ),
-        body: SingleChildScrollView(
-          child: Padding(
-            padding: context.paddingOnly(start: 15, end: 15),
-            child: _FormAuthBody(initialEmail: initialEmail),
+        body: GradientBackground(
+          colors: ColorManager.authBgGradient,
+          child: SafeArea(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: context.paddingOnly(start: 15, end: 15),
+                child: _FormAuthBody(initialEmail: initialEmail),
+              ),
+            ),
           ),
         ),
       ),
@@ -55,37 +65,60 @@ class RegisterPage extends StatelessWidget {
 Future<bool> showExitDialog(BuildContext context) async {
   return await showDialog<bool>(
         context: context,
-        builder: (dialogContext) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10.r),
-          ),
-          title: TextWidget(
-            context.tr(AuthStrings.exitDialogTitle),
-            style: context.bodyMedium
-                .size(15)
-                .colorExt(ColorManager.blackColor)
-                .w500,
-          ),
-          actions: [
-            ButtonWidget(
-              backgroundColor: ColorManager.primary,
-              title: TextWidget(
-                context.tr(AuthStrings.thinkAgain),
-                style: context.bodyMedium.colorExt(ColorManager.white),
-              ),
-              onPressed: () => Navigator.of(dialogContext).pop(false),
+        builder: (dialogContext) => Dialog(
+          backgroundColor: ColorManager.transparent,
+          child: GradientCard(
+            radius: 20,
+            padding: EdgeInsets.all(20.r),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextWidget(
+                  context.tr(AuthStrings.exitDialogTitle),
+                  textAlign: TextAlign.center,
+                  style: context.bodyMedium
+                      .size(16)
+                      .w600
+                      .colorExt(ColorManager.white),
+                ),
+                20.hBox,
+                SizedBox(
+                  width: double.infinity,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: ColorManager.pinkCtaGradient,
+                      ),
+                      borderRadius: BorderRadius.circular(24.r),
+                    ),
+                    child: TextButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(false),
+                      child: Text(
+                        context.tr(AuthStrings.thinkAgain),
+                        style: const TextStyle(
+                          color: ColorManager.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                8.hBox,
+                SizedBox(
+                  width: double.infinity,
+                  child: TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(true),
+                    child: Text(
+                      context.tr(AuthStrings.giveUpRegistering),
+                      style: const TextStyle(
+                        color: ColorManager.lumiaTextSecondary,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            20.hBox,
-            ButtonWidget(
-              backgroundColor: ColorManager.white,
-              borderColor: ColorManager.primary,
-              title: TextWidget(
-                context.tr(AuthStrings.giveUpRegistering),
-                style: context.bodyMedium.colorExt(ColorManager.primary),
-              ),
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-            ),
-          ],
+          ),
         ),
       ) ??
       false;

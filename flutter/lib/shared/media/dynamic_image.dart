@@ -89,6 +89,7 @@ class _DynamicImageState extends State<DynamicImage> {
           width: widget.width,
           height: widget.height,
           fit: widget.fit,
+          errorWidget: widget.errorWidget ?? _buildError(),
         ),
       );
     }
@@ -124,6 +125,7 @@ class _DynamicImageState extends State<DynamicImage> {
           width: widget.width,
           height: widget.height,
           fit: widget.fit,
+          errorWidget: widget.errorWidget ?? _buildError(),
         ),
       ImageType.standard => ImageRenderer.asset(
           widget.source,
@@ -161,6 +163,7 @@ class _DynamicImageState extends State<DynamicImage> {
           width: widget.width,
           height: widget.height,
           fit: widget.fit,
+          errorWidget: widget.errorWidget ?? _buildError(),
         ),
       ImageType.unknown => _buildError(),
     };

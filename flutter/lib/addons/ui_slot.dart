@@ -60,4 +60,10 @@ enum UiSlot {
   /// Core responsibility: Button row layout
   /// Feature responsibility: Individual action buttons
   userProfileActions,
+
+  /// Content tabs on a visited user's profile (e.g. Moments, Reels).
+  /// Core responsibility: TabBar layout + the built-in "General" tab.
+  /// Feature responsibility: a labeled tab (UiContribution.label) whose builder
+  /// renders that user's content, scoped via ProfileViewArguments.userId.
+  profileTab,
 }

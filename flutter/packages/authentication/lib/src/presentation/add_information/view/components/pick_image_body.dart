@@ -8,9 +8,16 @@ class _PickImageBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () => context.read<AddInformationBloc>().add(
-            PickImageEvent(image: state.image),
-          ),
+      onTap: () async {
+        // Use the app-standard picker (image_picker via MediaService) instead of
+        // FilePicker — reliable gallery/camera sheet, downscaled, and it returns
+        // cleanly when cancelled (no hang/"can't go back").
+        final picked = await MediaService.instance.pickImage(context);
+        if (picked == null || !context.mounted) return;
+        context.read<AddInformationBloc>().add(
+          UserImageEvent(image: File(picked.path)),
+        );
+      },
       child: Stack(
         clipBehavior: Clip.none,
         alignment: Alignment.bottomRight,

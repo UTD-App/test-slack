@@ -32,11 +32,18 @@ class MyDataModel extends MyDataEntity {
       isFirst: (map['is_first'] as bool?) ?? false,
       onlineTime: (map['online_time'] as String?) ?? '',
       authToken: (map['auth_token'] as String?) ?? '',
-      profile: map['profile'] != null
-          ? ProfileRoomModel.fromJson(map['profile'])
+      // Coerce nested maps to Map<String, dynamic>: the Hive cache round-trip
+      // returns nested objects as _Map<dynamic, dynamic>, which would throw a
+      // cast error when handed to the sub-model fromJson (param is
+      // Map<String, dynamic>). Network (dio) maps are already typed, so .from
+      // is a harmless copy there.
+      profile: map['profile'] is Map
+          ? ProfileRoomModel.fromJson(
+              Map<String, dynamic>.from(map['profile'] as Map))
           : null,
-      country: map['country'] != null
-          ? CountryModel.fromJson(map['country'])
+      country: map['country'] is Map
+          ? CountryModel.fromJson(
+              Map<String, dynamic>.from(map['country'] as Map))
           : null,
     );
   }
@@ -54,6 +61,11 @@ class MyDataModel extends MyDataEntity {
       'is_first': isFirst,
       'online_time': onlineTime,
       'auth_token': authToken,
+      // Persist the profile so the avatar survives a cache round-trip (read back
+      // by fromJson's map['profile']). Previously omitted -> avatar lost on any
+      // cache-backed load (e.g. when /my-data can't be reached on restart).
+      // `profile` is typed as the entity but is always a ProfileRoomModel here.
+      'profile': (profile as ProfileRoomModel?)?.toJson(),
     };
   }
 

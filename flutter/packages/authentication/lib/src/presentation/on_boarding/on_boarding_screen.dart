@@ -52,8 +52,10 @@ class OnBoardingScreenState extends State<OnBoardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: ColorManager.white,
-      body: Stack(
+      backgroundColor: ColorManager.authBgGradient.last,
+      body: GradientBackground(
+        colors: ColorManager.authBgGradient,
+        child: Stack(
         alignment: Alignment.topCenter,
         children: [
           Positioned(
@@ -90,8 +92,8 @@ class OnBoardingScreenState extends State<OnBoardingScreen> {
               effect: ExpandingDotsEffect(
                 dotHeight: 5,
                 dotWidth: 12,
-                activeDotColor: ColorManager.primary,
-                dotColor: ColorManager.lightGray,
+                activeDotColor: const Color(0xFFFF5BA6),
+                dotColor: ColorManager.white.withValues(alpha: 0.25),
               ),
             ),
           ),
@@ -113,9 +115,12 @@ class OnBoardingScreenState extends State<OnBoardingScreen> {
                 }
               },
               title: buttonText[currentPage],
+              backgroundColors: ColorManager.pinkCtaGradient,
+              radius: 30,
             ),
           ),
         ],
+        ),
       ),
     );
   }
@@ -138,33 +143,40 @@ class _OnBoardingBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.white,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          Image.asset(image, scale: 4),
-          index == 0 ? 0.hBox : 34.0.hBox,
-          Text(
-            title,
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: [
+        // Illustration on a soft frosted card so the artwork reads cleanly over
+        // the violet gradient regardless of its own backdrop.
+        Container(
+          padding: EdgeInsets.all(16.r),
+          decoration: BoxDecoration(
+            color: ColorManager.white.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(24.r),
+            border: Border.all(color: ColorManager.frostedBorder),
+          ),
+          child: Image.asset(image, scale: 4),
+        ),
+        index == 0 ? 24.0.hBox : 34.0.hBox,
+        Text(
+          title,
+          style: context.bodyMedium
+              .size(18)
+              .colorExt(ColorManager.white)
+              .w700,
+        ),
+        6.hBox,
+        SizedBox(
+          width: ScreenUtil().screenWidth * 0.8,
+          child: Text(
+            subTitle,
             style: context.bodyMedium
-                .size(16)
-                .colorExt(ColorManager.textTabBar)
-                .w700,
+                .size(15)
+                .colorExt(ColorManager.white.withValues(alpha: 0.75)),
+            textAlign: TextAlign.center,
           ),
-          4.hBox,
-          SizedBox(
-            width: ScreenUtil().screenWidth * 0.8,
-            child: Text(
-              subTitle,
-              style: context.bodyMedium
-                  .size(15)
-                  .colorExt(ColorManager.blackColor.withValues(alpha: 0.55)),
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

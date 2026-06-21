@@ -1,5 +1,7 @@
 import 'package:utd_app/cache/cache_manager.dart';
 import 'package:utd_app/network/client/api_client.dart';
+import 'package:utd_app/services/firebase_service.dart';
+import 'package:utd_app/services/notification_service.dart';
 import 'package:utd_app/shared/models/my_data_model.dart';
 import 'package:utd_app/shared/notifiers/user_data_notifier.dart';
 
@@ -22,6 +24,7 @@ class UserSessionService {
         final user = MyDataModel.fromJson(data);
         notifier.setUser(user);
         await CacheManager.saveUserData(user.toJson());
+        await _registerDeviceToken();
         return;
       }
     } catch (_) {
@@ -33,6 +36,23 @@ class UserSessionService {
     final cached = CacheManager.getUserData();
     if (cached != null) {
       notifier.setUser(MyDataModel.fromJson(cached));
+    }
+  }
+
+  /// Registers this device's FCM token with the backend so push can target it.
+  /// Best-effort: no-op when Firebase isn't initialized (e.g. no
+  /// google-services.json) or the token/request fails.
+  static Future<void> _registerDeviceToken() async {
+    if (!FirebaseService.isInitialized) return;
+    try {
+      final token = await NotificationService().getToken();
+      if (token == null || token.isEmpty) return;
+      await ApiClient.instance.dio.post(
+        '/notifications/device-token',
+        data: {'device_token': token},
+      );
+    } catch (_) {
+      // best-effort
     }
   }
 }

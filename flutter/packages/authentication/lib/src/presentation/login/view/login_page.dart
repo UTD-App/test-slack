@@ -18,10 +18,20 @@ class LoginPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const AppBarWidget(backgroundColor: ColorManager.white),
-      body: Padding(
-        padding: context.paddingSymmetric(horizontal: 20),
-        child: const _FormAuthBody(),
+      backgroundColor: ColorManager.authBgGradient.last,
+      extendBodyBehindAppBar: true,
+      appBar: const AppBarWidget(
+        backgroundColor: ColorManager.transparent,
+        iconColor: ColorManager.white,
+      ),
+      body: GradientBackground(
+        colors: ColorManager.authBgGradient,
+        child: SafeArea(
+          child: Padding(
+            padding: context.paddingSymmetric(horizontal: 20),
+            child: const _FormAuthBody(),
+          ),
+        ),
       ),
     );
   }

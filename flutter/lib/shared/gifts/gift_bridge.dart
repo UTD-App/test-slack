@@ -2,14 +2,15 @@ import 'package:flutter/widgets.dart';
 
 /// How the Gifts package opens its picker. Receives the context the gift is
 /// sent in (e.g. a moment) so the picker can post to the right endpoint, plus an
-/// optional [onSent] the picker fires after a successful send so the host can
-/// update its UI (e.g. bump the moment's gift count) without a full refresh.
+/// optional [onSent] the picker fires after a successful send — with the total
+/// COINS sent — so the host can update its UI (e.g. bump the moment's gift total)
+/// without a full refresh.
 typedef GiftLauncher = void Function(
   BuildContext context, {
   required String contextType,
   required int contextId,
   String? receiverName,
-  VoidCallback? onSent,
+  void Function(int coins)? onSent,
 });
 
 /// Flutter analog of the backend `App\Contracts\GiftSender` seam.
@@ -34,7 +35,7 @@ class GiftBridge {
     required String contextType,
     required int contextId,
     String? receiverName,
-    VoidCallback? onSent,
+    void Function(int coins)? onSent,
   }) {
     _launcher?.call(
       context,

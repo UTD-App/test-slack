@@ -35,6 +35,26 @@ class AuthStrings {
   static const userAgreementLogin = 'auth.user_agreement_login';
   static const andLogin = 'auth.and_login';
 
+  // ── Recover Password (email OTP) ────────────────────────
+  static const recoverEmailSubtitle = 'auth.recover_email_subtitle';
+  static const recoverPhoneSubtitle = 'auth.recover_phone_subtitle';
+  static const phoneNumber = 'auth.phone_number';
+  static const sendCode = 'auth.send_code';
+  static const enterCodeTitle = 'auth.enter_code_title';
+  static const codeSentTo = 'auth.code_sent_to';
+  static const verificationCode = 'auth.verification_code';
+  static const verify = 'auth.verify';
+  static const resendCode = 'auth.resend_code';
+  static const resendIn = 'auth.resend_in';
+  static const invalidPhone = 'auth.invalid_phone';
+  static const codeValidator = 'auth.code_validator';
+  static const setNewPasswordTitle = 'auth.set_new_password_title';
+  static const setNewPasswordSubtitle = 'auth.set_new_password_subtitle';
+  static const newPassword = 'auth.new_password';
+  static const confirmPassword = 'auth.confirm_password';
+  static const passwordsDoNotMatch = 'auth.passwords_do_not_match';
+  static const saveNewPassword = 'auth.save_new_password';
+
   // ── Add Information ─────────────────────────────────────
   static const improveTheInfo = 'auth.improve_the_info';
   static const uploadPicture = 'auth.upload_picture';
@@ -48,6 +68,11 @@ class AuthStrings {
   static const selectGender = 'auth.select_gender';
   static const selectBirthday = 'auth.select_birthday';
   static const userUnder18 = 'auth.user_under_18';
+  static const yourAge = 'auth.your_age';
+  static const yourGender = 'auth.your_gender';
+  static const done = 'auth.done';
+  static const completeMissing = 'auth.complete_missing';
+  static const photo = 'auth.photo';
 
   // ── Splash ──────────────────────────────────────────────
   static const loadingResources = 'auth.loading_resources';
@@ -101,6 +126,26 @@ class AuthStrings {
           agreeLogin: 'By logging in you agree to the ',
           userAgreementLogin: 'User Agreement',
           andLogin: ' and Privacy Policy',
+          recoverEmailSubtitle:
+              'Enter your registered email and we\'ll send a verification code to your inbox.',
+          recoverPhoneSubtitle:
+              'Enter your registered phone number and we\'ll send a verification code to your WhatsApp.',
+          phoneNumber: 'Phone number',
+          sendCode: 'Send Code',
+          enterCodeTitle: 'Verification Code',
+          codeSentTo: 'Code sent to',
+          verificationCode: 'Enter the 6-digit code',
+          verify: 'Verify',
+          resendCode: 'Resend code',
+          resendIn: 'Resend in',
+          invalidPhone: 'Please enter a valid phone number',
+          codeValidator: 'Please enter the code you received',
+          setNewPasswordTitle: 'New Password',
+          setNewPasswordSubtitle: 'Choose a new password for your account.',
+          newPassword: 'New password',
+          confirmPassword: 'Confirm password',
+          passwordsDoNotMatch: 'Passwords do not match',
+          saveNewPassword: 'Save New Password',
           improveTheInfo: 'Complete your profile to get started',
           uploadPicture: 'Upload Picture',
           fullName: 'Full Name',
@@ -113,6 +158,11 @@ class AuthStrings {
           selectGender: 'Please select your gender',
           selectBirthday: 'Please select your birthday',
           userUnder18: 'You must be at least 18 years old',
+          yourAge: 'Your age',
+          yourGender: 'Your gender',
+          done: 'Done',
+          completeMissing: 'Please complete:',
+          photo: 'Profile photo',
           loadingResources: 'Loading some resources...',
           registration: 'Registration',
           exitDialogTitle: 'Are you sure you want to leave registration?',
@@ -160,6 +210,26 @@ class AuthStrings {
           agreeLogin: 'بتسجيل الدخول أنت توافق على ',
           userAgreementLogin: 'اتفاقية المستخدم',
           andLogin: ' وسياسة الخصوصية',
+          recoverEmailSubtitle:
+              'أدخل بريدك الإلكتروني المسجّل وسنرسل لك رمز التحقق إلى بريدك.',
+          recoverPhoneSubtitle:
+              'أدخل رقم هاتفك المسجّل وسنرسل لك رمز التحقق على الواتساب.',
+          phoneNumber: 'رقم الهاتف',
+          sendCode: 'إرسال الرمز',
+          enterCodeTitle: 'رمز التحقق',
+          codeSentTo: 'تم إرسال الرمز إلى',
+          verificationCode: 'أدخل الرمز المكوّن من 6 أرقام',
+          verify: 'تحقق',
+          resendCode: 'إعادة إرسال الرمز',
+          resendIn: 'إعادة الإرسال خلال',
+          invalidPhone: 'يرجى إدخال رقم هاتف صحيح',
+          codeValidator: 'يرجى إدخال الرمز الذي وصلك',
+          setNewPasswordTitle: 'كلمة مرور جديدة',
+          setNewPasswordSubtitle: 'اختر كلمة مرور جديدة لحسابك.',
+          newPassword: 'كلمة المرور الجديدة',
+          confirmPassword: 'تأكيد كلمة المرور',
+          passwordsDoNotMatch: 'كلمتا المرور غير متطابقتين',
+          saveNewPassword: 'حفظ كلمة المرور',
           improveTheInfo: 'أكمل ملفك الشخصي للبدء',
           uploadPicture: 'رفع صورة',
           fullName: 'الاسم الكامل',
@@ -172,6 +242,11 @@ class AuthStrings {
           selectGender: 'يرجى اختيار الجنس',
           selectBirthday: 'يرجى اختيار تاريخ الميلاد',
           userUnder18: 'يجب أن يكون عمرك 18 عامًا على الأقل',
+          yourAge: 'عمرك',
+          yourGender: 'جنسك',
+          done: 'تم',
+          completeMissing: 'يرجى إكمال:',
+          photo: 'صورة الملف الشخصي',
           loadingResources: 'جارٍ تحميل الموارد...',
           registration: 'التسجيل',
           exitDialogTitle: 'هل أنت متأكد أنك تريد مغادرة التسجيل؟',

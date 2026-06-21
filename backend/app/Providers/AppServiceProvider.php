@@ -63,6 +63,14 @@ class AppServiceProvider extends ServiceProvider
             // DB not ready yet (e.g. during migrations) — fall back to .env
         }
 
+        // Register the CORE UTD Studio manifest (auth/home/profile/settings default
+        // screens + their elements/actions). Packages register their own manifest
+        // from their provider boot(). UTD Studio reads the aggregate via
+        // GET /api/utd/manifest.
+        if (class_exists(\App\Support\UtdManifest::class)) {
+            \App\Support\UtdManifest::registerPackage(require config_path('utd_manifest_core.php'));
+        }
+
         Package::observe(PackageObserver::class);
         MenuItem::observe(MenuItemObserver::class);
 

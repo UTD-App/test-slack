@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 
-import '../../main.dart' show restartApp;
+import '../../shared/services/app_session.dart';
 
 /// Callback type for token refresh
 typedef TokenRefreshCallback = Future<String?> Function();
@@ -50,6 +50,16 @@ class AuthInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
+    // Account suspended (ban): the server replies 403 with a distinguishable
+    // code so we don't confuse it with other 403s (e.g. a disabled package).
+    // Clear the session and bounce to login.
+    if (err.response?.statusCode == 403 && _isBanResponse(err.response?.data)) {
+      await onLogout?.call();
+      restartApp();
+      handler.reject(err);
+      return;
+    }
+
     // Another device logged in with this account: CheckLatestToken middleware
     // replies 505 once a newer token exists. This session's token is now stale,
     // so clear it and bounce to login instead of leaving the user stuck on a
@@ -103,6 +113,15 @@ class AuthInterceptor extends Interceptor {
     }
 
     handler.next(err);
+  }
+
+  /// True when a 403 body carries the account-suspended marker the backend
+  /// sends (GeneralBanMiddleware → data.code == 'account_suspended').
+  bool _isBanResponse(dynamic body) {
+    if (body is! Map) return false;
+    final data = body['data'];
+    final code = data is Map ? data['code'] : body['code'];
+    return code == 'account_suspended';
   }
 
   Future<void> _retryPendingRequests(String token) async {

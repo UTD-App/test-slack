@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:utd_app/shared/stac/stac_dynamic_screen.dart';
+import 'package:utd_app/shared/core/color_manager.dart';
+import 'package:utd_app/shared/widgets/gradient_background.dart';
 
 import '../src/presentation/splash/view/splash_page.dart';
 import '../src/presentation/on_boarding/on_boarding_screen.dart';
@@ -8,6 +9,7 @@ import '../src/presentation/intro/view/intro_page.dart';
 import '../src/presentation/login/view/login_page.dart';
 import '../src/presentation/register/view/register_page.dart';
 import '../src/presentation/add_information/view/add_information_page.dart';
+import '../src/presentation/recover_password/view/recover_password_page.dart';
 
 class AuthRoutes {
   AuthRoutes._();
@@ -38,28 +40,20 @@ class AuthRoutes {
         ),
         GoRoute(
           path: intro,
-          builder: (context, state) => StacDynamicScreen(
-            screenName: 'core_intro',
-            fallback: IntroPage(error: state.extra as String?),
+          builder: (context, state) => IntroPage(
+            error: state.extra as String?,
           ),
         ),
         GoRoute(
           path: login,
-          // Server-driven: renders the `core_login` screen designed in UTD
-          // Studio, falling back to the built-in LoginPage if none is published.
-          // (Screen names use the Studio slug convention — underscores, no dots.)
-          builder: (context, state) => const StacDynamicScreen(
-            screenName: 'core_login',
-            fallback: LoginPage(),
-          ),
+          builder: (context, state) => const LoginPage(),
         ),
         GoRoute(
           path: register,
           builder: (context, state) {
             final args = state.extra as Map<String, dynamic>? ?? {};
-            return StacDynamicScreen(
-              screenName: 'core_register',
-              fallback: RegisterPage(initialEmail: args['email'] as String?),
+            return RegisterPage(
+              initialEmail: args['email'] as String?,
             );
           },
         ),
@@ -69,17 +63,27 @@ class AuthRoutes {
         ),
         GoRoute(
           path: recoverPassword,
-          builder: (context, state) => const StacDynamicScreen(
-            screenName: 'core_forgot_password',
-            fallback: Scaffold(
-              body: Center(child: Text('Recover Password')),
-            ),
-          ),
+          builder: (context, state) => const RecoverPasswordPage(),
         ),
         GoRoute(
           path: privacy,
-          builder: (context, state) => const Scaffold(
-            body: Center(child: Text('Privacy Policy')),
+          builder: (context, state) => Scaffold(
+            backgroundColor: ColorManager.authBgGradient.last,
+            appBar: AppBar(
+              backgroundColor: ColorManager.transparent,
+              elevation: 0,
+              iconTheme: const IconThemeData(color: ColorManager.white),
+            ),
+            extendBodyBehindAppBar: true,
+            body: const GradientBackground(
+              colors: ColorManager.authBgGradient,
+              child: Center(
+                child: Text(
+                  'Privacy Policy',
+                  style: TextStyle(color: ColorManager.white, fontSize: 16),
+                ),
+              ),
+            ),
           ),
         ),
       ];

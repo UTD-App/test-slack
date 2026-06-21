@@ -1,4 +1,5 @@
 import 'package:authentication/core/asset_manager.dart';
+import 'package:authentication/core/auth_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -27,13 +28,17 @@ class _SplashPageState extends State<SplashPage> {
   Widget build(BuildContext context) {
     return BlocListener<SplashBloc, SplashState>(
       listener: (context, state) {
-        if (state is SplashResolved) {
-          context.go(state.route);
+        if (state is SplashAuthenticated) {
+          context.go(AuthRoutes.layout);
+        } else if (state is SplashUnauthenticated) {
+          context.go(AuthRoutes.onBoarding);
         }
       },
       child: Scaffold(
-        backgroundColor: ColorManager.white,
-        body: SizedBox(
+        backgroundColor: ColorManager.authBgGradient.last,
+        body: GradientBackground(
+          colors: ColorManager.authBgGradient,
+          child: SizedBox(
           width: MediaQuery.sizeOf(context).width,
           height: MediaQuery.sizeOf(context).height,
           child: Column(
@@ -41,17 +46,24 @@ class _SplashPageState extends State<SplashPage> {
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               100.hBox,
-              Image.asset(AssetManager.logo, height: 150.h, width: 150.w),
+              AppLogo(
+                height: 150.h,
+                width: 150.w,
+                fallback:
+                    Image.asset(AssetManager.logo, height: 150.h, width: 150.w),
+              ),
               const Spacer(),
-              const CircularProgressIndicator(color: ColorManager.primary),
+              const CircularProgressIndicator(color: ColorManager.white),
               10.hBox,
               Text(
                 context.tr(AuthStrings.loadingResources),
-                style: context.bodySmall.w400.colorExt(ColorManager.grey),
+                style: context.bodySmall.w400
+                    .colorExt(ColorManager.white.withValues(alpha: 0.7)),
               ),
               30.hBox,
             ],
           ),
+        ),
         ),
       ),
     );

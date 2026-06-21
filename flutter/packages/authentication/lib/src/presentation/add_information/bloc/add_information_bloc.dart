@@ -29,9 +29,7 @@ class AddInformationBloc
         AddInformationState(
           formKey: GlobalKey<FormState>(),
           name: TextEditingController(),
-          birthday: TextEditingController(),
           country: TextEditingController(),
-          gender: TextEditingController(),
           email: TextEditingController(),
         ),
       ) {
@@ -105,8 +103,8 @@ class AddInformationBloc
       InformationParameter(
         name: state.name.text,
         image: state.image,
-        gender: state.gender.text == event.context.tr(AuthStrings.male) ? 1 : 0,
-        date: state.birthday.text,
+        gender: state.gender == event.context.tr(AuthStrings.male) ? 1 : 0,
+        date: state.birthday,
       ),
     );
 
@@ -144,8 +142,8 @@ class AddInformationBloc
   @override
   Future<void> close() {
     state.name.dispose();
-    state.birthday.dispose();
     state.country.dispose();
+    state.email.dispose();
     return super.close();
   }
 }

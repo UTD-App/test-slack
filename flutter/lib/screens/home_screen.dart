@@ -1,13 +1,18 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import '../addons/feature_registry.dart';
 import '../addons/ui_contribution.dart';
 import '../addons/ui_slot.dart';
+import '../addons/widget_registry.dart';
+import '../features/notifications/notification_bell.dart';
 import '../localization/localization.dart';
+import '../services/launch_gate_service.dart';
 import '../shared/core/color_manager.dart';
-import '../shared/stac/stac_dynamic_screen.dart';
 import '../shared/widgets/ui_slot_renderer.dart';
-import 'settings_screen.dart';
+import 'self_profile_fallback.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,6 +29,13 @@ class _HomeScreenState extends State<HomeScreen> {
     final registry = context.watch<FeatureRegistry>();
     final colors = Theme.of(context).colorScheme;
 
+    // The last tab is always the current user's own profile ("Me"): the rich
+    // Profile package view when installed, or a minimal account fallback
+    // (ID / email / password + install hint) otherwise. The rich page is
+    // resolved through the WidgetRegistry seam (kSelfProfileWidget) so the base
+    // never imports the Profile package — packages depend on the base, never the
+    // reverse.
+
     final bottomNavContributions = registry
         .getUiContributions(UiSlot.bottomNav)
         .toList();
@@ -32,12 +44,13 @@ class _HomeScreenState extends State<HomeScreen> {
         .toList();
     final homeContributions = registry.getUiContributions(UiSlot.home).toList();
 
-    final hasHomeTab =
-        drawerContributions.isNotEmpty || homeContributions.isNotEmpty;
+    // The Home tab is always present: it's the app's landing page (top bar with
+    // search + notifications) even when no package contributes home content.
+    const hasHomeTab = true;
 
-    // Tab layout: [Home?] [bottomNav tabs...] [Settings]
-    // Indices:     0 (if hasHomeTab)  →  bottomNav offset  →  settings last
-    final bottomNavOffset = hasHomeTab ? 1 : 0;
+    // Tab layout: [Home] [bottomNav tabs...] [Settings]
+    // Indices:     0    →  bottomNav offset  →  settings last
+    const bottomNavOffset = 1;
     final settingsIndex = bottomNavOffset + bottomNavContributions.length;
     final totalTabs = settingsIndex + 1;
 
@@ -45,11 +58,12 @@ class _HomeScreenState extends State<HomeScreen> {
       _selectedIndex = 0;
     }
 
-    final isHomeTab = hasHomeTab && _selectedIndex == 0;
+    final isHomeTab = _selectedIndex == 0;
     final isSettings = _selectedIndex == settingsIndex;
 
     return Scaffold(
       backgroundColor: colors.surface,
+      extendBody: true,
       drawer: isHomeTab && drawerContributions.isNotEmpty
           ? _buildDrawer(drawerContributions, colors)
           : null,
@@ -70,9 +84,9 @@ class _HomeScreenState extends State<HomeScreen> {
             bottomNavOffset,
           ),
           _buildNavItem(
-            activeIcon: Icons.settings,
-            inactiveIcon: Icons.settings_outlined,
-            label: 'Settings',
+            activeIcon: Icons.person,
+            inactiveIcon: Icons.person_outline,
+            label: 'app.me',
             isSelected: isSettings,
             colors: colors,
             onTap: () => setState(() => _selectedIndex = settingsIndex),
@@ -99,21 +113,99 @@ class _HomeScreenState extends State<HomeScreen> {
     required int bottomNavOffset,
   }) {
     if (isSettings) {
-      return const StacDynamicScreen(
-        screenName: 'core_settings',
-        fallback: SettingsScreen(),
-      );
+      // Last tab: the current user's own profile, supplied by a package through
+      // the WidgetRegistry seam, or the minimal account fallback otherwise.
+      return registry.widgetRegistry.build(kSelfProfileWidget, context) ??
+          const SelfProfileFallback();
     }
 
     if (isHomeTab) {
-      if (homeContributions.isEmpty) {
-        return const Center(child: Text('Home'));
-      }
-      return HomeSlotRenderer(featureRegistry: registry, scrollable: true);
+      return _buildHomeTab(homeContributions, registry);
     }
 
     final navIndex = _selectedIndex - bottomNavOffset;
     return bottomNavContributions[navIndex].builder(context);
+  }
+
+  /// The landing page: a top bar (app name + search + notifications) above the
+  /// home-slot content contributed by packages (or a friendly empty state).
+  Widget _buildHomeTab(
+    List<UiContribution> homeContributions,
+    FeatureRegistry registry,
+  ) {
+    final colors = Theme.of(context).colorScheme;
+    return SafeArea(
+      bottom: false,
+      child: Column(
+        children: [
+          _buildHomeTopBar(colors),
+          Expanded(
+            child: homeContributions.isEmpty
+                ? _buildHomeEmptyState(colors)
+                : HomeSlotRenderer(featureRegistry: registry, scrollable: true),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Two small actions live at the top of the home page: search (opens the user
+  /// search) and notifications (the bell carries the live unread badge).
+  Widget _buildHomeTopBar(ColorScheme colors) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              AppInfoProvider.current.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: colors.onSurface,
+              ),
+            ),
+          ),
+          IconButton(
+            tooltip: context.tr('app.search'),
+            color: colors.onSurface,
+            icon: const Icon(Icons.search),
+            onPressed: () => context.push('/search'),
+          ),
+          IconButton(
+            tooltip: context.tr('notifications.title'),
+            color: colors.onSurface,
+            icon: const NotificationBell(),
+            onPressed: () => context.push('/notifications'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHomeEmptyState(ColorScheme colors) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.home_outlined, size: 64, color: colors.onSurfaceVariant),
+            const SizedBox(height: 12),
+            Text(
+              context.tr('app.welcome'),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+                color: colors.onSurface,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildDrawer(List<UiContribution> contributions, ColorScheme colors) {
@@ -243,38 +335,63 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   /// The rounded purple nav bar with a central live-button FAB overhanging
-  /// its top edge. A spacer is inserted in the middle of [navItems] to make
-  /// room for the FAB.
+  /// its top edge. Items are split into a left and right half around a fixed
+  /// centre gap, so the FAB stays centred for any number of tabs (3, 4, 5…).
   Widget _buildBottomBar({required List<Widget> navItems}) {
-    final items = List<Widget>.from(navItems);
-    items.insert((items.length / 2).ceil(), const SizedBox(width: 64));
+    final splitAt = (navItems.length / 2).ceil();
+    final leftItems = navItems.sublist(0, splitAt);
+    final rightItems = navItems.sublist(splitAt);
 
     return Stack(
       clipBehavior: Clip.none,
       alignment: Alignment.topCenter,
       children: [
+        // Frosted-glass bar: the body extends behind it (extendBody) so the
+        // BackdropFilter blurs the page gradient/content through a translucent
+        // fill — the mockup's glassy navigation look.
         Container(
-          decoration: BoxDecoration(
-            color: ColorManager.lumiaBgMedium,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-            border: const Border(
-              top: BorderSide(color: ColorManager.lumiaCardBorder),
-            ),
+          decoration: const BoxDecoration(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3),
-                blurRadius: 12,
-                offset: const Offset(0, -2),
+                color: Color(0x4D000000),
+                blurRadius: 16,
+                offset: Offset(0, -2),
               ),
             ],
           ),
-          child: SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: items,
+          child: ClipRRect(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      ColorManager.lumiaCardBg.withValues(alpha: 0.60),
+                      ColorManager.lumiaBgMedium.withValues(alpha: 0.62),
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
+                  border: const Border(
+                    top: BorderSide(color: ColorManager.frostedBorder),
+                  ),
+                ),
+                child: SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    child: Row(
+                      children: [
+                        Expanded(child: Row(children: leftItems)),
+                        const SizedBox(width: 64),
+                        Expanded(child: Row(children: rightItems)),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
@@ -302,8 +419,14 @@ class _HomeScreenState extends State<HomeScreen> {
           border: Border.all(color: ColorManager.lumiaBgMedium, width: 4),
           boxShadow: [
             BoxShadow(
-              color: ColorManager.lumiaAccent.withValues(alpha: 0.5),
-              blurRadius: 12,
+              color: ColorManager.lumiaAccent.withValues(alpha: 0.6),
+              blurRadius: 18,
+              spreadRadius: 2,
+            ),
+            BoxShadow(
+              color: const Color(0xFFEC4899).withValues(alpha: 0.4),
+              blurRadius: 26,
+              spreadRadius: 1,
             ),
           ],
         ),

@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
@@ -12,6 +10,9 @@ import 'package:authentication/core/asset_manager.dart';
 import '../../../../core/auth_routes.dart';
 import '../../../../core/auth_strings.dart';
 
+/// Auth landing page: a clean purple-pink hero (logo + tagline), a frosted card
+/// with a pink "Create Account" primary CTA and a ghost "Sign in with Email"
+/// secondary, an inline EN|ع language toggle, and the Terms/Privacy footer.
 class IntroPage extends StatefulWidget {
   final String? error;
   const IntroPage({super.key, this.error});
@@ -20,27 +21,20 @@ class IntroPage extends StatefulWidget {
   State<IntroPage> createState() => _IntroPageState();
 }
 
-class _IntroPageState extends State<IntroPage> with TickerProviderStateMixin {
-  late final AnimationController _mainCtrl;
-  final ValueNotifier<Offset> _parallaxOffset = ValueNotifier(Offset.zero);
-
+class _IntroPageState extends State<IntroPage> {
   @override
   void initState() {
     super.initState();
-
-    _mainCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 3),
-    )..repeat(reverse: true);
-
-    if (widget.error != null && (widget.error ?? '').isNotEmpty) {
+    final err = widget.error;
+    if (err != null && err.isNotEmpty) {
+      // Surface a ban/error reason passed in via the route (e.g. blocked login).
       Future.delayed(const Duration(milliseconds: 800), () {
         if (!mounted) return;
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
             title: Text(context.tr(AuthStrings.ban)),
-            content: Text(widget.error ?? ''),
+            content: Text(err),
             actions: [
               TextButton(
                 onPressed: () => context.pop(),
@@ -54,333 +48,196 @@ class _IntroPageState extends State<IntroPage> with TickerProviderStateMixin {
   }
 
   @override
-  void dispose() {
-    _mainCtrl.dispose();
-    _parallaxOffset.dispose();
-    super.dispose();
-  }
-
-  void _onPointerMove(PointerEvent e, Size size) {
-    final nx = ((e.position.dx / size.width) - 0.5).clamp(-0.5, 0.5);
-    final ny = ((e.position.dy / size.height) - 0.5).clamp(-0.5, 0.5);
-    _parallaxOffset.value = Offset(nx * 18, ny * 18);
-  }
-
-  Widget _emojiWidget({
-    required String emoji,
-    required double fontSize,
-    required double offset,
-    required double delay,
-  }) {
-    return AnimatedBuilder(
-      animation: _mainCtrl,
-      builder: (context, child) {
-        final t =
-            (math.sin((_mainCtrl.value * math.pi * 2) + delay) * 0.5) + 0.5;
-        final dy = offset * t;
-        final scale =
-            1 + 0.04 * math.sin((_mainCtrl.value * math.pi * 2) + delay);
-        return Transform.translate(
-          offset: Offset(0, -dy),
-          child: Transform.scale(scale: scale, child: child),
-        );
-      },
-      child: Text(
-        emoji,
-        style: context.bodyMedium.copyWith(
-          fontSize: fontSize,
-          height: 1,
-          color: Colors.white.withValues(alpha: 0.95),
-          shadows: const [
-            Shadow(blurRadius: 6, color: Colors.black26, offset: Offset(0, 3)),
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: GradientBackground(
+        colors: ColorManager.authBgGradient,
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        child: Stack(
+          children: [
+            // Soft, on-brand glow blobs for depth (replaces the old emoji clutter).
+            Positioned(
+              top: -60.h,
+              left: -50.w,
+              child: _glow(
+                ColorManager.lumiaAccent.withValues(alpha: 0.32),
+                240,
+              ),
+            ),
+            Positioned(
+              bottom: 30.h,
+              right: -70.w,
+              child: _glow(
+                ColorManager.pinkCtaGradient.first.withValues(alpha: 0.26),
+                300,
+              ),
+            ),
+            SafeArea(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 24.w),
+                child: Column(
+                  children: [
+                    8.hBox,
+                    const Align(
+                      alignment: AlignmentDirectional.centerEnd,
+                      child: LanguageTogglePill(),
+                    ),
+                    const Spacer(flex: 2),
+                    _hero(context),
+                    const Spacer(flex: 2),
+                    _card(context),
+                    const Spacer(flex: 3),
+                    _footer(context),
+                    16.hBox,
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final baseColor = ColorManager.primary;
-    final hsl = HSLColor.fromColor(baseColor);
-
-    final gradient = LinearGradient(
-      begin: AlignmentDirectional.topStart,
-      end: AlignmentDirectional.bottomEnd,
-      colors: [
-        hsl.withLightness((hsl.lightness + 0.05).clamp(0.0, 1.0)).toColor(),
-        hsl.withLightness((hsl.lightness - 0.25).clamp(0.0, 1.0)).toColor(),
-        hsl.withLightness((hsl.lightness - 0.35).clamp(0.0, 1.0)).toColor(),
-      ],
-      stops: const [0.0, 0.6, 1.0],
+  /// A blurred radial glow (transparent circle whose soft shadow is the glow).
+  Widget _glow(Color color, double diameter) {
+    return Container(
+      width: diameter.w,
+      height: diameter.w,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(color: color, blurRadius: 120, spreadRadius: 50),
+        ],
+      ),
     );
+  }
 
-    final size = MediaQuery.sizeOf(context);
-
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(gradient: gradient),
-        child: Listener(
-          onPointerHover: (e) => _onPointerMove(e, size),
-          onPointerMove: (e) => _onPointerMove(e, size),
-          child: Stack(
-            children: [
-              ValueListenableBuilder<Offset>(
-                valueListenable: _parallaxOffset,
-                builder: (context, offset, child) {
-                  return Transform.translate(offset: offset, child: child);
-                },
-                child: Opacity(
-                  opacity: 0.45,
-                  child: Stack(
-                    children: [
-                      Positioned(
-                        left: size.width * 0.040,
-                        top: size.height * 0.080,
-                        child: _emojiWidget(
-                          emoji: '🎮',
-                          fontSize: 70.h,
-                          offset: 25,
-                          delay: 0,
-                        ),
-                      ),
-                      Positioned(
-                        left: size.width * 0.080,
-                        top: size.height * 0.25,
-                        child: _emojiWidget(
-                          emoji: '😎',
-                          fontSize: 45.h,
-                          offset: 20,
-                          delay: 1.2,
-                        ),
-                      ),
-                      Positioned(
-                        right: size.width * 0.080,
-                        top: size.height * 0.10,
-                        child: _emojiWidget(
-                          emoji: '📹',
-                          fontSize: 50.h,
-                          offset: 18,
-                          delay: 2.4,
-                        ),
-                      ),
-                      Positioned(
-                        right: size.width * 0.10,
-                        top: size.height * 0.45,
-                        child: _emojiWidget(
-                          emoji: '💬',
-                          fontSize: 50.h,
-                          offset: 20,
-                          delay: 0.9,
-                        ),
-                      ),
-                      Positioned(
-                        right: size.width * 0.22,
-                        bottom: size.height * 0.25,
-                        child: _emojiWidget(
-                          emoji: '🏆',
-                          fontSize: 60.h,
-                          offset: 28,
-                          delay: 1.8,
-                        ),
-                      ),
-                      Positioned(
-                        left: size.width * 0.070,
-                        bottom: size.height * 0.180,
-                        child: _emojiWidget(
-                          emoji: '▶️',
-                          fontSize: 50.h,
-                          offset: 20,
-                          delay: 0.9,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Positioned.fill(
-                child: SafeArea(
-                  child: Center(
-                    child: Column(
-                      children: [
-                        (size.width / 2.75).hBox,
-                        Column(
-                          children: [
-                            Image.asset(
-                              AssetManager.logo,
-                              height: 120.h,
-                              width: 120.w,
-                            ),
-                            5.hBox,
-                            TextWidget(
-                              context.tr(AuthStrings.playStreamConnect),
-                              style: context.bodyMedium.w400
-                                  .size(14)
-                                  .colorExt(
-                                    ColorManager.white.withValues(alpha: 0.95),
-                                  ),
-                            ),
-                          ],
-                        ),
-                        40.hBox,
-                        Container(
-                          padding: context.paddingOnly(
-                            start: 20,
-                            end: 20,
-                            bottom: 20,
-                            top: 50,
-                          ),
-                          margin: context.paddingSymmetric(horizontal: 17.5),
-                          decoration: BoxDecoration(
-                            color: ColorManager.white.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(28),
-                            border: Border.all(
-                              color: ColorManager.white.withValues(
-                                alpha: 0.120,
-                              ),
-                              width: 1,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: ColorManager.white.withValues(
-                                  alpha: 0.03,
-                                ),
-                                blurRadius: 18,
-                                spreadRadius: 8,
-                                offset: const Offset(0, -6),
-                              ),
-                              BoxShadow(
-                                color: ColorManager.black.withValues(
-                                  alpha: 0.120,
-                                ),
-                                blurRadius: 40,
-                                offset: const Offset(0, 26),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              _ghostButton(
-                                icon: AssetManager.phone,
-                                label: context.tr(AuthStrings.signInWithEmail),
-                                onTap: () => context.push(AuthRoutes.login),
-                              ),
-                              12.hBox,
-                              _ghostButton(
-                                icon: AssetManager.userAddInfo,
-                                label: context.tr(AuthStrings.createAccount),
-                                onTap: () => context.push(AuthRoutes.register),
-                              ),
-                              UiSlotRenderer(
-                                slot: UiSlot.loginMethods,
-                                featureRegistry: context.read<FeatureRegistry>(),
-                                padding: const EdgeInsets.only(top: 12),
-                                spacing: 12,
-                              ),
-                              30.hBox,
-                              Divider(
-                                color: Colors.white.withValues(alpha: 0.14),
-                                height: 0.0,
-                                thickness: 1.25,
-                              ),
-                              30.hBox,
-                              GestureDetector(
-                                onTap: () => context.push(AuthRoutes.privacy),
-                                child: Center(
-                                  child: Text.rich(
-                                    textAlign: TextAlign.center,
-                                    TextSpan(
-                                      children: [
-                                        TextSpan(
-                                          text: context.tr(
-                                            AuthStrings.bySigningUp,
-                                          ),
-                                        ),
-                                        TextSpan(
-                                          text: context.tr(
-                                            AuthStrings.termsOfService,
-                                          ),
-                                          style: const TextStyle(
-                                            decoration:
-                                                TextDecoration.underline,
-                                            decorationColor: ColorManager.white,
-                                          ),
-                                        ),
-                                        const TextSpan(text: ' • '),
-                                        TextSpan(
-                                          text: context.tr(
-                                            AuthStrings.privacyPolicy,
-                                          ),
-                                          style: const TextStyle(
-                                            decoration:
-                                                TextDecoration.underline,
-                                            decorationColor: ColorManager.white,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    style: context.bodyMedium
-                                        .size(13)
-                                        .colorExt(
-                                          ColorManager.white.withValues(
-                                            alpha: 0.75,
-                                          ),
-                                        ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+  Widget _hero(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: ColorManager.lumiaAccent.withValues(alpha: 0.45),
+                blurRadius: 50,
+                spreadRadius: 6,
               ),
             ],
           ),
+          child: AppLogo(
+            height: 132.h,
+            width: 132.w,
+            fallback:
+                Image.asset(AssetManager.logo, height: 132.h, width: 132.w),
+          ),
         ),
+        16.hBox,
+        TextWidget(
+          context.tr(AuthStrings.playStreamConnect),
+          style: context.bodyMedium.w500
+              .size(15)
+              .colorExt(ColorManager.white.withValues(alpha: 0.92)),
+        ),
+      ],
+    );
+  }
+
+  Widget _card(BuildContext context) {
+    return GradientCard(
+      frosted: true,
+      radius: 28,
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 24.h),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _authButton(
+            context,
+            label: context.tr(AuthStrings.createAccount),
+            onTap: () => context.push(AuthRoutes.register),
+            primary: true,
+          ),
+          14.hBox,
+          _authButton(
+            context,
+            label: context.tr(AuthStrings.signInWithEmail),
+            onTap: () => context.push(AuthRoutes.login),
+            primary: false,
+          ),
+          // Optional third-party login methods contributed by feature packages
+          // (empty when none are installed — renders nothing).
+          UiSlotRenderer(
+            slot: UiSlot.loginMethods,
+            featureRegistry: context.read<FeatureRegistry>(),
+            padding: const EdgeInsets.only(top: 12),
+            spacing: 12,
+          ),
+        ],
       ),
     );
   }
 
-  Widget _ghostButton({
-    required String icon,
+  Widget _authButton(
+    BuildContext context, {
     required String label,
     required VoidCallback onTap,
-    double? size,
-    bool isLoading = false,
+    required bool primary,
   }) {
     return ButtonWidget(
-      shadowColor: ColorManager.transparent,
-      elevation: 0,
-      radius: 60.r,
-      height: 55,
       onPressed: onTap,
-      width: ScreenUtil().screenWidth,
+      width: double.infinity,
+      height: 55.h,
+      radius: 30.r,
+      elevation: 0,
+      shadowColor: ColorManager.transparent,
       padding: EdgeInsets.zero,
       paddingButton: EdgeInsets.zero,
-      isLoading: isLoading,
-      cLoadingColor: ColorManager.primary,
-      title: SizedBox(
-        width: 290.w,
-        child: Row(
+      backgroundColors: primary ? ColorManager.pinkCtaGradient : null,
+      backgroundColor: primary ? null : ColorManager.transparent,
+      borderColor: primary
+          ? ColorManager.transparent
+          : ColorManager.white.withValues(alpha: 0.55),
+      borderWidth: primary ? 0 : 1.4,
+      title: TextWidget(
+        label,
+        style: context.bodyMedium.w700.size(16).colorExt(ColorManager.white),
+      ),
+    );
+  }
+
+  Widget _footer(BuildContext context) {
+    return GestureDetector(
+      onTap: () => context.push(AuthRoutes.privacy),
+      child: Text.rich(
+        textAlign: TextAlign.center,
+        TextSpan(
           children: [
-            5.wBox,
-            Image.asset(height: size?.h ?? 35.h, width: size?.w ?? 35.w, icon),
-            const Spacer(),
-            TextWidget(
-              label,
-              style: context.bodyMedium.w400
-                  .colorExt(ColorManager.blackColor)
-                  .copyWith(fontSize: 16.sp),
+            TextSpan(text: context.tr(AuthStrings.bySigningUp)),
+            TextSpan(
+              text: context.tr(AuthStrings.termsOfService),
+              style: const TextStyle(
+                decoration: TextDecoration.underline,
+                decorationColor: ColorManager.white,
+              ),
             ),
-            const Spacer(flex: 4),
+            const TextSpan(text: ' • '),
+            TextSpan(
+              text: context.tr(AuthStrings.privacyPolicy),
+              style: const TextStyle(
+                decoration: TextDecoration.underline,
+                decorationColor: ColorManager.white,
+              ),
+            ),
           ],
         ),
+        style: context.bodyMedium
+            .size(13)
+            .colorExt(ColorManager.white.withValues(alpha: 0.75)),
       ),
-      backgroundColor: ColorManager.white,
     );
   }
 }

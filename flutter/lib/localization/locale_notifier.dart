@@ -3,6 +3,8 @@ import 'dart:ui';
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../network/client/api_client.dart';
+
 /// Manages the current locale, persists user preference, and supports
 /// runtime locale switching.
 ///
@@ -28,6 +30,8 @@ class LocaleNotifier extends ChangeNotifier {
   late Locale _locale;
   late List<Locale> _supportedLocales;
   late Locale _fallbackLocale;
+  Set<String> _rtlCodes = const {'ar'};
+  Map<String, String> _names = const {};
 
   /// The currently active locale.
   Locale get locale => _locale;
@@ -35,8 +39,15 @@ class LocaleNotifier extends ChangeNotifier {
   /// The list of supported locales.
   List<Locale> get supportedLocales => _supportedLocales;
 
-  /// Whether the current locale uses right-to-left text direction.
-  bool get isRtl => _locale.languageCode == 'ar';
+  /// Whether the current locale uses right-to-left text direction. Driven by the
+  /// backend's `is_rtl` flags (so any RTL language added in the admin works), not
+  /// a hardcoded 'ar'.
+  bool get isRtl => _rtlCodes.contains(_locale.languageCode);
+
+  /// Native display name of a language (e.g. 'العربية', 'Français') from the
+  /// backend; falls back to the upper-cased code for an unknown one.
+  String nameFor(String languageCode) =>
+      _names[languageCode] ?? languageCode.toUpperCase();
 
   /// Initializes the locale notifier.
   ///
@@ -50,9 +61,13 @@ class LocaleNotifier extends ChangeNotifier {
     required List<Locale> supportedLocales,
     required Locale fallbackLocale,
     bool useDeviceLocale = true,
+    Set<String> rtlCodes = const {'ar'},
+    Map<String, String> names = const {},
   }) async {
     _supportedLocales = supportedLocales;
     _fallbackLocale = fallbackLocale;
+    _rtlCodes = rtlCodes;
+    _names = names;
 
     final prefs = await SharedPreferences.getInstance();
     final savedCode = prefs.getString(_prefsKey);
@@ -69,6 +84,22 @@ class LocaleNotifier extends ChangeNotifier {
     }
   }
 
+  /// Replace the supported-language set at runtime (after a fresh fetch from the
+  /// backend), so a language added in the admin shows up without a relaunch.
+  /// Keeps the current locale.
+  void applySupported(
+    List<Locale> supportedLocales, {
+    Set<String> rtlCodes = const {'ar'},
+    Map<String, String> names = const {},
+  }) {
+    if (supportedLocales.isEmpty) return;
+
+    _supportedLocales = supportedLocales;
+    _rtlCodes = rtlCodes;
+    _names = names;
+    notifyListeners();
+  }
+
   /// Changes the active locale and persists the choice.
   ///
   /// Throws [ArgumentError] if the locale is not in [supportedLocales].
@@ -83,6 +114,7 @@ class LocaleNotifier extends ChangeNotifier {
     if (_locale == locale) return;
 
     _locale = locale;
+    _syncApiLocaleHeader();
     notifyListeners();
 
     final prefs = await SharedPreferences.getInstance();
@@ -92,10 +124,24 @@ class LocaleNotifier extends ChangeNotifier {
   /// Clears the persisted locale preference and reverts to the fallback.
   Future<void> resetLocale() async {
     _locale = _fallbackLocale;
+    _syncApiLocaleHeader();
     notifyListeners();
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_prefsKey);
+  }
+
+  /// Keep the backend's `X-localization` header in step with the active locale,
+  /// so server-rendered text (notifications feed + push) follows the UI language
+  /// and device-token registration stores the right locale. Best-effort: a no-op
+  /// if the API client isn't initialized yet (main.dart sets the initial header
+  /// right after ApiClient.initialize()).
+  void _syncApiLocaleHeader() {
+    try {
+      ApiClient.instance.setHeader('X-localization', _locale.languageCode);
+    } catch (_) {
+      // ApiClient not ready (early startup / tests).
+    }
   }
 
   bool _isSupported(String languageCode) {

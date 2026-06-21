@@ -8,10 +8,18 @@ class AuthApiService extends BaseApiService {
   static const String _resetPassword = '/auth/reset-password';
   static const String _addInfo = '/profile/update';
 
+  // WhatsApp-OTP recovery (phone based) — mirrors the Eagle flow.
+  static const String _sendOtp = '/auth/forgot-password/send-otp';
+  static const String _verifyOtp = '/auth/forgot-password/verify-code';
+  static const String _resetWithOtp = '/auth/forgot-password/reset-otp';
+
   String get loginPath => _login;
   String get checkEmailPath => _checkEmail;
   String get registerPath => _register;
   String get forgotPasswordPath => _forgotPassword;
   String get resetPasswordPath => _resetPassword;
   String get addInfoPath => _addInfo;
+  String get sendOtpPath => _sendOtp;
+  String get verifyOtpPath => _verifyOtp;
+  String get resetWithOtpPath => _resetWithOtp;
 }

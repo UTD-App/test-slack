@@ -6,6 +6,7 @@ import 'package:utd_app/shared/entities/my_data_entity.dart';
 import '../../domain/params/auth_parameter.dart';
 import '../../domain/params/forget_password_parameter.dart';
 import '../../domain/params/information_parameter.dart';
+import '../../domain/params/recover_otp_parameter.dart';
 import '../../domain/params/register_parameter.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_remote_datasource.dart';
@@ -39,6 +40,23 @@ class AuthRepositoryImpl implements AuthRepository {
     required ForgetPasswordParameter params,
   }) {
     return remoteDataSource.forgetPassword(params: params);
+  }
+
+  @override
+  Future<Result<BaseResponse<String>>> sendOtp(String email) {
+    return remoteDataSource.sendOtp(email);
+  }
+
+  @override
+  Future<Result<BaseResponse<String>>> verifyOtp(VerifyOtpParameter params) {
+    return remoteDataSource.verifyOtp(params);
+  }
+
+  @override
+  Future<Result<BaseResponse<String>>> resetWithOtp(
+    ResetWithOtpParameter params,
+  ) {
+    return remoteDataSource.resetWithOtp(params);
   }
 
   @override

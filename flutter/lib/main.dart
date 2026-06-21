@@ -1,4 +1,5 @@
 import 'package:authentication/authentication.dart';
+import 'package:profile/profile.dart';
 import 'package:audio_room/audio_room.dart';
 import 'package:moment/moment.dart';
 import 'package:flutter/material.dart';
@@ -47,6 +48,7 @@ void main() async {
     // Add your purchased packages here — see README for instructions
     return [
       AuthFeature(),
+      ProfileFeature(),
       MomentFeature(),
       AudioRoomFeature(),
     ];

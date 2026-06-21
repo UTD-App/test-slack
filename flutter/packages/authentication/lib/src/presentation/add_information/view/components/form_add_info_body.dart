@@ -5,8 +5,83 @@ class _FormAddInfoBody extends StatelessWidget {
 
   final AddInformationState state;
 
+  /// Derives the user's age from the stored birthday (`yyyy-MM-dd`), or null
+  /// when no birthday has been chosen yet.
+  int? _ageFromBirthday(String text) {
+    final birth = DateTime.tryParse(text);
+    if (birth == null) return null;
+    final now = DateTime.now();
+    var age = now.year - birth.year;
+    if (now.month < birth.month ||
+        (now.month == birth.month && now.day < birth.day)) {
+      age--;
+    }
+    return age;
+  }
+
+  /// Opens the mockup age wheel; the picked age is converted back to a birthday
+  /// so the backend contract (birthday `yyyy-MM-dd`) is unchanged.
+  Future<void> _pickAge(BuildContext context) async {
+    final current = _ageFromBirthday(state.birthday) ?? 18;
+    final age = await showAgePickerSheet(
+      context,
+      title: context.tr(AuthStrings.yourAge),
+      doneLabel: context.tr(AuthStrings.done),
+      initial: current,
+      min: 18,
+      max: 80,
+    );
+    if (age == null || !context.mounted) return;
+    final now = DateTime.now();
+    final birthday = DateTime(now.year - age, now.month, now.day);
+    context.read<AddInformationBloc>().add(
+      SelectedBirthdayEvent(dateTime: birthday),
+    );
+  }
+
+  Widget _label(BuildContext context, String key) => TextWidget(
+    context.tr(key),
+    style: context.bodySmall.w500
+        .colorExt(ColorManager.lumiaTextSecondary)
+        .size(14),
+  );
+
+  Widget _darkField(
+    BuildContext context, {
+    required String hint,
+    TextEditingController? controller,
+    String? Function(String?)? validator,
+  }) {
+    final border = OutlineInputBorder(
+      borderRadius: 14.radius,
+      borderSide: const BorderSide(color: ColorManager.frostedBorder),
+    );
+    final focused = OutlineInputBorder(
+      borderRadius: 14.radius,
+      borderSide: const BorderSide(color: ColorManager.lumiaAccentLight),
+    );
+    return TextInputWidget(
+      hint,
+      controller: controller,
+      validator: validator,
+      textColor: ColorManager.white,
+      cursorColor: ColorManager.white,
+      fillColor: ColorManager.frostedFill,
+      hintStyle: context.bodyLarge
+          .colorExt(ColorManager.lumiaTextSecondary)
+          .size(14),
+      contentPadding: context.paddingSymmetric(horizontal: 16, vertical: 14),
+      border: border,
+      enabledBorder: border,
+      focusedBorder: focused,
+      errorBorder: border,
+      focusedErrorBorder: focused,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final age = _ageFromBirthday(state.birthday);
     return Form(
       key: state.formKey,
       child: Padding(
@@ -14,41 +89,30 @@ class _FormAddInfoBody extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            5.hBox,
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                TextWidget(
-                  context.tr(AuthStrings.uploadPicture),
-                  textAlign: TextAlign.center,
-                  style: context.bodySmall.w500
-                      .colorExt(ColorManager.lightGray2)
-                      .size(14),
-                ),
-                _PickImageBody(state: state),
-              ],
+            // Avatar upload
+            GradientCard(
+              frosted: true,
+              padding: context.paddingSymmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextWidget(
+                    context.tr(AuthStrings.uploadPicture),
+                    style: context.bodySmall.w500
+                        .colorExt(ColorManager.lumiaTextSecondary)
+                        .size(14),
+                  ),
+                  _PickImageBody(state: state),
+                ],
+              ),
             ),
-            10.hBox,
-            TextInputWidget(
-              context.tr(AuthStrings.fullName),
-              label: TextWidget(
-                context.tr(AuthStrings.fullName),
-                style: context.bodyLarge.colorExt(
-                  ColorManager.blackColor.withValues(alpha: 0.45),
-                ),
-              ),
-              border: const UnderlineInputBorder(
-                borderSide: BorderSide(color: ColorManager.transparent),
-              ),
-              enabledBorder: UnderlineInputBorder(
-                borderSide: BorderSide(
-                  color: Colors.grey.withValues(alpha: 0.2),
-                ),
-              ),
-              focusedBorder: const UnderlineInputBorder(
-                borderSide: BorderSide(color: Colors.green),
-              ),
-              errorBorder: InputBorder.none,
+            18.hBox,
+            // Full name
+            _label(context, AuthStrings.fullName),
+            8.hBox,
+            _darkField(
+              context,
+              hint: context.tr(AuthStrings.fullName),
               controller: state.name,
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -57,205 +121,88 @@ class _FormAddInfoBody extends StatelessWidget {
                 return null;
               },
             ),
-            20.hBox,
-            // Birthday picker
-            GestureDetector(
-              onTap: () async {
-                final picked = await showDatePicker(
-                  context: context,
-                  initialDate: DateTime(2000),
-                  firstDate: DateTime(1950),
-                  lastDate: DateTime.now(),
-                );
-                if (picked != null && context.mounted) {
-                  context.read<AddInformationBloc>().add(
-                    SelectedBirthdayEvent(dateTime: picked),
-                  );
-                }
-              },
-              child: AbsorbPointer(
-                child: TextInputWidget(
-                  context.tr(AuthStrings.selectBirthday),
-                  controller: state.birthday,
-                  border: const UnderlineInputBorder(
-                    borderSide: BorderSide(color: ColorManager.transparent),
-                  ),
-                  enabledBorder: UnderlineInputBorder(
-                    borderSide: BorderSide(
-                      color: Colors.grey.withValues(alpha: 0.2),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            30.hBox,
-            TextWidget(
-              context.tr(AuthStrings.gender),
-              style: context.bodySmall.w500
-                  .colorExt(ColorManager.lightGray2)
-                  .size(14),
-            ),
+            22.hBox,
+            // Gender
+            _label(context, AuthStrings.yourGender),
             10.hBox,
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                // Male button
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => context.read<AddInformationBloc>().add(
-                      SelectedGenderEvent(gender: context.tr(AuthStrings.male)),
-                    ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: 10.radius,
-                        gradient:
-                            state.gender.text == context.tr(AuthStrings.male)
-                            ? const LinearGradient(
-                                colors: ColorManager.maleContainer,
-                              )
-                            : null,
-                        color: state.gender.text != context.tr(AuthStrings.male)
-                            ? ColorManager.inactiveColor
-                            : null,
-                      ),
-                      padding: context.paddingSymmetric(
-                        vertical: 12,
-                        horizontal: 13,
-                      ),
-                      child: Row(
-                        children: [
-                          ImageWidget(
-                            height: 20.h,
-                            width: 20.w,
-                            image: AssetManager.man,
-                          ),
-                          5.wBox,
-                          TextWidget(
-                            context.tr(AuthStrings.male),
-                            style: context.bodyMedium
-                                .size(15)
-                                .copyWith(color: ColorManager.white),
-                          ),
-                          const Spacer(),
-                          CircleAvatar(
-                            radius: 17.r,
-                            backgroundColor: Colors.white,
-                            child: Image.asset(
-                              height: 30.h,
-                              width: 30.w,
-                              AssetManager.manInfo,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                10.wBox,
-                // Female button
-                Expanded(
-                  child: GestureDetector(
-                    onTap: () => context.read<AddInformationBloc>().add(
-                      SelectedGenderEvent(
-                        gender: context.tr(AuthStrings.female),
-                      ),
-                    ),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: 10.radius,
-                        gradient:
-                            state.gender.text == context.tr(AuthStrings.female)
-                            ? const LinearGradient(
-                                colors: ColorManager.femaleContainer,
-                              )
-                            : null,
-                        color:
-                            state.gender.text != context.tr(AuthStrings.female)
-                            ? ColorManager.inactiveColor
-                            : null,
-                      ),
-                      padding: context.paddingSymmetric(
-                        vertical: 12,
-                        horizontal: 13,
-                      ),
-                      child: Row(
-                        children: [
-                          Transform(
-                            alignment: Alignment.center,
-                            transform: Matrix4.diagonal3Values(-1.0, 1.0, 1.0),
-                            child: ImageWidget(
-                              height: 20.h,
-                              width: 20.w,
-                              image: AssetManager.femaleIconInfo,
-                            ),
-                          ),
-                          5.wBox,
-                          TextWidget(
-                            context.tr(AuthStrings.female),
-                            style: context.bodyMedium
-                                .size(15)
-                                .copyWith(color: ColorManager.white),
-                          ),
-                          const Spacer(),
-                          CircleAvatar(
-                            radius: 17.r,
-                            backgroundColor: Colors.white,
-                            child: Image.asset(
-                              height: 30.h,
-                              width: 30.w,
-                              AssetManager.women,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+            GenderSelector(
+              maleLabel: context.tr(AuthStrings.male),
+              femaleLabel: context.tr(AuthStrings.female),
+              selected: state.gender,
+              onSelect: (label) => context.read<AddInformationBloc>().add(
+                SelectedGenderEvent(gender: label),
+              ),
+              maleIcon: AssetManager.man,
+              maleAvatar: AssetManager.manInfo,
+              femaleIcon: AssetManager.femaleIconInfo,
+              femaleAvatar: AssetManager.women,
             ),
-            70.hBox,
-            Align(
-              alignment: Alignment.center,
-              child: ButtonWidget(
-                title: context.tr(AuthStrings.submit),
-                height: 55.h,
-                width: 200.w,
-                elevation: 0,
-                backgroundColor: ColorManager.primary,
-                isLoading: state.requestState.isLoading,
-                onPressed: () {
-                  if (state.image == null) {
-                    ToastManager.showToast(
-                      context,
-                      message: context.tr(AuthStrings.pickImage),
-                      isError: true,
-                    );
-                  } else if (state.name.text.isEmpty) {
-                    ToastManager.showToast(
-                      context,
-                      message: context.tr(AuthStrings.username),
-                      isError: true,
-                    );
-                  } else if (state.gender.text.isEmpty) {
-                    ToastManager.showToast(
-                      context,
-                      message: context.tr(AuthStrings.selectGender),
-                      isError: true,
-                    );
-                  } else if (state.birthday.text.isEmpty) {
-                    ToastManager.showToast(
-                      context,
-                      message: context.tr(AuthStrings.selectBirthday),
-                      isError: true,
-                    );
-                  } else {
-                    context.read<AddInformationBloc>().add(
-                      AddInformationEvent(context: context),
-                    );
-                  }
-                },
+            22.hBox,
+            // Age (wheel picker)
+            _label(context, AuthStrings.yourAge),
+            10.hBox,
+            GradientCard(
+              frosted: true,
+              onTap: () => _pickAge(context),
+              padding: context.paddingSymmetric(horizontal: 16, vertical: 16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  TextWidget(
+                    age != null
+                        ? '$age'
+                        : context.tr(AuthStrings.selectBirthday),
+                    style: context.bodyMedium.size(15).colorExt(
+                      age != null
+                          ? ColorManager.white
+                          : ColorManager.lumiaTextSecondary,
+                    ),
+                  ),
+                  const Icon(
+                    Icons.expand_more_rounded,
+                    color: ColorManager.lumiaTextSecondary,
+                  ),
+                ],
               ),
             ),
+            40.hBox,
+            ButtonWidget(
+              title: context.tr(AuthStrings.submit),
+              height: 55.h,
+              radius: 30,
+              backgroundColors: ColorManager.pinkCtaGradient,
+              isLoading: state.requestState.isLoading,
+              onPressed: () {
+                // Tell the user EXACTLY what's still missing, all at once.
+                final missing = <String>[];
+                if (state.image == null) {
+                  missing.add(context.tr(AuthStrings.photo));
+                }
+                if (state.name.text.trim().isEmpty) {
+                  missing.add(context.tr(AuthStrings.fullName));
+                }
+                if (state.gender.isEmpty) {
+                  missing.add(context.tr(AuthStrings.gender));
+                }
+                if (state.birthday.isEmpty) {
+                  missing.add(context.tr(AuthStrings.yourAge));
+                }
+                if (missing.isNotEmpty) {
+                  ToastManager.showToast(
+                    context,
+                    message:
+                        '${context.tr(AuthStrings.completeMissing)} '
+                        '${missing.join('، ')}',
+                    isError: true,
+                  );
+                  return;
+                }
+                context.read<AddInformationBloc>().add(
+                  AddInformationEvent(context: context),
+                );
+              },
+            ),
+            20.hBox,
           ],
         ),
       ),

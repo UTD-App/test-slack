@@ -16,7 +16,11 @@ class AppCacheManager {
 
   void init() {
     if (_initialized) return;
-    _manager = CacheManager(
+    // Must be an ImageCacheManager: cached_network_image asserts (and THROWS in
+    // debug builds) when maxWidthDiskCache/maxHeightDiskCache is set on a plain
+    // CacheManager. The profile cover banner uses maxWidthDiskCache, so a plain
+    // CacheManager made every cover image fail to load (broken icon) in debug.
+    _manager = _UtdImageCacheManager(
       Config(
         _cacheKey,
         stalePeriod: _stalePeriod,
@@ -56,4 +60,11 @@ class AppCacheManager {
   Future<void> prefetch(String url) async {
     await _manager.downloadFile(url);
   }
+}
+
+/// A [CacheManager] that also supports cached_network_image's on-the-fly image
+/// resizing (maxWidthDiskCache/maxHeightDiskCache) via the [ImageCacheManager]
+/// mixin. Without this, setting those options throws an assertion in debug.
+class _UtdImageCacheManager extends CacheManager with ImageCacheManager {
+  _UtdImageCacheManager(super.config);
 }
