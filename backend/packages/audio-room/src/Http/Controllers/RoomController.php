@@ -171,14 +171,14 @@ class RoomController extends Controller
             $data['room_cover'] = $request->file('room_cover')->store('rooms/covers');
         }
 
+        $room->update(array_filter($data, fn ($v) => $v !== null));
+
         foreach (['empty_seat_icon', 'locked_seat_icon'] as $field) {
-            $icon = $this->processSeatIcon($request, $field, $room->$field);
-            if ($icon !== null || $request->has($field)) {
-                $data[$field] = $icon;
+            if ($request->has($field)) {
+                $room->$field = $this->processSeatIcon($request, $field, $room->$field);
             }
         }
-
-        $room->update(array_filter($data, fn ($v) => $v !== null));
+        $room->save();
         $room->load(['owner.profile', 'owner.country', 'categoryType']);
         $room->loadCount('visitors');
 
