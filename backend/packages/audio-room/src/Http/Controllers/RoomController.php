@@ -35,7 +35,13 @@ class RoomController extends Controller
             });
         }
 
-        $query->orderByDesc('visitors_count')->orderByDesc('created_at');
+        $sortBy = $request->input('sort_by', 'visitors');
+        if ($sortBy === 'newest') {
+            $query->orderByDesc('created_at');
+        } else {
+            $query->orderByDesc('visitors_count')->orderByDesc('created_at');
+        }
+
         $rooms = $query->paginate(20);
 
         $favorites = json_decode(Auth::user()->room_favorites ?? '[]', true);
