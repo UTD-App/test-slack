@@ -191,6 +191,7 @@ class RoomController extends Controller
 
         $streamConfig = [
             'app_id' => config('audio-room.utd_stream.app_id', ''),
+            'server_secret' => config('audio-room.utd_stream.server_secret', ''),
         ];
 
         $roomData = $this->formatRoom($room);
@@ -455,6 +456,7 @@ class RoomController extends Controller
     {
         return Common::apiResponse(true, '', [
             'app_id' => config('audio-room.utd_stream.app_id', ''),
+            'server_secret' => config('audio-room.utd_stream.server_secret', ''),
             'max_admin' => 4,
         ]);
     }
