@@ -14,11 +14,12 @@
  * mapping. UTD Studio discovers this via GET /api/utd/manifest and seeds the
  * Craft tree below into the app's Stac screens on Sync.
  *
- * DESIGN: mirrors the REAL native profile (the "Lumia" centered identity block
- * on a deep-purple screen — circular avatar, name + country flag, UID, bio,
- * country). Solid purple colours approximate the native gradient (the gradient
- * ring / level badges are bespoke Flutter flourishes primitives can't express),
- * so pulling this back into the app produces no visual change.
+ * DESIGN: mirrors the REAL native profile (the "Lumia" centered identity block —
+ * circular avatar, name + country flag, UID, bio, email, country). This screen
+ * renders inside the AppShell, so its ROOT is TRANSPARENT and the purple shell
+ * Scaffold fills the whole screen (no short-container "split"). Empty fields
+ * hide via visibleBinding so it degrades cleanly. The gradient ring / level
+ * badges are bespoke Flutter flourishes primitives can't express.
  */
 
 // ── Craft node helper (same shape the Studio design scripts emit) ──────────
@@ -38,26 +39,26 @@ $node = function (string $name, bool $canvas, array $props, array $kids = [], ?s
     return $n;
 };
 
-// ── Lumia palette (solid approximations of the native gradient theme) ──────
+// ── Lumia palette ──────────────────────────────────────────────────────────
 $C = [
-    'bg'       => '#4A2E8C', // profile screen (≈ lumiaBgGradient mid #583C9E)
-    'white'    => '#FFFFFF',
-    'muted'    => '#CDBFEE', // lumiaTextSecondary
-    'bioText'  => '#E3D8FB',
+    'screen'  => '#00000000', // transparent → inherit the AppShell's purple Scaffold
+    'white'   => '#FFFFFF',
+    'muted'   => '#CDBFEE',   // lumiaTextSecondary
+    'bioText' => '#E3D8FB',
 ];
 
-// user_profile — CENTERED identity block bound to profile.user (Scope):
-// circular avatar, name + country flag, UID, bio, country. Matches the native
+// user_profile — CENTERED identity bound to profile.user (Scope): circular
+// avatar, name + country flag, UID, bio, email, country. Matches the native
 // "Me"/profile landing (no cover banner in the main view).
 $profileWidgets = [
-    'ROOT'    => $node('Container', true, ['background' => $C['bg'], 'padding' => 20, 'gap' => 10, 'align' => 'center', 'flex' => 0], ['scope'], null),
+    'ROOT'    => $node('Container', true, ['background' => $C['screen'], 'padding' => 20, 'gap' => 12, 'align' => 'center', 'flex' => 0], ['scope'], null),
     'scope'   => $node('Scope', true, ['source' => 'profile.user'], ['avatar', 'nameRow', 'uid', 'bio', 'country'], 'ROOT'),
 
-    'avatar'  => $node('Image', false, ['src' => '', 'binding' => 'profile.user.avatar', 'width' => 96, 'height' => 96, 'fit' => 'cover', 'shape' => 'circle', 'radius' => 0], [], 'scope'),
+    'avatar'  => $node('Image', false, ['src' => '', 'binding' => 'profile.user.avatar', 'width' => 110, 'height' => 110, 'fit' => 'cover', 'shape' => 'circle', 'radius' => 0], [], 'scope'),
 
     'nameRow' => $node('Row', true, ['gap' => 6, 'align' => 'center'], ['name', 'flag'], 'scope'),
-    'name'    => $node('Text', false, ['text' => 'الاسم', 'binding' => 'profile.user.name', 'fontSize' => 20, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'maxLines' => 1], [], 'nameRow'),
-    'flag'    => $node('Image', false, ['src' => '', 'binding' => 'profile.user.flag', 'visibleBinding' => 'profile.user.flag', 'width' => 22, 'height' => 15, 'fit' => 'cover', 'radius' => 3], [], 'nameRow'),
+    'name'    => $node('Text', false, ['text' => 'الاسم', 'binding' => 'profile.user.name', 'fontSize' => 22, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'maxLines' => 1], [], 'nameRow'),
+    'flag'    => $node('Image', false, ['src' => '', 'binding' => 'profile.user.flag', 'visibleBinding' => 'profile.user.flag', 'width' => 24, 'height' => 16, 'fit' => 'cover', 'radius' => 3], [], 'nameRow'),
 
     'uid'     => $node('Text', false, ['text' => '', 'binding' => 'profile.user.uid', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'maxLines' => 1], [], 'scope'),
     'bio'     => $node('Text', false, ['text' => '', 'binding' => 'profile.user.bio', 'visibleBinding' => 'profile.user.bio', 'fontSize' => 14, 'fontWeight' => 400, 'color' => $C['bioText'], 'align' => 'center', 'maxLines' => 0], [], 'scope'),
@@ -81,9 +82,8 @@ return [
         ['key' => 'uid',     'label' => 'المعرّف',    'type' => 'string',    'screen' => 'user_profile'],
     ],
 
-    // Single-object source: the signed-in user's profile. A `Scope` (utdObject)
-    // bound to `profile.user` lets the designer bind its children to the live
-    // profile. Resolved on the client by `registerProfileStacSources()`.
+    // Single-object source: the signed-in user's profile. Resolved on the client
+    // by `registerProfileStacSources()`.
     'object_sources' => [
         [
             'key'      => 'profile.user',
@@ -101,8 +101,7 @@ return [
     ],
 
     'action_elements' => [
-        // Open the (native) edit-profile screen. Reuses the core navigate action
-        // — no package-specific Flutter parser needed.
+        // Open the (native) edit-profile screen. Reuses the core navigate action.
         [
             'key' => 'open_edit', 'label' => 'تعديل الملف',
             'produces' => 'core.navigate', 'default_shape' => 'button', 'screen' => 'user_profile',
@@ -119,7 +118,7 @@ return [
             'name'         => 'user_profile',
             'label'        => 'الملف الشخصي',
             'icon'         => '👤',
-            'version'      => '1.1.0',
+            'version'      => '1.2.0',
             'nav'          => false,
             'navIcon'      => 'person',
             'order'        => 31,
@@ -127,7 +126,7 @@ return [
             'requiresAuth' => true,
             'showOnce'     => false,
             'opens'        => null,
-            'chrome'       => ['appBar' => ['enabled' => false, 'title' => 'الملف الشخصي', 'bg' => $C['bg'], 'actions' => []]],
+            'chrome'       => ['appBar' => ['enabled' => false, 'title' => 'الملف الشخصي', 'bg' => $C['screen'], 'actions' => []]],
             'widgets'      => $profileWidgets,
         ],
     ],
