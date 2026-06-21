@@ -224,10 +224,13 @@ class RoomController extends Controller
             'server_secret' => config('audio-room.utd_stream.server_secret', ''),
         ];
 
+        $favorites = json_decode(Auth::user()->room_favorites ?? '[]', true);
+
         $roomData = $this->formatRoom($room);
         $roomData['stream_config'] = $streamConfig;
         $roomData['is_owner'] = $room->isOwner(Auth::id());
         $roomData['is_admin'] = $room->isAdmin(Auth::id());
+        $roomData['is_favorite'] = in_array($room->id, $favorites);
 
         return Common::apiResponse(true, '', $roomData);
     }
