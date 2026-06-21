@@ -38,9 +38,39 @@ class RoomController extends Controller
         $query->orderByDesc('visitors_count')->orderByDesc('created_at');
         $rooms = $query->paginate(20);
 
-        $data = $rooms->getCollection()->map(fn ($room) => $this->formatRoom($room));
+        $favorites = json_decode(Auth::user()->room_favorites ?? '[]', true);
+
+        $data = $rooms->getCollection()->map(function ($room) use ($favorites) {
+            $formatted = $this->formatRoom($room);
+            $formatted['is_favorite'] = in_array($room->id, $favorites);
+            return $formatted;
+        });
 
         return Common::apiResponse(true, '', $data, 200, $rooms);
+    }
+
+    public function favorites(): JsonResponse
+    {
+        $favoriteIds = json_decode(Auth::user()->room_favorites ?? '[]', true);
+
+        if (empty($favoriteIds)) {
+            return Common::apiResponse(true, '', []);
+        }
+
+        $rooms = Room::with(['owner.profile', 'owner.country', 'categoryType'])
+            ->withCount('visitors')
+            ->whereIn('id', $favoriteIds)
+            ->where('room_status', 1)
+            ->orderByDesc('visitors_count')
+            ->get();
+
+        $data = $rooms->map(function ($room) {
+            $formatted = $this->formatRoom($room);
+            $formatted['is_favorite'] = true;
+            return $formatted;
+        });
+
+        return Common::apiResponse(true, '', $data);
     }
 
     public function store(Request $request): JsonResponse
@@ -336,15 +366,17 @@ class RoomController extends Controller
 
         if (in_array($id, $favorites)) {
             $favorites = array_values(array_diff($favorites, [$id]));
-            $message = 'Removed from favorites';
+            $isFavorite = false;
         } else {
             $favorites[] = $id;
-            $message = 'Added to favorites';
+            $isFavorite = true;
         }
 
         $user->update(['room_favorites' => json_encode($favorites)]);
 
-        return Common::apiResponse(true, $message);
+        return Common::apiResponse(true, $isFavorite ? 'Added to favorites' : 'Removed from favorites', [
+            'is_favorite' => $isFavorite,
+        ]);
     }
 
     public function toggleComments(Request $request, int $id): JsonResponse

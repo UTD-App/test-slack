@@ -13,6 +13,7 @@ Route::middleware(['auth:sanctum', 'package.enabled:audio-room'])->group(functio
     Route::get('rooms', [RoomController::class, 'index']);
     Route::post('rooms', [RoomController::class, 'store']);
     Route::get('rooms/mine', [RoomController::class, 'mine']);
+    Route::get('rooms/favorites', [RoomController::class, 'favorites']);
     Route::get('rooms/categories', [RoomController::class, 'categories']);
     Route::get('rooms/categories/{id}/types', [RoomController::class, 'categoryTypes']);
     Route::get('rooms/{id}', [RoomController::class, 'show']);
