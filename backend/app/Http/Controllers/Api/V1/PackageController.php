@@ -15,12 +15,18 @@ class PackageController extends Controller
     // to know which screens to show the client
     public function installed(): \Illuminate\Http\JsonResponse
     {
-        $packages = \App\Models\TranslationKey::distinct()
-            ->whereNotIn('group', ['app', 'admin', 'auth', 'dashboard', 'messages', 'api', 'validation'])
-            ->pluck('group')
-            ->values();
+        // Source of truth = the `packages` table (owned by `utd:sync-packages`),
+        // NOT distinct translation groups. The old translation-group derivation
+        // leaked Laravel lang-file names (pagination, passwords, validation…) and
+        // missed real packages that didn't register a same-named translation
+        // group (e.g. profile). Always include `base` even before a sync runs.
+        $slugs = \App\Models\Package::query()
+            ->where('enabled', true)
+            ->orderBy('order')
+            ->pluck('slug')
+            ->all();
 
-        $installedPackages = array_merge(['base'], $packages->toArray());
+        $installedPackages = array_values(array_unique(array_merge(['base'], $slugs)));
 
         return Common::apiResponse(true, '', [
             'packages'     => $installedPackages,

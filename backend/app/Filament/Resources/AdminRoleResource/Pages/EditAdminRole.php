@@ -34,7 +34,15 @@ class EditAdminRole extends EditRecord
             return;
         }
 
-        $this->record->permissions()->sync($this->permissionIds);
+        // The matrix only renders cards for live packages, so $permissionIds covers
+        // visible packages only. Preserve any grants belonging to hidden packages
+        // (e.g. a temporarily disabled module) so the sync doesn't silently drop them.
+        $hiddenGrants = $this->record->permissions()
+            ->whereNotIn('package', AdminRoleResource::visiblePackageSlugs())
+            ->pluck('admin_permissions.id')
+            ->all();
+
+        $this->record->permissions()->sync(array_merge($this->permissionIds, $hiddenGrants));
     }
 
     protected function getHeaderActions(): array

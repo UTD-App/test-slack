@@ -3,10 +3,13 @@
 namespace App\Models;
 
 use App\Services\PackageRegistry;
+use App\Support\Auditable;
 use Illuminate\Database\Eloquent\Model;
 
 class Package extends Model
 {
+    use Auditable;
+
     protected $guarded = [];
 
     protected $casts = [

@@ -15,6 +15,7 @@
         "ext-openssl": "*",
         "filament/filament": "^3.2",
         "guzzlehttp/guzzle": "^7.0.1",
+        "kahusoftware/filament-ckeditor-field": "^1.0",
         "kreait/laravel-firebase": "^5.10",
         "laravel/framework": "^10.0",
         "laravel/octane": "^2.0",

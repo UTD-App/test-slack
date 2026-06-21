@@ -61,6 +61,21 @@ class UserResource extends BaseResource
                         ->disk('app_storage')
                         ->directory('avatars')
                         ->columnSpanFull(),
+                    // Multi-image profile cover (swipeable banner on the app, up
+                    // to 3). Lives on the profile relation like avatar; the page
+                    // hooks (Create/EditUser) route this to profile.covers.
+                    FileUpload::make('covers')
+                        ->label(__('admin.covers'))
+                        ->image()
+                        ->multiple()
+                        ->maxFiles(3)
+                        ->reorderable()
+                        ->appendFiles()
+                        ->imageEditor()
+                        ->maxSize(5120)
+                        ->disk('app_storage')
+                        ->directory('covers')
+                        ->columnSpanFull(),
                     // UID is mandatory — a user can never be created without one.
                     TextInput::make('uuid')
                         ->label(__('admin.uuid'))
@@ -117,15 +132,14 @@ class UserResource extends BaseResource
             return ($registry->resolve())($infolist);
         }
 
+        // Minimal default — shown only when the Profile package is NOT installed/
+        // enabled (it owns the rich view via the registry above). Deliberately
+        // limited to core identity + admin essentials: id, uid, name, email,
+        // status, joined (NO avatar). Richer fields (avatar, phone, gender,
+        // birthday, bio, country) belong to the Profile package's infolist.
         return $infolist->schema([
             Section::make(__('admin.profile'))->schema([
-                Grid::make(3)->schema([
-                    ImageEntry::make('avatar')
-                        ->circular()
-                        ->label(__('admin.avatar'))
-                        // Same driver-aware resolution as the table (see above).
-                        ->getStateUsing(fn($record) => filled($u = app(StorageConfigService::class)->webUrl($record->avatar)) ? url($u) : null)
-                        ->defaultImageUrl(fn() => 'https://ui-avatars.com/api/?background=random'),
+                Grid::make(2)->schema([
                     TextEntry::make('id')->label(__('admin.id')),
                     TextEntry::make('uuid')->label(__('admin.uuid'))->copyable(),
                 ]),
@@ -135,16 +149,6 @@ class UserResource extends BaseResource
                 Grid::make(2)->schema([
                     TextEntry::make('name')->label(__('admin.name')),
                     TextEntry::make('email')->label(__('admin.email'))->copyable(),
-                    TextEntry::make('phone')->label(__('admin.phone')),
-                    TextEntry::make('gender')
-                        ->label(__('admin.gender'))
-                        ->formatStateUsing(fn($state) => match($state) {
-                            1 => __('admin.male'),
-                            2 => __('admin.female'),
-                            default => '—'
-                        }),
-                    TextEntry::make('birthday')->label(__('admin.birthday'))->date(),
-                    TextEntry::make('bio')->label(__('admin.bio'))->columnSpanFull(),
                 ]),
             ]),
 
@@ -156,7 +160,6 @@ class UserResource extends BaseResource
                         ->formatStateUsing(fn($state) => $state ? __('admin.active') : __('admin.banned'))
                         ->color(fn($state) => $state ? 'success' : 'danger'),
                     TextEntry::make('created_at')->label(__('admin.joined'))->dateTime(),
-                    TextEntry::make('country.name')->label(__('admin.country')),
                 ]),
             ]),
         ]);

@@ -115,7 +115,12 @@ class AuthController extends Controller
     {
         $user = $request->user();
 
-        $user->update(array_filter($request->only(['name', 'bio', 'birthday', 'gender'])));
+        // Keep only fields the client actually sent; drop null/'' but NOT "0"
+        // (a bare array_filter would silently discard gender=0 / female).
+        $user->update(array_filter(
+            $request->only(['name', 'bio', 'birthday', 'gender']),
+            static fn ($v) => $v !== null && $v !== '',
+        ));
 
         // Avatar: either an already-uploaded path/URL string (from /media/upload,
         // the reusable client path) or a raw file uploaded inline. Both go
@@ -132,7 +137,78 @@ class AuthController extends Controller
             $user->profile()->updateOrCreate(['user_id' => $user->id], ['avatar' => $avatar]);
         }
 
+        // Covers: the multi-image profile banner (up to 3). Each entry is either
+        // an already-uploaded path/URL string (from /media/upload, the reusable
+        // client path) or a raw file uploaded inline. Sending the `covers` key —
+        // even an empty array — replaces the stored set (so clearing works);
+        // omitting it leaves the existing covers untouched. Mirrors the avatar
+        // path so storage stays provider-agnostic.
+        $covers = $this->resolveCovers($request);
+        if ($covers !== null) {
+            $user->profile()->updateOrCreate(['user_id' => $user->id], ['covers' => $covers]);
+        }
+
         return Common::apiResponse(true, 'Profile updated', $user->fresh()->load(['profile', 'country']));
+    }
+
+    /**
+     * Resolve the incoming `covers` payload into an array of stored paths, or
+     * null when the client did not send a `covers` key at all (→ leave the
+     * existing covers untouched). An empty array clears the covers. Accepts
+     * already-uploaded path/URL strings and/or inline uploaded files; both
+     * resolve through the Media seam so storage stays provider-agnostic.
+     *
+     * @return array<int, string>|null
+     */
+    protected function resolveCovers(Request $request): ?array
+    {
+        $sent = $request->hasFile('covers') || $request->exists('covers');
+        if (! $sent) {
+            return null;
+        }
+
+        $files = array_values(array_filter((array) $request->file('covers', [])));
+        $strings = array_values(array_filter(
+            (array) $request->input('covers', []),
+            static fn ($v) => is_string($v) && $v !== '',
+        ));
+
+        // Cap the total number of covers (files + already-uploaded strings).
+        // The app renders CValidationException as a 422 (a plain Laravel
+        // ValidationException would fall through the api Handler to a 500).
+        $this->validateCovers(
+            ['covers' => array_merge($files, $strings)],
+            ['covers' => 'array|max:3'],
+        );
+
+        $paths = [];
+
+        foreach ($files as $file) {
+            $this->validateCovers(
+                ['cover' => $file],
+                ['cover' => 'image|mimes:jpeg,jpg,png,webp|max:5120'],
+            );
+            $paths[] = \App\Facades\Media::upload($file, 'covers')->path;
+        }
+
+        foreach ($strings as $value) {
+            $this->validateCovers(
+                ['cover' => $value],
+                ['cover' => 'string|max:2048'],
+            );
+            $paths[] = $value;
+        }
+
+        return array_values($paths);
+    }
+
+    /** Validate a small payload, raising the app's 422 exception on failure. */
+    protected function validateCovers(array $data, array $rules): void
+    {
+        $validator = \Illuminate\Support\Facades\Validator::make($data, $rules);
+        if ($validator->fails()) {
+            throw new \App\Exceptions\CValidationException($validator->errors()->first());
+        }
     }
 
     public function getSettings(Request $request)

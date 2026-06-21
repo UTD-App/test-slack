@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Helpers\Common;
 use App\Http\Controllers\Controller;
 use App\Models\Config;
+use App\Support\SocialPlatforms;
 use Illuminate\Http\Request;
 
 /**
@@ -32,33 +33,9 @@ class AppVersionController extends Controller
 
         $version = (int) $request->query('version', 0);
 
-        $configs = Config::whereIn('name', [
-            'maintenance_mode',
-            'maintenance_message',
-            "{$platform}_min_version",
-            "{$platform}_latest_version",
-            "{$platform}_update_required",
-            "{$platform}_store_url",
-            // Branding / general app config
-            'app_name',
-            'app_description',
-            'app_logo',
-            'support_email',
-            'support_phone',
-            'privacy_url',
-            'terms_url',
-            // App colors (admin overrides; blank = app keeps its built-in color)
-            'theme_primary',
-            'theme_accent',
-            'theme_bg_dark',
-            'theme_bg_gradient_1',
-            'theme_bg_gradient_2',
-            'theme_bg_gradient_3',
-            'theme_card_bg',
-            'theme_card_border',
-            'theme_text_primary',
-            'theme_text_secondary',
-        ])->pluck('value', 'name');
+        // Cached name=>value map (Redis in prod) — no DB hit once warm. The map is
+        // dropped automatically whenever any config row changes (Config model).
+        $configs = Config::map();
 
         $minVersion     = (int) ($configs["{$platform}_min_version"] ?? 0);
         $latestVersion  = (int) ($configs["{$platform}_latest_version"] ?? 0);
@@ -79,6 +56,21 @@ class AppVersionController extends Controller
         // Branding — every field defaulted so the app always has something usable.
         // `logo` is the raw stored path; the app resolves it via resolveMediaUrl
         // (never hardcode a host server-side — emulator/phone/prod differ).
+        // Contact Us — the admin-managed list of contact links. Each entry carries
+        // its label + (for known platforms) brand color so the app can render it
+        // even for platforms an old build doesn't know. Custom-icon paths are raw
+        // (app resolves them). Empty rows are dropped server-side.
+        $socialLinks = $this->socialLinks($configs);
+
+        // Backward-compat: older app builds read a flat {platform: url} map. Keep
+        // emitting it for the known platforms so they keep working until rebuilt.
+        $social = [];
+        foreach ($socialLinks as $link) {
+            if (SocialPlatforms::isKnown($link['platform'])) {
+                $social[$link['platform']] = $link['value'];
+            }
+        }
+
         $app = [
             'name'          => $configs['app_name'] ?? config('app.name', 'Tempo'),
             'description'   => $configs['app_description'] ?? '',
@@ -87,6 +79,8 @@ class AppVersionController extends Controller
             'support_phone' => $configs['support_phone'] ?? null,
             'privacy_url'   => $configs['privacy_url'] ?? null,
             'terms_url'     => $configs['terms_url'] ?? null,
+            'social'        => $social,
+            'social_links'  => $socialLinks,
         ];
 
         // Colors: return the admin override or null. Null lets the app fall back
@@ -118,5 +112,47 @@ class AppVersionController extends Controller
             'app'                 => $app,
             'theme'               => $theme,
         ]);
+    }
+
+    /**
+     * The ordered contact links, normalized for the app. Reads the JSON
+     * `social_links` config (admin-managed CRUD list); falls back to the legacy
+     * per-platform `social_{key}` rows for installs that predate the list, so the
+     * Contact Us screen keeps working through the migration.
+     *
+     * @param  array<string,mixed>  $configs
+     * @return array<int,array{platform:string,label:string,value:string,icon:?string,color:?string}>
+     */
+    private function socialLinks(array $configs): array
+    {
+        $raw = $configs['social_links'] ?? null;
+
+        if (is_string($raw) && $raw !== '') {
+            $decoded = json_decode($raw, true);
+            if (is_array($decoded)) {
+                $links = [];
+                foreach ($decoded as $item) {
+                    if (is_array($item) && ($enriched = SocialPlatforms::enrich($item)) !== null) {
+                        $links[] = $enriched;
+                    }
+                }
+
+                return $links;
+            }
+        }
+
+        // Legacy fallback: build from the old social_{key} scalar rows.
+        $links = [];
+        foreach (array_keys(SocialPlatforms::KNOWN) as $key) {
+            $value = $configs["social_{$key}"] ?? null;
+            if ($value !== null && $value !== '') {
+                $enriched = SocialPlatforms::enrich(['platform' => $key, 'value' => $value]);
+                if ($enriched !== null) {
+                    $links[] = $enriched;
+                }
+            }
+        }
+
+        return $links;
     }
 }

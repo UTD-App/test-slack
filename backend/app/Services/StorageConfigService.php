@@ -58,6 +58,66 @@ class StorageConfigService
         return \Illuminate\Support\Facades\Storage::url($path);
     }
 
+    /**
+     * Resolve a stored media value to a URL that loads in the ADMIN WEB browser.
+     *
+     * url() is correct for the mobile app, but the dashboard runs in a desktop
+     * browser that can't reach a mobile-only public-disk host such as the Android
+     * emulator's 10.0.2.2 (STORAGE_PUBLIC_URL). So the rules differ here:
+     *   - cloud-backed media (GCS/S3 with a bucket) → the absolute cloud URL
+     *   - local public-disk media                   → a HOST-RELATIVE /storage/…
+     *     path, so it loads from whatever host serves the panel
+     *   - bare relative paths are resolved through url() first
+     *   - our own absolute URLs that embed /storage/<tail> are re-resolved from the
+     *     <tail> (so a stored emulator host doesn't leak into the panel)
+     *   - any other external absolute URL (CDN, ui-avatars, pravatar) passes through
+     *
+     * Use this for every image rendered in the admin panel.
+     */
+    public function webUrl(?string $path): ?string
+    {
+        if ($path === null || $path === '') {
+            return null;
+        }
+
+        if (preg_match('#^https?://#i', $path)) {
+            // Re-resolve our own stored media; leave third-party URLs untouched.
+            if (preg_match('#/storage/(.+)$#', $path, $m)) {
+                $path = $m[1];
+            } else {
+                return $path;
+            }
+        } else {
+            $path = ltrim($path, '/');
+        }
+
+        $url = $this->url($path);
+
+        // Keep absolute ONLY when the file truly lives on a public cloud bucket
+        // (mirrors url()'s own branching); otherwise strip to a host-relative path
+        // for the dashboard host.
+        $driver   = $this->get('storage_driver', 'gcs');
+        $bucket   = $this->get('storage_bucket');
+        $endpoint = $this->get('storage_endpoint');
+        $isCloud  = ($driver === 's3' && $endpoint && $bucket) || ($driver === 'gcs' && $bucket);
+
+        return $isCloud ? $url : $this->toHostRelativeUrl($url);
+    }
+
+    /** Strip scheme+host from a URL so it resolves against the current request host. */
+    private function toHostRelativeUrl(string $url): string
+    {
+        $p = parse_url($url, PHP_URL_PATH);
+
+        if (empty($p)) {
+            return $url;
+        }
+
+        $q = parse_url($url, PHP_URL_QUERY);
+
+        return $p . ($q ? '?' . $q : '');
+    }
+
     private function s3Config(): array
     {
         return [
@@ -91,6 +151,16 @@ class StorageConfigService
             ? storage_path('app/' . ltrim($uploaded, '/'))
             : ($base['key_file_path'] ?? base_path('service-account.json'));
 
+        // Resolve a relative key path against the project root. The Google client
+        // reads the key file relative to the PHP process' working directory, which
+        // under php-fpm/nginx is usually public/ (not the project root) — so a
+        // relative GOOGLE_CLOUD_KEY_FILE like "service-account.json" fails on real
+        // requests with "Given keyfile path ... does not exist" (yet works in
+        // tinker, where the CWD happens to be the project root).
+        if (is_string($keyFilePath) && $keyFilePath !== '' && ! $this->isAbsolutePath($keyFilePath)) {
+            $keyFilePath = base_path($keyFilePath);
+        }
+
         return [
             'driver'        => 'gcs',
             'key_file_path' => $keyFilePath,
@@ -123,6 +193,14 @@ class StorageConfigService
             'username' => $this->get('storage_key'),
             'password' => $this->get('storage_secret'),
         ];
+    }
+
+    /**
+     * Whether $path is absolute: Unix "/..." or Windows "C:\..." / "C:/...".
+     */
+    private function isAbsolutePath(string $path): bool
+    {
+        return (bool) preg_match('#^(/|[A-Za-z]:[\\\\/])#', $path);
     }
 
     private function get(string $key, mixed $default = null): mixed

@@ -67,6 +67,10 @@ class LanguageResource extends BaseResource
                     ->label(__('admin.translate'))
                     ->icon('heroicon-o-pencil-square')
                     ->url(fn(Language $record) => static::getUrl('translations', ['record' => $record])),
+                Action::make('content_translations')
+                    ->label(__('admin.content_translations'))
+                    ->icon('heroicon-o-document-text')
+                    ->url(fn(Language $record) => static::getUrl('content-translations', ['record' => $record])),
                 EditAction::make(),
                 DeleteAction::make()
                     ->before(fn(Language $record) => throw_if(
@@ -84,6 +88,7 @@ class LanguageResource extends BaseResource
             'create'       => Pages\CreateLanguage::route('/create'),
             'edit'         => Pages\EditLanguage::route('/{record}/edit'),
             'translations' => Pages\ManageTranslations::route('/{record}/translations'),
+            'content-translations' => Pages\ManageContentTranslations::route('/{record}/content-translations'),
         ];
     }
 }

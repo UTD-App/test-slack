@@ -19,6 +19,14 @@ class PagesSeeder extends Seeder
                 ],
             ],
             [
+                'key'   => 'terms',
+                'title' => ['en' => 'Terms of Service', 'ar' => 'شروط الخدمة'],
+                'body'  => [
+                    'en' => "These are the terms of service.\n\nThis is placeholder content. Replace it from Admin → Pages → Terms of Service.",
+                    'ar' => "هذه هي شروط الخدمة.\n\nهذا نص مبدئي. عدّله من لوحة التحكم ← الصفحات ← شروط الخدمة.",
+                ],
+            ],
+            [
                 'key'   => 'about-us',
                 'title' => ['en' => 'About Us', 'ar' => 'من نحن'],
                 'body'  => [

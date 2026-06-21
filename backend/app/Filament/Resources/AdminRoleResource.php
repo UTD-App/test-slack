@@ -5,6 +5,7 @@ namespace App\Filament\Resources;
 use App\Filament\Resources\AdminRoleResource\Pages;
 use App\Models\AdminRole;
 use App\Services\AdminPermissionRegistry;
+use App\Services\PackageRegistry;
 use Filament\Forms\Components\CheckboxList;
 use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\Section;
@@ -48,6 +49,15 @@ class AdminRoleResource extends BaseResource
     {
         // Group the catalog by PACKAGE first, base before the rest.
         $byPackage = app(AdminPermissionRegistry::class)->all()->groupBy('package');
+
+        // The permission catalog is upsert-only and is never pruned, so a package that
+        // was once installed leaves its rows behind in admin_permissions. Without this
+        // filter those orphan rows render as "ghost" cards for modules that are no
+        // longer present (or are currently disabled). Only show cards for packages that
+        // are actually live — installed & enabled, plus base.
+        $visible = static::visiblePackageSlugs();
+        $byPackage = $byPackage->filter(fn ($perms, string $package): bool => in_array($package, $visible, true));
+
         $packages = $byPackage->keys()
             ->sort(fn ($a, $b) => $a === 'base' ? -1 : ($b === 'base' ? 1 : strcmp($a, $b)))
             ->values();
@@ -185,6 +195,19 @@ class AdminRoleResource extends BaseResource
         $label = __($key);
 
         return $label === $key ? Str::headline($package) : $label;
+    }
+
+    /**
+     * Package slugs whose permission cards are shown in the matrix: the live set
+     * (installed + enabled, always including base). Grants for packages outside this
+     * set are hidden from the form, so the save path must preserve them rather than
+     * sync them away (see EditAdminRole::afterSave).
+     *
+     * @return array<int, string>
+     */
+    public static function visiblePackageSlugs(): array
+    {
+        return app(PackageRegistry::class)->enabledSlugs();
     }
 
     public static function canDelete(Model $record): bool

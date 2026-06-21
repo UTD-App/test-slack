@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\Auth\RegisterController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\ConfigController;
 use App\Http\Controllers\Api\V1\MediaController;
+use App\Http\Controllers\Api\V1\PresenceController;
 use App\Http\Controllers\Api\V1\PackageController;
 use App\Http\Controllers\Api\V1\PageController;
 use App\Http\Controllers\Api\V1\StacController;
@@ -13,6 +14,7 @@ use App\Http\Controllers\Api\V1\UtdManifestController;
 use App\Http\Controllers\Api\V1\MenuController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\TranslationController;
+use App\Http\Controllers\Api\V1\UserController;
 use Illuminate\Support\Facades\Route;
 
 // HAProxy health check — must be outside throttle middleware
@@ -110,10 +112,17 @@ Route::prefix(config('app.api_prefix'))->group(function () {
         Route::post('login', [AuthController::class, 'login'])->middleware('auth.rate.limit:5,1');
         Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetToken'])->middleware('auth.rate.limit:3,5');
         Route::post('reset-password', [ForgotPasswordController::class, 'reset'])->middleware('auth.rate.limit:3,5');
+
+        // WhatsApp-OTP recovery (phone based) — mirrors the Eagle flow.
+        Route::post('forgot-password/send-otp', [ForgotPasswordController::class, 'sendOtp'])->middleware('auth.rate.limit:3,5');
+        Route::post('forgot-password/verify-code', [ForgotPasswordController::class, 'verifyOtp'])->middleware('auth.rate.limit:5,1');
+        Route::post('forgot-password/reset-otp', [ForgotPasswordController::class, 'resetWithOtp'])->middleware('auth.rate.limit:3,5');
     });
 
     // ── Static content pages (privacy policy, about us, …) — public ──
-    Route::get('page/{key}', [PageController::class, 'show']);
+    // `localization` so the controller can resolve title/body to the app's
+    // current language (X-localization) even though the route is unauthenticated.
+    Route::get('page/{key}', [PageController::class, 'show'])->middleware('localization');
 
     // ── Launch gate: force-update + maintenance — public (pre-login) ──
     Route::get('app-version', [AppVersionController::class, 'check']);
@@ -123,6 +132,17 @@ Route::prefix(config('app.api_prefix'))->group(function () {
         function () {
             Route::get('my-data', [AuthController::class, 'myData']);
             Route::post('profile/update', [AuthController::class, 'updateProfile']);
+
+            // Batch online-status lookup for a list of users.
+            Route::post('users/online-status', [PresenceController::class, 'onlineStatus']);
+
+            // Find other users by UID or name (home-page search).
+            Route::get('users/search', [UserController::class, 'search']);
+
+            // Public profile data for any user — base fallback rendered when the
+            // Profile package isn't installed. `whereNumber` keeps it from
+            // shadowing the literal `users/search` route above.
+            Route::get('users/{id}', [UserController::class, 'show'])->whereNumber('id');
 
             // Delete my own account (revoke tokens + soft-delete the user)
             Route::post('account/delete', [AuthController::class, 'deleteAccount']);

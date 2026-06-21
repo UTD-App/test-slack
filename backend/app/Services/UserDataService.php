@@ -32,8 +32,11 @@ class UserDataService
             'uuid' => $user->uuid,
             'bio' => $user->bio,
             'online_time' => $user->online_time,
+            'is_online' => $user->isOnline(),
+            'last_seen' => $user->online_time?->toIso8601String(),
             'country' => $user->country?->toArray(),
-            'profile' => $user->profile?->toArray(),
+            'profile' => $this->profilePayload($user),
+            'stats' => $this->socialCounts($user),
             'roles' => $user->roles->pluck('key')->values()->toArray(),
         ];
     }
@@ -53,8 +56,11 @@ class UserDataService
             'notification_id' => $user->notification_id,
             'is_first' => (bool) ($user->is_points_first ?? false),
             'online_time' => $user->online_time,
+            'is_online' => $user->isOnline(),
+            'last_seen' => $user->online_time?->toIso8601String(),
             'country' => $user->country?->toArray(),
-            'profile' => $user->profile?->toArray(),
+            'profile' => $this->profilePayload($user),
+            'stats' => $this->socialCounts($user),
             'roles' => $user->roles->pluck('key')->values()->toArray(),
             'settings' => app(UserSettingService::class)->getAll($user),
         ];
@@ -67,5 +73,40 @@ class UserDataService
         }
 
         return $data;
+    }
+
+    /**
+     * The profile relation as an array, but with gender/birthday sourced from
+     * the USER columns (what the profile editor actually writes to) so they
+     * always reflect the user even when the legacy profiles.* columns are empty.
+     * Falls back to the profile relation's values when the user column is null.
+     */
+    private function profilePayload(User $user): array
+    {
+        $profile = $user->profile?->toArray() ?? [];
+
+        $profile['gender'] = $user->gender ?? ($profile['gender'] ?? null);
+
+        $birthday = $user->birthday ?? ($profile['birthday'] ?? null);
+        $profile['birthday'] = $birthday
+            ? \Illuminate\Support\Carbon::parse($birthday)->toDateString()
+            : null;
+
+        return $profile;
+    }
+
+    /**
+     * Denormalised social counters (kept on the users table). Surfaced so the
+     * profile can show a Friends / Following / Followers row without depending
+     * on the social package. When that package is installed it can contribute a
+     * richer interactive version under its own key.
+     */
+    private function socialCounts(User $user): array
+    {
+        return [
+            'friends' => (int) ($user->number_of_friends ?? 0),
+            'following' => (int) ($user->number_of_followings ?? 0),
+            'followers' => (int) ($user->number_of_fans ?? 0),
+        ];
     }
 }

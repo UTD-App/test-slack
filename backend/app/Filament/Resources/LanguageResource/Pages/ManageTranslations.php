@@ -2,17 +2,21 @@
 
 namespace App\Filament\Resources\LanguageResource\Pages;
 
+use App\Contracts\Translator;
+use App\Jobs\AiTranslateMissingTranslations;
 use App\Filament\Resources\LanguageResource;
 use App\Models\Language;
-use App\Models\Translation;
 use App\Models\TranslationKey;
 use App\Services\TranslationLoader;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Actions as FormActions;
+use Filament\Forms\Components\Actions\Action as FormAction;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Form;
+use Filament\Forms\Set;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
 use Filament\Tables;
@@ -21,6 +25,7 @@ use Filament\Tables\Concerns\InteractsWithTable;
 use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Str;
 
 class ManageTranslations extends Page implements HasTable
 {
@@ -56,6 +61,10 @@ class ManageTranslations extends Page implements HasTable
     {
         $activeTab = request()->query('tab', 'admin');
 
+        // UI translations live in lang/<code>/*.php — read the locale's flat map
+        // once and resolve each row's value from it (replaces the old DB lookup).
+        $fileValues = app(TranslationLoader::class)->scanLangFiles($this->record->code);
+
         return $table
             ->query(
                 TranslationKey::query()
@@ -64,7 +73,6 @@ class ManageTranslations extends Page implements HasTable
                         fn($q) => $q->whereNotIn('group', $this->adminGroups)
                     )
                     ->when($this->selectedGroup, fn($q) => $q->where('group', $this->selectedGroup))
-                    ->with(['translations' => fn($q) => $q->where('language_id', $this->record->id)])
                     ->orderBy('group')
                     ->orderBy('key')
             )
@@ -84,8 +92,9 @@ class ManageTranslations extends Page implements HasTable
                     ->label(__('admin.key'))
                     ->searchable()
                     ->limit(50),
-                TextColumn::make('translations.0.value')
+                TextColumn::make('value')
                     ->label(__('admin.translation_col', ['code' => strtoupper($this->record->code)]))
+                    ->state(fn(TranslationKey $record) => $fileValues[$record->key] ?? null)
                     ->placeholder(__('admin.not_translated'))
                     ->wrap()
                     ->color(fn($state) => $state ? 'success' : 'warning'),
@@ -95,25 +104,44 @@ class ManageTranslations extends Page implements HasTable
                     ->label(__('admin.translate'))
                     ->icon('heroicon-o-pencil')
                     ->fillForm(fn(TranslationKey $record) => [
-                        'value' => Translation::where('language_id', $this->record->id)
-                            ->where('translation_key_id', $record->id)
-                            ->value('value'),
+                        'value' => app(TranslationLoader::class)
+                            ->getFileValue($this->record->code, $record->key),
                     ])
-                    ->form([
-                        TextInput::make('value')
-                            ->label(__('admin.translation_in', ['lang' => $this->record->native_name]))
-                            ->required(),
-                    ])
+                    ->form(fn(TranslationKey $record) => $this->editForm($record))
                     ->action(function (TranslationKey $record, array $data) {
-                        Translation::updateOrCreate(
-                            ['language_id' => $this->record->id, 'translation_key_id' => $record->id],
-                            ['value' => $data['value']]
+                        $loader = app(TranslationLoader::class);
+                        $loader->writeGroupValues(
+                            $this->record->code,
+                            $record->group,
+                            [$record->key => $data['value']]
                         );
-                        app(TranslationLoader::class)->clearCache($this->record->code);
+                        $loader->clearCache($this->record->code);
                         Notification::make()->title(__('admin.translation_saved'))->success()->send();
                     }),
             ])
             ->headerActions([
+                Tables\Actions\Action::make('ai_translate_all_missing')
+                    ->label(__('admin.ai_translate_all_missing'))
+                    ->icon('heroicon-o-sparkles')
+                    ->color('primary')
+                    ->requiresConfirmation()
+                    ->modalDescription(fn() => __('admin.translation_in', ['lang' => $this->record->native_name]))
+                    // Runs in the background (one Gemini call per key → minutes for
+                    // a full tab; doing it inline timed out). Values appear on the
+                    // page as batches finish — refresh to see them. Requires a
+                    // queue worker (php artisan queue:work).
+                    ->action(function () {
+                        AiTranslateMissingTranslations::dispatch(
+                            $this->record->id,
+                            request()->query('tab', 'admin'),
+                            $this->selectedGroup,
+                        );
+                        Notification::make()
+                            ->title(__('admin.ai_translate_started'))
+                            ->success()
+                            ->send();
+                    }),
+
                 Tables\Actions\Action::make('sync_keys')
                     ->label(__('admin.sync_keys'))
                     ->icon('heroicon-o-arrow-path')
@@ -145,21 +173,24 @@ class ManageTranslations extends Page implements HasTable
                             return;
                         }
 
+                        $loader   = app(TranslationLoader::class);
+                        $byGroup  = [];
                         $imported = 0;
                         foreach ($content as $key => $value) {
-                            $group   = explode('.', $key)[0] ?? 'app';
-                            $keyModel = TranslationKey::firstOrCreate(
-                                ['key' => $key],
-                                ['group' => $group]
-                            );
-                            Translation::updateOrCreate(
-                                ['language_id' => $this->record->id, 'translation_key_id' => $keyModel->id],
-                                ['value' => $value]
-                            );
+                            if (!is_string($value)) {
+                                continue;
+                            }
+                            $group = explode('.', $key)[0] ?: 'app';
+                            // Keep the key catalog in sync so it lists on the page.
+                            TranslationKey::firstOrCreate(['key' => $key], ['group' => $group]);
+                            $byGroup[$group][$key] = $value;
                             $imported++;
                         }
 
-                        app(TranslationLoader::class)->clearCache($this->record->code);
+                        foreach ($byGroup as $group => $vals) {
+                            $loader->writeGroupValues($this->record->code, $group, $vals);
+                        }
+                        $loader->clearCache($this->record->code);
 
                         Notification::make()
                             ->title(__('admin.imported', ['count' => $imported]))
@@ -184,9 +215,44 @@ class ManageTranslations extends Page implements HasTable
             ])
             ->defaultPaginationPageOption(10)
             ->paginationPageOptions([10, 25, 50, 100])
+            // Auto-refresh so a running background AI-translate is visible live —
+            // rows flip to "translated" without a manual reload.
+            ->poll('10s')
             ->emptyStateHeading(__('admin.no_keys_yet'))
             ->emptyStateDescription(__('admin.no_keys_hint'))
             ->emptyStateIcon('heroicon-o-language');
+    }
+
+    /**
+     * The per-key edit modal: an "AI translate" button (fills the value from the
+     * English source via the {@see Translator} engine) above the manual input.
+     * The English string for a UI key is its value in lang/en/*.php.
+     */
+    private function editForm(TranslationKey $record): array
+    {
+        $english = app(TranslationLoader::class)->scanLangFiles('en')[$record->key] ?? '';
+        $target  = $this->record->code;
+
+        return [
+            FormActions::make([
+                FormAction::make('ai_fill')
+                    ->label(__('admin.ai_translate'))
+                    ->icon('heroicon-o-sparkles')
+                    ->visible($english !== '' && $target !== 'en')
+                    ->action(function (Set $set) use ($english, $target) {
+                        $translator = app(Translator::class);
+                        $set('value', $translator->translate($english, $target, 'en'));
+                        if ($translator->lastError()) {
+                            Notification::make()->title(__('admin.ai_failed'))->danger()->send();
+                        }
+                    }),
+            ]),
+
+            TextInput::make('value')
+                ->label(__('admin.translation_in', ['lang' => $this->record->native_name]))
+                ->helperText($english !== '' ? __('admin.default') . ': ' . Str::limit($english, 160) : null)
+                ->required(),
+        ];
     }
 
     public function getBreadcrumbs(): array

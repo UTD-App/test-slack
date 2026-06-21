@@ -3,7 +3,6 @@
 namespace App\Filament\Pages;
 
 use App\Models\Config;
-use Filament\Forms\Components\ColorPicker;
 use Filament\Forms\Components\Fieldset;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Placeholder;
@@ -32,6 +31,13 @@ class AppSettings extends Page
         return __('admin.nav_settings');
     }
 
+    // The page title/heading is derived from the class name by default ("App
+    // Settings") and ignores the locale — pin it to the translated nav label.
+    public function getTitle(): string
+    {
+        return __('admin.nav_settings');
+    }
+
     public static function canAccess(): bool
     {
         return filament()->auth()->user()?->can('settings.view') ?? false;
@@ -47,11 +53,18 @@ class AppSettings extends Page
             'app_logo'        => $this->getSetting('app_logo'),
             'support_email'   => $this->getSetting('support_email'),
             'support_phone'   => $this->getSetting('support_phone'),
-            'privacy_url'     => $this->getSetting('privacy_url'),
-            'terms_url'       => $this->getSetting('terms_url'),
             // Firebase
             'firebase_server_key'  => $this->getSetting('firebase_server_key'),
             'firebase_project_id'  => $this->getSetting('firebase_project_id'),
+            // Mail / SMTP (password-recovery OTP + transactional email)
+            'mail_mailer'          => $this->getSetting('mail_mailer', 'smtp'),
+            'mail_host'            => $this->getSetting('mail_host'),
+            'mail_port'            => $this->getSetting('mail_port', '587'),
+            'mail_encryption'      => $this->getSetting('mail_encryption', 'tls'),
+            'mail_username'        => $this->getSetting('mail_username'),
+            'mail_password'        => $this->getSetting('mail_password'),
+            'mail_from_address'    => $this->getSetting('mail_from_address'),
+            'mail_from_name'       => $this->getSetting('mail_from_name'),
             // Storage (GCS is the default provider)
             'storage_driver'       => $this->getSetting('storage_driver', 'gcs'),
             'storage_endpoint'     => $this->getSetting('storage_endpoint'),
@@ -80,17 +93,6 @@ class AppSettings extends Page
             'huawei_latest_version'   => $this->getSetting('huawei_latest_version'),
             'huawei_update_required'  => (bool) $this->getSetting('huawei_update_required'),
             'huawei_store_url'        => $this->getSetting('huawei_store_url'),
-            // App colors (empty = the app's built-in default color is used)
-            'theme_primary'        => $this->getSetting('theme_primary'),
-            'theme_accent'         => $this->getSetting('theme_accent'),
-            'theme_bg_dark'        => $this->getSetting('theme_bg_dark'),
-            'theme_bg_gradient_1'  => $this->getSetting('theme_bg_gradient_1'),
-            'theme_bg_gradient_2'  => $this->getSetting('theme_bg_gradient_2'),
-            'theme_bg_gradient_3'  => $this->getSetting('theme_bg_gradient_3'),
-            'theme_card_bg'        => $this->getSetting('theme_card_bg'),
-            'theme_card_border'    => $this->getSetting('theme_card_border'),
-            'theme_text_primary'   => $this->getSetting('theme_text_primary'),
-            'theme_text_secondary' => $this->getSetting('theme_text_secondary'),
         ]);
     }
 
@@ -110,11 +112,15 @@ class AppSettings extends Page
                             FileUpload::make('app_logo')
                                 ->label(__('admin.app_logo'))
                                 ->image()
+                                // The app logo is a small public branding asset — keep it on
+                                // the local public disk (web-served via storage:link), NOT the
+                                // app media disk which may be a read-only/unconfigured cloud
+                                // bucket (GCS). Otherwise the field hangs on "awaiting size".
+                                ->disk('public')
+                                ->visibility('public')
                                 ->directory('settings'),
                             TextInput::make('support_email')->label(__('admin.support_email'))->email(),
                             TextInput::make('support_phone')->label(__('admin.support_phone')),
-                            TextInput::make('privacy_url')->label(__('admin.privacy_url'))->url(),
-                            TextInput::make('terms_url')->label(__('admin.terms_url'))->url(),
                         ])->columns(2),
 
                     Tabs\Tab::make(__('admin.firebase_section'))
@@ -136,6 +142,51 @@ class AppSettings extends Page
                                 ->password()
                                 ->revealable(),
                         ]),
+
+                    Tabs\Tab::make(__('admin.mail_section'))
+                        ->icon('heroicon-o-envelope')
+                        ->schema([
+                            Placeholder::make('mail_hint')
+                                ->hiddenLabel()
+                                ->content(__('admin.mail_section_hint'))
+                                ->columnSpanFull(),
+                            Select::make('mail_mailer')
+                                ->label(__('admin.mail_mailer'))
+                                ->options([
+                                    'smtp' => 'SMTP',
+                                    'log'  => __('admin.mail_mailer_log'),
+                                ])
+                                ->default('smtp')
+                                ->native(false),
+                            TextInput::make('mail_host')
+                                ->label(__('admin.mail_host'))
+                                ->placeholder('smtp.example.com'),
+                            TextInput::make('mail_port')
+                                ->label(__('admin.mail_port'))
+                                ->numeric()
+                                ->placeholder('465'),
+                            Select::make('mail_encryption')
+                                ->label(__('admin.mail_encryption'))
+                                ->options([
+                                    'ssl'  => 'SSL',
+                                    'tls'  => 'TLS',
+                                    'none' => __('admin.mail_encryption_none'),
+                                ])
+                                ->default('tls')
+                                ->native(false),
+                            TextInput::make('mail_username')
+                                ->label(__('admin.mail_username')),
+                            TextInput::make('mail_password')
+                                ->label(__('admin.mail_password'))
+                                ->password()
+                                ->revealable(),
+                            TextInput::make('mail_from_address')
+                                ->label(__('admin.mail_from_address'))
+                                ->email()
+                                ->placeholder('noreply@example.com'),
+                            TextInput::make('mail_from_name')
+                                ->label(__('admin.mail_from_name')),
+                        ])->columns(2),
 
                     Tabs\Tab::make(__('admin.storage_section'))
                         ->icon('heroicon-o-circle-stack')
@@ -220,46 +271,8 @@ class AppSettings extends Page
                             $this->versionFieldset('huawei', __('admin.huawei')),
                         ]),
 
-                    Tabs\Tab::make(__('admin.colors_section'))
-                        ->icon('heroicon-o-swatch')
-                        ->schema([
-                            Placeholder::make('colors_hint')
-                                ->hiddenLabel()
-                                ->content(__('admin.colors_section_hint')),
-                            Fieldset::make(__('admin.colors_brand'))->schema([
-                                $this->colorField('theme_primary', __('admin.color_primary'), '#BE4AFF'),
-                                $this->colorField('theme_accent', __('admin.color_accent'), '#D9A0FF'),
-                            ])->columns(2),
-                            Fieldset::make(__('admin.colors_background'))->schema([
-                                $this->colorField('theme_bg_dark', __('admin.color_bg_dark'), '#463394'),
-                                $this->colorField('theme_bg_gradient_1', __('admin.color_bg_gradient_1'), '#7E3E97'),
-                                $this->colorField('theme_bg_gradient_2', __('admin.color_bg_gradient_2'), '#583C9E'),
-                                $this->colorField('theme_bg_gradient_3', __('admin.color_bg_gradient_3'), '#3D2D86'),
-                            ])->columns(2),
-                            Fieldset::make(__('admin.colors_cards'))->schema([
-                                $this->colorField('theme_card_bg', __('admin.color_card_bg'), '#6750AE'),
-                                $this->colorField('theme_card_border', __('admin.color_card_border'), '#8E72D2'),
-                            ])->columns(2),
-                            Fieldset::make(__('admin.colors_text'))->schema([
-                                $this->colorField('theme_text_primary', __('admin.color_text_primary'), '#FFFFFF'),
-                                $this->colorField('theme_text_secondary', __('admin.color_text_secondary'), '#D0C0EE'),
-                            ])->columns(2),
-                        ]),
-
                 ]),
         ])->statePath('data');
-    }
-
-    /**
-     * One admin-overridable app color. Left empty, the app keeps its built-in
-     * default; the placeholder shows the built-in value as a guide.
-     */
-    private function colorField(string $key, string $label, string $exampleHex): ColorPicker
-    {
-        return ColorPicker::make($key)
-            ->label($label)
-            ->placeholder($exampleHex)
-            ->helperText(__('admin.color_field_hint'));
     }
 
     /**
@@ -307,6 +320,10 @@ class AppSettings extends Page
                 ['value' => $value]
             );
         }
+
+        // Belt-and-suspenders: ensure the cached config map is dropped so the
+        // app picks up these changes on its next /app-version call immediately.
+        Config::flushMapCache();
 
         Notification::make()
             ->title(__('admin.settings_saved'))

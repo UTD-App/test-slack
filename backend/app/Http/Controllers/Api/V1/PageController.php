@@ -10,7 +10,11 @@ class PageController extends Controller
 {
     /**
      * Public static content page by key (privacy-policy, about-us, …).
-     * Returns localized title/body ({en, ar}); the app picks the locale.
+     *
+     * Title/body are resolved to the request's current locale (set from the
+     * X-localization header by the `localization` middleware), falling back to
+     * the default language when a translation is missing — so the app just shows
+     * `data.title` / `data.body` as plain strings.
      */
     public function show(string $key)
     {
@@ -21,9 +25,10 @@ class PageController extends Controller
         }
 
         return Common::apiResponse(true, '', [
-            'key'   => $page->key,
-            'title' => $page->title,
-            'body'  => $page->body,
+            'key'    => $page->key,
+            'title'  => $page->tr('title'),
+            'body'   => $page->tr('body'),
+            'locale' => app()->getLocale(),
         ]);
     }
 }

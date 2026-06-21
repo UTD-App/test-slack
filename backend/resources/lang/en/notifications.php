@@ -12,4 +12,12 @@ return [
     'preferences_updated' => 'Notification preferences updated.',
     'device_registered'   => 'Device registered for notifications.',
 
+    // ── App UI strings (the Flutter notifications.* keys) ──
+    'title'         => 'Notifications',
+    'empty'         => 'No notifications yet',
+    'empty_hint'    => "When something happens, you'll see it here.",
+    'mark_all_read' => 'Mark all read',
+    'error'         => 'Could not load notifications',
+    'retry'         => 'Retry',
+
 ];

@@ -22,6 +22,13 @@ class EditProfile extends Page
 
     public ?array $data = [];
 
+    // Without this the title is derived from the class name ("Edit Profile")
+    // and stays English regardless of locale.
+    public function getTitle(): string
+    {
+        return __('admin.my_profile');
+    }
+
     public function mount(): void
     {
         $user = Auth::guard('admin')->user();

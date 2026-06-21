@@ -74,6 +74,39 @@ return [
         'app_id' => env('AGORA_APP_ID'),
         'app_certificate' => env('AGORA_APP_CERTIFICATE'),
     ],
+
+    // Google Cloud Translation (one of the translatable-content auto-translate
+    // engines). Auth: GOOGLE_TRANSLATE_API_KEY if set, otherwise an ADC token
+    // from the GCS service-account key file. Requires the Cloud Translation API
+    // enabled + billing on the project.
+    'google_translate' => [
+        'enabled'    => env('GOOGLE_TRANSLATE_ENABLED', true),
+        'api_key'    => env('GOOGLE_TRANSLATE_API_KEY'),
+        'project_id' => env('GOOGLE_CLOUD_PROJECT_ID'),
+        'key_file'   => env('GOOGLE_CLOUD_KEY_FILE', 'service-account.json'),
+        'endpoint'   => env('GOOGLE_TRANSLATE_ENDPOINT', 'https://translation.googleapis.com/language/translate/v2'),
+    ],
+
+    // Gemini (the DEFAULT auto-translate engine). 'api_key' mode = Generative
+    // Language API (just GEMINI_API_KEY). 'vertex' mode = Vertex AI via ADC (needs
+    // the Vertex AI API enabled + roles/aiplatform.user on the project).
+    'gemini' => [
+        'enabled'     => env('GEMINI_ENABLED', true),
+        'api_key'     => env('GEMINI_API_KEY'),
+        'model'       => env('GEMINI_MODEL', 'gemini-2.5-flash'),
+        'driver_mode' => env('GEMINI_DRIVER_MODE', 'api_key'), // api_key | vertex
+        'project_id'  => env('GEMINI_PROJECT_ID', 'aitry-476410'),
+        'location'    => env('GEMINI_LOCATION', 'us-central1'),
+        // Explicit creds for vertex mode (a service-account OR a gcloud ADC json).
+        // Leave blank to use ambient ADC (gcloud / metadata).
+        'key_file'    => env('GEMINI_KEY_FILE'),
+        'base_url'    => env('GEMINI_BASE_URL', 'https://generativelanguage.googleapis.com'),
+    ],
+
+    // Which engine powers the admin "Translate"/"AI translate" buttons.
+    'translator' => [
+        'driver' => env('TRANSLATOR_DRIVER', 'gemini'), // gemini | google
+    ],
     'firebase' => [
     'credentials' => env('FILE_NAME'),
     ],

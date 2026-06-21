@@ -10,7 +10,7 @@ class Profile extends Model
     protected $fillable = [
         'user_id',
         'avatar',
-        'cover',
+        'covers',
         'gender',
         'birthday',
         'province',
@@ -18,21 +18,52 @@ class Profile extends Model
         'country',
     ];
 
-    // Expose `image` (a full public URL) so the Flutter clients — which read
-    // `profile.image` — render the stored `avatar` path. Already-absolute URLs
-    // pass through untouched; relative paths go through the Media seam.
-    protected $appends = ['image'];
+    protected $casts = [
+        // Multi-image profile cover (swipeable banner). Stored as a JSON array
+        // of raw storage paths / URLs; resolved to public URLs via `cover_images`.
+        'covers' => 'array',
+    ];
+
+    // Expose `image` (avatar) and `cover_images` (covers) as full public URLs so
+    // the Flutter clients render the stored paths without knowing the storage
+    // driver. Already-absolute URLs pass through; relative paths go through the
+    // Media seam.
+    protected $appends = ['image', 'cover_images'];
 
     public function getImageAttribute(): ?string
     {
-        $avatar = $this->attributes['avatar'] ?? null;
-        if (empty($avatar)) {
+        return $this->resolveMediaUrl($this->attributes['avatar'] ?? null);
+    }
+
+    /**
+     * Resolved, displayable URLs for every stored cover. Returns [] when none,
+     * so clients can simply render the list (empty → no banner).
+     *
+     * @return array<int, string>
+     */
+    public function getCoverImagesAttribute(): array
+    {
+        $covers = $this->covers; // cast to array (or null)
+        if (empty($covers) || ! is_array($covers)) {
+            return [];
+        }
+
+        return array_values(array_filter(array_map(
+            fn ($path) => $this->resolveMediaUrl(is_string($path) ? $path : null),
+            $covers,
+        )));
+    }
+
+    /** Absolute-URL passthrough; relative paths resolved via the Media seam. */
+    protected function resolveMediaUrl(?string $path): ?string
+    {
+        if (empty($path)) {
             return null;
         }
-        if (str_starts_with($avatar, 'http://') || str_starts_with($avatar, 'https://')) {
-            return $avatar;
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
         }
-        return Media::url($avatar);
+        return Media::url($path);
     }
 
     public function user()

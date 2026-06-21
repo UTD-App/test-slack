@@ -24,7 +24,7 @@ class AdminPermissionSeeder extends Seeder
     /** role name => permission groups granted by default (all abilities in each group). */
     private const DEFAULTS = [
         'user_manager'     => ['users', 'notifications'],
-        'settings_manager' => ['settings', 'languages', 'pages', 'menu', 'stac'],
+        'settings_manager' => ['settings', 'languages', 'pages', 'email_templates', 'menu', 'stac'],
         'content_manager'  => ['pages'],
     ];
 

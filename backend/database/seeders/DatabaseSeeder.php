@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
             AdminUserSeeder::class,
             AdminPermissionSeeder::class,
             PagesSeeder::class,
+            EmailTemplateSeeder::class,
         ]);
     }
 }

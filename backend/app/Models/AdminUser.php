@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\Auditable;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -9,7 +10,7 @@ use Illuminate\Notifications\Notifiable;
 
 class AdminUser extends Authenticatable implements FilamentUser
 {
-    use Notifiable;
+    use Notifiable, Auditable;
 
     protected $table = 'admin_users';
 

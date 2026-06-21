@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use App\Support\Auditable;
 use Illuminate\Database\Eloquent\Model;
 
 class AdminRole extends Model
 {
+    use Auditable;
+
     protected $guarded = [];
 
     public function users()

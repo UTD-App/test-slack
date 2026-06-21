@@ -4,6 +4,7 @@ namespace App\Providers\Filament;
 
 use App\Filament\Pages\EditProfile;
 use App\Http\Middleware\SetAdminLocale;
+use App\Models\Config;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -35,18 +36,33 @@ class AdminPanelProvider extends PanelProvider
             ->colors([
                 'primary' => Color::Blue,
             ])
-            ->brandName(config('app.name') . ' — Admin')
+            // Brand name comes from the admin-editable App Settings `app_name`
+            // (cached config map), falling back to APP_NAME. Evaluated lazily per
+            // request, so changing it in App Settings updates the panel header.
+            ->brandName(function (): string {
+                try {
+                    $name = Config::map()['app_name'] ?? config('app.name');
+                } catch (\Throwable) {
+                    $name = config('app.name');
+                }
+
+                return trim(($name ?: config('app.name')) . ' — ' . __('admin.admin_brand_suffix'));
+            })
             ->favicon(asset('images/favicon.ico'))
             ->darkMode(false)
             ->userMenuItems([
                 MenuItem::make()
-                    ->label('My Profile')
+                    ->label(__('admin.my_profile'))
                     ->icon('heroicon-o-user-circle')
                     ->url(fn() => EditProfile::getUrl()),
             ])
             ->renderHook(
                 PanelsRenderHook::GLOBAL_SEARCH_BEFORE,
                 fn() => view('filament.components.top-bar-actions')
+            )
+            ->renderHook(
+                PanelsRenderHook::AUTH_LOGIN_FORM_AFTER,
+                fn() => view('filament.components.login-language-switcher')
             )
             ->renderHook(
                 PanelsRenderHook::PAGE_HEADER_ACTIONS_BEFORE,

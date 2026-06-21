@@ -12,6 +12,14 @@ class SetAdminLocale
 {
     public function handle(Request $request, Closure $next): mixed
     {
+        // 0. Explicit switch via ?lang= (used by the login-page language toggle,
+        //    which runs BEFORE auth). Only accept active, known language codes so
+        //    a crafted URL can't set an arbitrary locale.
+        $requested = $request->query('lang');
+        if (is_string($requested) && $requested !== '' && in_array($requested, $this->allowedLocales(), true)) {
+            Session::put('admin_locale', $requested);
+        }
+
         // 1. Admin's personal choice (stored in session)
         $locale = Session::get('admin_locale');
 
@@ -26,5 +34,17 @@ class SetAdminLocale
         config(['app.locale' => $locale]);
 
         return $next($request);
+    }
+
+    /** Active language codes; falls back to en/ar when the table isn't seeded. */
+    private function allowedLocales(): array
+    {
+        try {
+            $codes = Language::where('is_active', true)->pluck('code')->all();
+        } catch (\Throwable) {
+            $codes = [];
+        }
+
+        return $codes !== [] ? $codes : ['en', 'ar'];
     }
 }

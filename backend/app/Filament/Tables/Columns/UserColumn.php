@@ -2,10 +2,10 @@
 
 namespace App\Filament\Tables\Columns;
 
+use App\Services\StorageConfigService;
 use Closure;
 use Filament\Tables\Columns\Column;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 /**
@@ -109,39 +109,23 @@ class UserColumn extends Column
         return Str::limit($this->getUid(), 12, '…');
     }
 
-    /** A real avatar (absolute URL or public-disk path) or the bundled default image. */
+    /** A real avatar (resolved for the admin browser) or the bundled default image. */
     public function getAvatarUrl(): string
     {
-        $user = $this->getUser();
-        $avatar = $user?->avatar;
+        $avatar = $this->getUser()?->avatar;
 
         if (is_string($avatar) && $avatar !== '') {
-            if (Str::startsWith($avatar, ['http://', 'https://'])) {
-                return $avatar;
+            // Driver-aware resolution shared with the profile page: absolute cloud
+            // URL for GCS/S3, host-relative /storage/… for the local public disk
+            // (whose configured host may be the emulator's 10.0.2.2), passthrough
+            // for external URLs. See StorageConfigService::webUrl().
+            $url = app(StorageConfigService::class)->webUrl($avatar);
+            if (filled($url)) {
+                return $url;
             }
-
-            // Stored on the public disk. Return a HOST-RELATIVE URL so the image
-            // loads from whatever host the dashboard is served on. The disk URL
-            // may be configured for a mobile-only host (e.g. the Android emulator's
-            // 10.0.2.2) that a desktop browser viewing the dashboard can't reach.
-            return self::toHostRelativeUrl(Storage::disk('public')->url(ltrim($avatar, '/')));
         }
 
         return self::defaultAvatarUrl();
-    }
-
-    /** Strip scheme+host from a URL so it resolves against the current request host. */
-    protected static function toHostRelativeUrl(string $url): string
-    {
-        $path = parse_url($url, PHP_URL_PATH);
-
-        if (empty($path)) {
-            return $url;
-        }
-
-        $query = parse_url($url, PHP_URL_QUERY);
-
-        return $path . ($query ? '?' . $query : '');
     }
 
     /** Bundled local default avatar (shown when a user has no picture). */
