@@ -10,28 +10,24 @@
  *
  * UTD Studio discovers this via GET /api/utd/manifest. It stays generic: the
  * editor reads `elements` (data bindings), `screens` (data sources) and
- * `action_elements` (available actions) straight from here — it has NO
- * hardcoded knowledge of "core". Adding/removing an action = editing THIS file.
+ * `action_elements` (available actions) straight from here.
  *
  * Element keys map 1:1 to what the Flutter `core.currentUser` object source
  * exposes (see flutter/lib/shared/stac/core_stac_sources.dart).
  *
- * `default_screens` ships ready-to-edit Craft trees (login / home / profile /
- * settings) so UTD Studio seeds a working core app on first Sync.
- *
  * DESIGN: these trees mirror the REAL native screens as closely as the Stac
- * primitives allow, so what UTD Studio shows (and pushes back to the app)
- * matches the app — pulling them in produces no visual change. Native theme =
- * "Lumia" dark purple / pink-accent.
+ * primitives allow. Native theme = "Lumia" dark purple / pink-accent.
  *
- * SCREEN BACKGROUND: the home/profile/settings tabs render INSIDE the AppShell,
- * whose Scaffold is the deep-purple themed background. So their ROOT containers
- * use a TRANSPARENT background — the purple shell fills the whole screen
- * uniformly (no white/short-container "split", which is what looked broken
- * before). Only `login` (shown pre-auth, OUTSIDE the AppShell on a default
- * Scaffold) carries a SOLID purple background of its own.
- * Gradients/frosted-glass/level-badges are bespoke Flutter flourishes
- * primitives can't express; cards/text use solid Lumia colours.
+ * SCREEN BACKGROUND: home/profile/settings render INSIDE the AppShell (a
+ * deep-purple Scaffold), so their ROOT is TRANSPARENT — the purple shell fills
+ * the whole screen uniformly. Only `login` (pre-auth, outside the shell) carries
+ * a solid purple background.
+ *
+ * PROFILE is built as a "Me hub": a centered identity header (avatar/name/flag/
+ * uid/bio bound to the live user) + a pink Edit CTA + a list of tappable menu
+ * cards — so the screen stays full and intentional even when the user's profile
+ * fields are empty (cards are static). Gradients/level-badges are bespoke
+ * Flutter flourishes primitives can't express.
  */
 
 // ── Craft node helper (mirrors the Studio design scripts) ──────────────
@@ -60,7 +56,7 @@ $style = [
 // ── Lumia palette (solid approximations of the native gradient theme) ──────
 $C = [
     'screen'     => '#00000000', // transparent → inherit the AppShell's purple Scaffold (tabs)
-    'login'      => '#3A2A7E',   // solid deep purple for the pre-auth login (no AppShell behind it)
+    'login'      => '#3A2A7E',   // solid deep purple for the pre-auth login
     'card'       => '#5B4399',   // card surface (≈ lumiaCardGradient)
     'cardBorder' => '#8E72D2',   // lumiaCardBorder
     'accent'     => '#BE4AFF',   // lumiaAccent
@@ -73,8 +69,18 @@ $C = [
     'field'      => '#ECE7FB',    // light input fill → default dark field text stays legible
 ];
 
-// login — solid deep-purple screen (pre-auth, outside the AppShell): title +
-// subtitle + email/password + recover link + pink CTA + register link.
+// Reusable tappable menu card (tinted icon + label + chevron), parented to ROOT.
+$mkTile = function (string $id, string $icon, string $tint, string $label, string $tapAction, array $tapParams) use ($node, $style, $C): array {
+    return [
+        $id         => $node('Container', true, array_merge($style, ['background' => $C['card'], 'radius' => 14, 'padding' => 14, 'borderWidth' => 1, 'borderColor' => $C['cardBorder'], 'gap' => 0, 'align' => 'stretch', 'onTapAction' => $tapAction, 'onTapParams' => $tapParams]), [$id . 'Row'], 'ROOT'),
+        $id . 'Row' => $node('Row', true, ['gap' => 12, 'align' => 'center'], [$id . 'Ic', $id . 'Lb', $id . 'Ch'], $id),
+        $id . 'Ic'  => $node('Icon', false, ['name' => $icon, 'size' => 20, 'color' => $tint], [], $id . 'Row'),
+        $id . 'Lb'  => $node('Text', false, ['text' => $label, 'fontSize' => 14, 'fontWeight' => 500, 'color' => $C['white'], 'align' => 'right', 'binding' => '', 'maxLines' => 1, 'flex' => 1], [], $id . 'Row'),
+        $id . 'Ch'  => $node('Icon', false, ['name' => 'chevron_left', 'size' => 18, 'color' => $C['muted']], [], $id . 'Row'),
+    ];
+};
+
+// login — solid deep-purple screen (pre-auth, outside the AppShell).
 $loginWidgets = [
     'ROOT'    => $node('Container', true, array_merge($style, ['background' => $C['login'], 'padding' => 22, 'gap' => 16, 'align' => 'stretch', 'flex' => 0]), ['t1', 't2', 'fEmail', 'fPass', 'recover', 'btn', 'regRow'], null),
     't1'      => $node('Text', false, ['text' => 'أهلاً بك 👋', 'fontSize' => 28, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'binding' => '', 'maxLines' => 0], [], 'ROOT'),
@@ -88,8 +94,7 @@ $loginWidgets = [
     'regBtn'  => $node('Button', false, array_merge($style, ['label' => 'سجّل الآن', 'background' => '#00000000', 'color' => $C['accentLt'], 'radius' => 0, 'flex' => 0, 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/register', 'mode' => 'push']]), [], 'regRow'),
 ];
 
-// home — title row (name + notifications) + search + a welcome card. Transparent
-// ROOT → the purple AppShell fills the screen (no white split).
+// home — title row + search + welcome card. Transparent ROOT.
 $homeWidgets = [
     'ROOT'      => $node('Container', true, array_merge($style, ['background' => $C['screen'], 'padding' => 16, 'gap' => 16, 'align' => 'stretch', 'flex' => 0]), ['topRow', 'search', 'card'], null),
     'topRow'    => $node('Row', true, ['gap' => 8, 'align' => 'center'], ['appName', 'bell'], 'ROOT'),
@@ -102,55 +107,59 @@ $homeWidgets = [
     'cardSub'   => $node('Text', false, ['text' => 'ابدأ استكشاف كل المميزات', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => '', 'maxLines' => 0], [], 'card'),
 ];
 
-// profile — CENTERED identity on the purple AppShell (transparent ROOT): circular
-// avatar (tap → change), name + country flag, UID, bio, email, country. Empty
-// fields hide via visibleBinding so it degrades cleanly. Native "Me" landing.
-$profileWidgets = [
-    'ROOT'    => $node('Container', true, array_merge($style, ['background' => $C['screen'], 'padding' => 20, 'gap' => 12, 'align' => 'center', 'flex' => 0]), ['scope'], null),
-    'scope'   => $node('Scope', true, ['source' => 'core.currentUser'], ['avatar', 'nameRow', 'uid', 'bio', 'email', 'country'], 'ROOT'),
-    'avatar'  => $node('Image', false, ['src' => '', 'width' => 110, 'height' => 110, 'fit' => 'cover', 'shape' => 'circle', 'radius' => 0, 'binding' => 'core.currentUser.avatar', 'onTapAction' => 'core.changeAvatar', 'onTapTarget' => '', 'onTapParams' => ['source' => 'gallery']], [], 'scope'),
-    'nameRow' => $node('Row', true, ['gap' => 6, 'align' => 'center'], ['name', 'flag'], 'scope'),
-    'name'    => $node('Text', false, ['text' => 'الاسم', 'fontSize' => 22, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'binding' => 'core.currentUser.name', 'maxLines' => 1], [], 'nameRow'),
-    'flag'    => $node('Image', false, ['src' => '', 'width' => 24, 'height' => 16, 'fit' => 'cover', 'radius' => 3, 'binding' => 'core.currentUser.flag', 'visibleBinding' => 'core.currentUser.flag'], [], 'nameRow'),
-    'uid'     => $node('Text', false, ['text' => '', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => 'core.currentUser.uid', 'maxLines' => 1], [], 'scope'),
-    'bio'     => $node('Text', false, ['text' => '', 'fontSize' => 14, 'fontWeight' => 400, 'color' => $C['bioText'], 'align' => 'center', 'binding' => 'core.currentUser.bio', 'visibleBinding' => 'core.currentUser.bio', 'maxLines' => 0], [], 'scope'),
-    'email'   => $node('Text', false, ['text' => '', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => 'core.currentUser.email', 'visibleBinding' => 'core.currentUser.email', 'maxLines' => 1], [], 'scope'),
-    'country' => $node('Text', false, ['text' => '', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => 'core.currentUser.country', 'visibleBinding' => 'core.currentUser.country', 'maxLines' => 0], [], 'scope'),
-];
+// profile — "Me hub": centered identity header (bound to core.currentUser) +
+// pink Edit CTA + tappable menu cards. Stays full even when fields are empty.
+$profileWidgets = array_merge(
+    [
+        'ROOT'     => $node('Container', true, array_merge($style, ['background' => $C['screen'], 'padding' => 20, 'gap' => 14, 'align' => 'stretch', 'flex' => 0]), ['scope', 'editBtn', 'mSettings', 'mContact', 'mAbout'], null),
+        'scope'    => $node('Scope', true, ['source' => 'core.currentUser'], ['header'], 'ROOT'),
+        'header'   => $node('Container', true, ['background' => '#00000000', 'padding' => 8, 'gap' => 8, 'align' => 'center', 'flex' => 0], ['avatar', 'nameRow', 'uid', 'bio'], 'scope'),
+        'avatar'   => $node('Image', false, ['src' => '', 'width' => 116, 'height' => 116, 'fit' => 'cover', 'shape' => 'circle', 'radius' => 0, 'binding' => 'core.currentUser.avatar', 'onTapAction' => 'core.changeAvatar', 'onTapTarget' => '', 'onTapParams' => ['source' => 'gallery']], [], 'header'),
+        'nameRow'  => $node('Row', true, ['gap' => 6, 'align' => 'center'], ['name', 'flag'], 'header'),
+        'name'     => $node('Text', false, ['text' => 'الملف الشخصي', 'fontSize' => 22, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'binding' => 'core.currentUser.name', 'maxLines' => 1], [], 'nameRow'),
+        'flag'     => $node('Image', false, ['src' => '', 'width' => 24, 'height' => 16, 'fit' => 'cover', 'radius' => 3, 'binding' => 'core.currentUser.flag', 'visibleBinding' => 'core.currentUser.flag'], [], 'nameRow'),
+        'uid'      => $node('Text', false, ['text' => '', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => 'core.currentUser.uid', 'visibleBinding' => 'core.currentUser.uid', 'maxLines' => 1], [], 'header'),
+        'bio'      => $node('Text', false, ['text' => '', 'fontSize' => 14, 'fontWeight' => 400, 'color' => $C['bioText'], 'align' => 'center', 'binding' => 'core.currentUser.bio', 'visibleBinding' => 'core.currentUser.bio', 'maxLines' => 0], [], 'header'),
+        'editBtn'  => $node('Button', false, array_merge($style, ['label' => 'تعديل الملف الشخصي', 'background' => $C['pink'], 'color' => $C['white'], 'radius' => 24, 'flex' => 0, 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/profile', 'mode' => 'push']]), [], 'ROOT'),
+    ],
+    $mkTile('mSettings', 'settings', '#42A5F5', 'الإعدادات', 'core.navigate', ['route' => '/settings', 'mode' => 'push']),
+    $mkTile('mContact', 'support_agent', '#26C6DA', 'تواصل معنا', 'core.navigate', ['route' => '/contact-us', 'mode' => 'push']),
+    $mkTile('mAbout', 'info', '#7C4DFF', 'عن التطبيق', 'core.navigate', ['route' => '/page/about', 'mode' => 'push'])
+);
 
-// settings — in-body title + tappable purple cards (tinted icon + label +
-// chevron) over the purple AppShell, then a destructive logout. Transparent ROOT.
-$mkSettingsTile = function (string $id, string $icon, string $tint, string $label, string $tapAction, array $tapParams) use ($node, $style, $C): array {
-    return [
-        $id           => $node('Container', true, array_merge($style, ['background' => $C['card'], 'radius' => 14, 'padding' => 14, 'borderWidth' => 1, 'borderColor' => $C['cardBorder'], 'gap' => 0, 'align' => 'stretch', 'onTapAction' => $tapAction, 'onTapParams' => $tapParams]), [$id . 'Row'], 'ROOT'),
-        $id . 'Row'   => $node('Row', true, ['gap' => 12, 'align' => 'center'], [$id . 'Ic', $id . 'Lb', $id . 'Ch'], $id),
-        $id . 'Ic'    => $node('Icon', false, ['name' => $icon, 'size' => 20, 'color' => $tint], [], $id . 'Row'),
-        $id . 'Lb'    => $node('Text', false, ['text' => $label, 'fontSize' => 14, 'fontWeight' => 500, 'color' => $C['white'], 'align' => 'right', 'binding' => '', 'maxLines' => 1, 'flex' => 1], [], $id . 'Row'),
-        $id . 'Ch'    => $node('Icon', false, ['name' => 'chevron_left', 'size' => 18, 'color' => $C['muted']], [], $id . 'Row'),
-    ];
-};
-
+// settings — in-body title + tappable purple cards + destructive logout.
 $settingsWidgets = array_merge(
     [
         'ROOT'   => $node('Container', true, array_merge($style, ['background' => $C['screen'], 'padding' => 16, 'gap' => 12, 'align' => 'stretch', 'flex' => 0]), ['sTitle', 'tLang', 'tPrivacy', 'tTerms', 'tContact', 'tAbout', 'tAccount', 'btnLogout'], null),
         'sTitle' => $node('Text', false, ['text' => 'الإعدادات', 'fontSize' => 22, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'right', 'binding' => '', 'maxLines' => 1], [], 'ROOT'),
     ],
-    $mkSettingsTile('tLang', 'language', '#26C6DA', 'اللغة', 'core.setLocale', ['code' => 'ar']),
-    $mkSettingsTile('tPrivacy', 'privacy_tip', '#66BB6A', 'سياسة الخصوصية', 'core.navigate', ['route' => '/page/privacy', 'mode' => 'push']),
-    $mkSettingsTile('tTerms', 'description', '#26A69A', 'شروط الاستخدام', 'core.navigate', ['route' => '/page/terms', 'mode' => 'push']),
-    $mkSettingsTile('tContact', 'support_agent', '#42A5F5', 'تواصل معنا', 'core.navigate', ['route' => '/contact-us', 'mode' => 'push']),
-    $mkSettingsTile('tAbout', 'info', '#7C4DFF', 'عن التطبيق', 'core.navigate', ['route' => '/page/about', 'mode' => 'push']),
-    $mkSettingsTile('tAccount', 'person', '#5C6BC0', 'الحساب', 'core.navigate', ['route' => '/profile', 'mode' => 'push']),
+    $mkTile('tLang', 'language', '#26C6DA', 'اللغة', 'core.setLocale', ['code' => 'ar']),
+    $mkTile('tPrivacy', 'privacy_tip', '#66BB6A', 'سياسة الخصوصية', 'core.navigate', ['route' => '/page/privacy', 'mode' => 'push']),
+    $mkTile('tTerms', 'description', '#26A69A', 'شروط الاستخدام', 'core.navigate', ['route' => '/page/terms', 'mode' => 'push']),
+    $mkTile('tContact', 'support_agent', '#42A5F5', 'تواصل معنا', 'core.navigate', ['route' => '/contact-us', 'mode' => 'push']),
+    $mkTile('tAbout', 'info', '#7C4DFF', 'عن التطبيق', 'core.navigate', ['route' => '/page/about', 'mode' => 'push']),
+    $mkTile('tAccount', 'person', '#5C6BC0', 'الحساب', 'core.navigate', ['route' => '/profile', 'mode' => 'push']),
     [
         'btnLogout' => $node('Button', false, array_merge($style, ['label' => 'تسجيل الخروج', 'background' => $C['card'], 'color' => $C['red'], 'radius' => 14, 'flex' => 0, 'onTapAction' => 'core.logout', 'onTapParams' => ['confirm' => true]]), [], 'ROOT'),
     ]
 );
 
+// audio — bottom-nav tab placeholder for the audio-room feature (Eng-Hazem is
+// building the real package). Marked nav=true so the tab shows in the shell; the
+// screen is a themed "coming soon" until the audio-room package ships its own
+// nav screen, at which point this can be removed.
+$audioWidgets = [
+    'ROOT'   => $node('Container', true, array_merge($style, ['background' => $C['screen'], 'padding' => 24, 'gap' => 12, 'align' => 'center', 'flex' => 0]), ['aIcon', 'aTitle', 'aSub'], null),
+    'aIcon'  => $node('Icon', false, ['name' => 'graphic_eq', 'size' => 64, 'color' => $C['accentLt']], [], 'ROOT'),
+    'aTitle' => $node('Text', false, ['text' => 'الغرف الصوتية', 'fontSize' => 20, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'binding' => '', 'maxLines' => 1], [], 'ROOT'),
+    'aSub'   => $node('Text', false, ['text' => 'قريباً 🎧', 'fontSize' => 14, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => '', 'maxLines' => 0], [], 'ROOT'),
+];
+
 return [
     'key'     => 'core',
     'name'    => 'Core',
     'icon'    => 'settings',
-    'screens' => ['intro', 'login', 'register', 'forgot_password', 'home', 'profile', 'settings'],
+    'screens' => ['intro', 'login', 'register', 'forgot_password', 'home', 'audio', 'profile', 'settings'],
 
     // Display bindings (profile screen ⇄ current user)
     'elements' => [
@@ -226,8 +235,7 @@ return [
                 ['key' => 'bioField',  'label' => 'حقل النبذة', 'type' => 'field_ref'],
             ],
         ],
-        // تغيير صورة الملف الشخصي: العميل بيحطّه كـ onTap على عنصر الصورة. الـ parser
-        // في فلاتر بيفتح المعرض/الكاميرا، يرفع الصورة، ويحدّث المستخدم الحالي فورًا.
+        // تغيير صورة الملف الشخصي: العميل بيحطّه كـ onTap على عنصر الصورة.
         [
             'key' => 'change_avatar', 'label' => 'تغيير صورة الملف',
             'produces' => 'core.changeAvatar', 'default_shape' => 'image', 'screen' => 'profile',
@@ -273,7 +281,7 @@ return [
             'name'         => 'login',
             'label'        => 'تسجيل الدخول',
             'icon'         => '🔑',
-            'version'      => '1.2.0',
+            'version'      => '1.3.0',
             'nav'          => false,
             'navIcon'      => 'person',
             'order'        => 1,
@@ -288,7 +296,7 @@ return [
             'name'         => 'home',
             'label'        => 'الرئيسية',
             'icon'         => '🏠',
-            'version'      => '1.2.0',
+            'version'      => '1.3.0',
             'nav'          => true,
             'navIcon'      => 'home',
             'order'        => 2,
@@ -300,10 +308,25 @@ return [
             'widgets'      => $homeWidgets,
         ],
         [
+            'name'         => 'audio',
+            'label'        => 'الغرف الصوتية',
+            'icon'         => '🎧',
+            'version'      => '1.3.0',
+            'nav'          => true,
+            'navIcon'      => 'mic',
+            'order'        => 20,
+            'role'         => 'app.audio',
+            'requiresAuth' => true,
+            'showOnce'     => false,
+            'opens'        => null,
+            'chrome'       => ['appBar' => ['enabled' => false, 'title' => 'الغرف الصوتية', 'bg' => $C['screen'], 'actions' => []]],
+            'widgets'      => $audioWidgets,
+        ],
+        [
             'name'         => 'profile',
             'label'        => 'الملف الشخصي',
             'icon'         => '👤',
-            'version'      => '1.2.0',
+            'version'      => '1.3.0',
             'nav'          => true,
             'navIcon'      => 'person',
             'order'        => 30,
@@ -318,7 +341,7 @@ return [
             'name'         => 'settings',
             'label'        => 'الإعدادات',
             'icon'         => '⚙️',
-            'version'      => '1.2.0',
+            'version'      => '1.3.0',
             'nav'          => true,
             'navIcon'      => 'settings',
             'order'        => 40,
