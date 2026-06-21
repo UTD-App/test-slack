@@ -4,17 +4,14 @@
  * UTD Studio manifest for the PROFILE package.
  *
  * Ships the user-profile screen as a server-driven Stac screen editable from
- * UTD Studio. The rich self-profile (gradient avatar ring, camera badge,
- * gender + level badges, feature grid, avatar→full-profile, copy-ID) is too
- * detailed for Stac primitives, so it is rendered by a CUSTOM NATIVE widget,
- * `core.selfProfile` (SelfProfileCardParser, declared in the core manifest's
- * `widgets`). The screen stays server-driven — UTD Studio composes it and
- * places this one node — but it renders natively for a pixel-match with the
- * standalone app.
+ * UTD Studio, decomposed into Stac PRIMITIVES (Container/Row/Image/Text under a
+ * Scope) bound to the `profile.user` object source.
  *
- * The `profile.user` object source below stays available for designers who want
- * to bind individual fields to primitives instead of using the whole card.
- * Resolved on the client by `registerProfileStacSources()`.
+ * NOTE: a richer pixel-match needs a CUSTOM native widget (`core.selfProfile`,
+ * shipped + registered in Flutter as SelfProfileCardParser) — but UTD Studio's
+ * Craft editor currently crashes deserializing a node of an unregistered custom
+ * type. So until the Studio editor supports custom package widgets, this screen
+ * stays primitives. See the message to the Studio owner.
  */
 
 // ── Craft node helper (same shape the Studio design scripts emit) ──────────
@@ -34,11 +31,25 @@ $node = function (string $name, bool $canvas, array $props, array $kids = [], ?s
     return $n;
 };
 
-// user_profile — a single custom native widget (core.selfProfile) on a
-// transparent screen (the AppShell's purple Scaffold shows through).
+// ── Lumia palette ──────────────────────────────────────────────────────────
+$C = [
+    'screen'  => '#00000000', // transparent → inherit the AppShell's purple Scaffold
+    'white'   => '#FFFFFF',
+    'muted'   => '#CDBFEE',
+    'bioText' => '#E3D8FB',
+];
+
+// user_profile — CENTERED identity bound to profile.user (primitives only).
 $profileWidgets = [
-    'ROOT' => $node('Container', true, ['background' => '#00000000', 'padding' => 0, 'gap' => 0, 'align' => 'stretch', 'flex' => 0], ['card'], null),
-    'card' => $node('core.selfProfile', false, [], [], 'ROOT'),
+    'ROOT'    => $node('Container', true, ['background' => $C['screen'], 'padding' => 20, 'gap' => 10, 'align' => 'center', 'flex' => 0], ['scope'], null),
+    'scope'   => $node('Scope', true, ['source' => 'profile.user'], ['avatar', 'nameRow', 'uid', 'bio', 'country'], 'ROOT'),
+    'avatar'  => $node('Image', false, ['src' => '', 'binding' => 'profile.user.avatar', 'width' => 110, 'height' => 110, 'fit' => 'cover', 'shape' => 'circle', 'radius' => 0], [], 'scope'),
+    'nameRow' => $node('Row', true, ['gap' => 6, 'align' => 'center'], ['name', 'flag'], 'scope'),
+    'name'    => $node('Text', false, ['text' => 'الاسم', 'binding' => 'profile.user.name', 'fontSize' => 22, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'maxLines' => 1], [], 'nameRow'),
+    'flag'    => $node('Image', false, ['src' => '', 'binding' => 'profile.user.flag', 'visibleBinding' => 'profile.user.flag', 'width' => 24, 'height' => 16, 'fit' => 'cover', 'radius' => 3], [], 'nameRow'),
+    'uid'     => $node('Text', false, ['text' => '', 'binding' => 'profile.user.uid', 'visibleBinding' => 'profile.user.uid', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'maxLines' => 1], [], 'scope'),
+    'bio'     => $node('Text', false, ['text' => '', 'binding' => 'profile.user.bio', 'fontSize' => 14, 'fontWeight' => 400, 'color' => $C['bioText'], 'align' => 'center', 'maxLines' => 0], [], 'scope'),
+    'country' => $node('Text', false, ['text' => '', 'binding' => 'profile.user.country', 'visibleBinding' => 'profile.user.country', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'maxLines' => 0], [], 'scope'),
 ];
 
 return [
@@ -47,7 +58,6 @@ return [
     'icon'    => 'person',
     'screens' => ['user_profile'],
 
-    // Display bindings (available if a designer binds fields to primitives).
     'elements' => [
         ['key' => 'name',    'label' => 'الاسم',    'type' => 'string',    'screen' => 'user_profile'],
         ['key' => 'bio',     'label' => 'نبذة',     'type' => 'string',    'screen' => 'user_profile'],
@@ -58,8 +68,6 @@ return [
         ['key' => 'uid',     'label' => 'المعرّف',    'type' => 'string',    'screen' => 'user_profile'],
     ],
 
-    // Single-object source: the signed-in user's profile. Resolved on the client
-    // by `registerProfileStacSources()`.
     'object_sources' => [
         [
             'key'      => 'profile.user',
@@ -77,7 +85,6 @@ return [
     ],
 
     'action_elements' => [
-        // Open the (native) edit-profile screen. Reuses the core navigate action.
         [
             'key' => 'open_edit', 'label' => 'تعديل الملف',
             'produces' => 'core.navigate', 'default_shape' => 'button', 'screen' => 'user_profile',
@@ -88,13 +95,12 @@ return [
         ],
     ],
 
-    // ── Ready-to-edit default screen (seeded by UTD Studio on Sync) ──
     'default_screens' => [
         [
             'name'         => 'user_profile',
             'label'        => 'الملف الشخصي',
             'icon'         => '👤',
-            'version'      => '1.5.0',
+            'version'      => '1.6.0',
             'nav'          => false,
             'navIcon'      => 'person',
             'order'        => 31,
