@@ -277,6 +277,8 @@ return [
     'storage_gcs_key_file' => 'ملف مفتاح الحساب (service-account.json)',
     'storage_gcs_key_file_hint' => 'ارفع ملف مفتاح حساب الخدمة من Google Cloud. يُحفظ بشكل خاص ولا يكون متاحًا على الإنترنت.',
     'stac_section' => 'UTD Studio تخصيص الواجهة',
+    'manifest_secret' => 'مفتاح قراءة الواجهات (Manifest Secret)',
+    'manifest_secret_hint' => 'انسخه من UTD Studio — يستخدمه لقراءة قائمة الباكدجات والشاشات (X-UTD-Secret).',
     'stac_key' => 'مفتاح Stac للنشر',
     'stac_key_hint' => 'انسخه من لوحة UTD Studio',
     'stac_section_hint' => 'اربط حسابك مع UTD Studio لتخصيص واجهة التطبيق.',

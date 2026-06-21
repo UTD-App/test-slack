@@ -75,7 +75,10 @@ class AppSettings extends Page
             // GCS-specific (project id falls back to the Firebase one for existing setups)
             'storage_project_id'   => $this->getSetting('storage_project_id', $this->getSetting('firebase_project_id')),
             'storage_gcs_key_file' => $this->getSetting('storage_gcs_key_file'),
-            // Stac
+            // UTD Studio — both keys are copied FROM UTD Studio into this dashboard:
+            // utd_secret (X-UTD-Secret) lets Studio READ the manifest; utd_stac_key
+            // (X-Stac-Key) lets Studio PUSH the generated Stac screens.
+            'utd_secret'           => $this->getSetting('utd_secret'),
             'utd_stac_key'         => $this->getSetting('utd_stac_key'),
             // Maintenance
             'maintenance_mode'     => (bool) $this->getSetting('maintenance_mode'),
@@ -136,12 +139,17 @@ class AppSettings extends Page
                     Tabs\Tab::make(__('admin.stac_section'))
                         ->icon('heroicon-o-paint-brush')
                         ->schema([
+                            TextInput::make('utd_secret')
+                                ->label(__('admin.manifest_secret'))
+                                ->helperText(__('admin.manifest_secret_hint'))
+                                ->password()
+                                ->revealable(),
                             TextInput::make('utd_stac_key')
                                 ->label(__('admin.stac_key'))
                                 ->helperText(__('admin.stac_key_hint'))
                                 ->password()
                                 ->revealable(),
-                        ]),
+                        ])->columns(2),
 
                     Tabs\Tab::make(__('admin.mail_section'))
                         ->icon('heroicon-o-envelope')

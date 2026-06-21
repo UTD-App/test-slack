@@ -295,6 +295,8 @@ return [
     'storage_gcs_key_file' => 'Service account key (service-account.json)',
     'storage_gcs_key_file_hint' => 'Upload your Google Cloud service-account key file. Stored privately — never web-accessible.',
     'stac_section'        => 'UTD Studio — UI Customization',
+    'manifest_secret'     => 'Manifest Secret',
+    'manifest_secret_hint'=> 'Copy from UTD Studio. UTD uses this (X-UTD-Secret) to READ your packages & screens manifest.',
     'stac_key'            => 'Stac Push Key',
     'stac_key_hint'       => 'Copy from your UTD Stac subscription dashboard. UTD uses this to push UI screens to your server.',
     'stac_section_hint'   => 'Connect to UTD Stac panel for server-driven UI customization.',
