@@ -7,7 +7,6 @@ class AudioRoomApiService extends BaseApiService {
 
   // Room actions
   String enterPath(int id) => '/rooms/$id/enter';
-  String tokenPath(int id) => '/rooms/$id/token';
   String exitPath(int id) => '/rooms/$id/exit';
   String favoritePath(int id) => '/rooms/$id/favorite';
   String commentStatusPath(int id) => '/rooms/$id/comment-status';
@@ -17,6 +16,7 @@ class AudioRoomApiService extends BaseApiService {
 
   // Room queries
   String myRoomPath() => '/rooms/mine';
+  String favoritesPath() => '/rooms/favorites';
   String categoriesPath() => '/rooms/categories';
   String roomConfigPath() => '/config/room';
 

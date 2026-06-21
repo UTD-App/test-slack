@@ -14,6 +14,7 @@ abstract class AudioRoomRepository {
     int page = 1,
     int? categoryId,
     String? search,
+    String? sortBy,
   });
 
   Future<Result<BaseResponse<RoomModel>>> getRoom(int id);
@@ -79,14 +80,11 @@ abstract class AudioRoomRepository {
 
   Future<Result<BaseResponse>> unbanUser(int roomId, int userId);
 
+  // Favorites
+  Future<Result<BaseResponse<List<RoomModel>>>> getFavoriteRooms();
+
   // Room config
   Future<Result<BaseResponse<Map<String, dynamic>>>> getRoomConfig();
-
-  // Token generation
-  Future<Result<BaseResponse<Map<String, dynamic>>>> generateToken(
-    int roomId,
-    Map<String, dynamic> data,
-  );
 }
 
 class AudioRoomRepositoryImpl implements AudioRoomRepository {
@@ -99,8 +97,9 @@ class AudioRoomRepositoryImpl implements AudioRoomRepository {
     int page = 1,
     int? categoryId,
     String? search,
+    String? sortBy,
   }) =>
-      remoteDataSource.getRooms(page: page, categoryId: categoryId, search: search);
+      remoteDataSource.getRooms(page: page, categoryId: categoryId, search: search, sortBy: sortBy);
 
   @override
   Future<Result<BaseResponse<RoomModel>>> getRoom(int id) =>
@@ -225,19 +224,16 @@ class AudioRoomRepositoryImpl implements AudioRoomRepository {
       remoteDataSource.unbanUser(roomId, userId);
 
   @override
-  Future<Result<BaseResponse<Map<String, dynamic>>>> getRoomConfig() =>
-      remoteDataSource.getRoomConfig();
+  Future<Result<BaseResponse<List<RoomModel>>>> getFavoriteRooms() =>
+      remoteDataSource.getFavoriteRooms();
 
   @override
-  Future<Result<BaseResponse<Map<String, dynamic>>>> generateToken(
-    int roomId,
-    Map<String, dynamic> data,
-  ) =>
-      remoteDataSource.generateToken(roomId, data);
+  Future<Result<BaseResponse<Map<String, dynamic>>>> getRoomConfig() =>
+      remoteDataSource.getRoomConfig();
 }
 
 abstract class AudioRoomRemoteDataSource {
-  Future<Result<BaseResponse<List<RoomModel>>>> getRooms({int page, int? categoryId, String? search});
+  Future<Result<BaseResponse<List<RoomModel>>>> getRooms({int page, int? categoryId, String? search, String? sortBy});
   Future<Result<BaseResponse<RoomModel>>> getRoom(int id);
   Future<Result<BaseResponse<RoomModel>>> createRoom({required String name, required int mode, String? intro, int? roomType, int? roomClass, String? password, File? cover});
   Future<Result<BaseResponse<RoomModel>>> updateRoom(int id, {String? name, String? intro, String? rule, String? background, String? password, int? mode, int? roomType, int? roomClass, bool? isCommentsClosed, bool? freeMic, File? cover});
@@ -258,6 +254,6 @@ abstract class AudioRoomRemoteDataSource {
   Future<Result<BaseResponse>> kickUser(int roomId, int userId, {int minutes});
   Future<Result<BaseResponse>> banUser(int roomId, int userId, {int? durationSeconds, String? reason});
   Future<Result<BaseResponse>> unbanUser(int roomId, int userId);
+  Future<Result<BaseResponse<List<RoomModel>>>> getFavoriteRooms();
   Future<Result<BaseResponse<Map<String, dynamic>>>> getRoomConfig();
-  Future<Result<BaseResponse<Map<String, dynamic>>>> generateToken(int roomId, Map<String, dynamic> data);
 }

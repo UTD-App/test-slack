@@ -36,6 +36,14 @@ abstract class AudioRoomKeys {
   static const enter = 'audio_room.enter';
   static const streamConfigMissing = 'audio_room.stream_config_missing';
   static const noBackgrounds = 'audio_room.no_backgrounds';
+  static const favorites = 'audio_room.favorites';
+  static const noFavorites = 'audio_room.no_favorites';
+  static const rooms = 'audio_room.rooms';
+  static const searchByNameOrId = 'audio_room.search_by_name_or_id';
+  static const sortByVisitors = 'audio_room.sort_by_visitors';
+  static const sortByNewest = 'audio_room.sort_by_newest';
+  static const sortByOldest = 'audio_room.sort_by_oldest';
+  static const sortBy = 'audio_room.sort_by';
 }
 
 const Map<String, Map<String, String>> audioRoomTranslations = {
@@ -77,6 +85,14 @@ const Map<String, Map<String, String>> audioRoomTranslations = {
     'audio_room.enter': 'Enter',
     'audio_room.stream_config_missing': 'Stream configuration not available',
     'audio_room.no_backgrounds': 'No backgrounds available',
+    'audio_room.favorites': 'Favorites',
+    'audio_room.no_favorites': 'No favorite rooms',
+    'audio_room.rooms': 'Rooms',
+    'audio_room.search_by_name_or_id': 'Search by name or ID...',
+    'audio_room.sort_by_visitors': 'Most visitors',
+    'audio_room.sort_by_newest': 'Recently added',
+    'audio_room.sort_by_oldest': 'Oldest',
+    'audio_room.sort_by': 'Sort',
   },
   'ar': {
     'audio_room.title': 'الغرف',
@@ -116,5 +132,14 @@ const Map<String, Map<String, String>> audioRoomTranslations = {
     'audio_room.enter': 'دخول',
     'audio_room.stream_config_missing': 'إعدادات البث غير متوفرة',
     'audio_room.no_backgrounds': 'لا توجد خلفيات',
+    'audio_room.favorites': 'المفضلة',
+    'audio_room.no_favorites': 'لا توجد غرف مفضلة',
+    'audio_room.rooms': 'الغرف',
+    'audio_room.search_by_name_or_id': 'ابحث بالاسم أو الرقم...',
+    'audio_room.sort_by_visitors': 'الأكثر زواراً',
+    'audio_room.sort_by_newest': 'المضافة حديثاً',
+    'audio_room.sort_by_oldest': 'المضافة قديماً',
+    'audio_room.sort_by': 'ترتيب',
+    'audio_room.recently_added': 'الأخيرة',
   },
 };

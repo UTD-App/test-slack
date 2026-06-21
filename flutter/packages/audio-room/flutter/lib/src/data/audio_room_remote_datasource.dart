@@ -22,10 +22,12 @@ class AudioRoomRemoteDataSourceImpl implements AudioRoomRemoteDataSource {
     int page = 1,
     int? categoryId,
     String? search,
+    String? sortBy,
   }) async {
     final params = <String, dynamic>{'page': page};
     if (categoryId != null) params['category_id'] = categoryId;
     if (search != null && search.isNotEmpty) params['search'] = search;
+    if (sortBy != null && sortBy.isNotEmpty) params['sort_by'] = sortBy;
 
     return apiService.get(
       apiService.roomsPath(),
@@ -315,19 +317,17 @@ class AudioRoomRemoteDataSourceImpl implements AudioRoomRemoteDataSource {
     );
   }
 
-  // Token generation
+  // Favorites
 
   @override
-  Future<Result<BaseResponse<Map<String, dynamic>>>> generateToken(
-    int roomId,
-    Map<String, dynamic> data,
-  ) async {
-    return apiService.post(
-      apiService.tokenPath(roomId),
-      data: data,
-      fromJson: (json) => BaseResponse<Map<String, dynamic>>.fromJson(
+  Future<Result<BaseResponse<List<RoomModel>>>> getFavoriteRooms() async {
+    return apiService.get(
+      apiService.favoritesPath(),
+      fromJson: (json) => BaseResponse<List<RoomModel>>.fromJson(
         json,
-        fromJsonT: (data) => data as Map<String, dynamic>,
+        fromJsonT: (data) => (data as List)
+            .map((e) => RoomModel.fromJson(e as Map<String, dynamic>))
+            .toList(),
       ),
     );
   }

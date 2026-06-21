@@ -15,6 +15,8 @@ class RoomHeaderWidget extends StatelessWidget {
   final VoidCallback? onSettingsTap;
   final VoidCallback? onModeTap;
   final ValueChanged<bool>? onLockCommentsToggled;
+  final VoidCallback? onFavoriteTap;
+  final bool isFavorite;
 
   const RoomHeaderWidget({
     super.key,
@@ -26,6 +28,8 @@ class RoomHeaderWidget extends StatelessWidget {
     this.onSettingsTap,
     this.onModeTap,
     this.onLockCommentsToggled,
+    this.onFavoriteTap,
+    this.isFavorite = false,
   });
 
   @override
@@ -50,6 +54,11 @@ class RoomHeaderWidget extends StatelessWidget {
                       UTDMemberListSheet.show(context, controller: controller),
                 ),
                 const SizedBox(width: 4),
+                if (room.isOwner != true)
+                  _FavoriteButton(
+                    isFavorite: isFavorite,
+                    onTap: onFavoriteTap,
+                  ),
                 if (room.isOwner == true || room.isAdmin == true)
                   _AdminMenu(
                     controller: controller,
@@ -338,6 +347,34 @@ class _ExitOption extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _FavoriteButton extends StatelessWidget {
+  final bool isFavorite;
+  final VoidCallback? onTap;
+
+  const _FavoriteButton({required this.isFavorite, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 32,
+        height: 32,
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.black.withValues(alpha: 0.3),
+        ),
+        child: Icon(
+          isFavorite ? Icons.favorite : Icons.favorite_border,
+          color: isFavorite ? Colors.red : Colors.white70,
+          size: 18,
+        ),
       ),
     );
   }

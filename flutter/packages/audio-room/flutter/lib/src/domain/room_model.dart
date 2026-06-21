@@ -3,6 +3,7 @@ import 'room_entity.dart';
 class RoomModel extends RoomEntity {
   final bool? isOwner;
   final bool? isAdmin;
+  final bool isFavorite;
   final Map<String, dynamic>? streamConfig;
 
   const RoomModel({
@@ -32,6 +33,7 @@ class RoomModel extends RoomEntity {
     super.createdAt,
     this.isOwner,
     this.isAdmin,
+    this.isFavorite = false,
     this.streamConfig,
   });
 
@@ -70,6 +72,7 @@ class RoomModel extends RoomEntity {
           : null,
       isOwner: _toBool(json['is_owner']),
       isAdmin: _toBool(json['is_admin']),
+      isFavorite: _toBool(json['is_favorite']) ?? false,
       streamConfig: json['stream_config'] as Map<String, dynamic>?,
     );
   }
@@ -103,6 +106,7 @@ class RoomModel extends RoomEntity {
     bool? freeMic,
     String? ownerAvatar,
     bool? isAdmin,
+    bool? isFavorite,
   }) {
     return RoomModel(
       id: id,
@@ -131,6 +135,7 @@ class RoomModel extends RoomEntity {
       createdAt: createdAt,
       isOwner: isOwner,
       isAdmin: isAdmin ?? this.isAdmin,
+      isFavorite: isFavorite ?? this.isFavorite,
       streamConfig: streamConfig,
     );
   }

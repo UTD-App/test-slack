@@ -22,6 +22,10 @@ class RoomListBloc extends Bloc<RoomListEvent, RoomListState> {
     on<SelectCategoryEvent>(_onSelectCategory);
     on<ToggleFavoriteEvent>(_onToggleFavorite);
     on<LoadMyRoomEvent>(_onLoadMyRoom);
+    on<LoadFavoritesEvent>(_onLoadFavorites);
+    on<ChangeViewModeEvent>(_onChangeViewMode);
+    on<ChangeSortEvent>(_onChangeSort);
+    on<SearchFavoritesEvent>(_onSearchFavorites);
   }
 
   void _emitRoomsResult(
@@ -59,6 +63,7 @@ class RoomListBloc extends Bloc<RoomListEvent, RoomListState> {
       page: 1,
       categoryId: state.selectedCategoryId,
       search: state.searchQuery,
+      sortBy: state.sortBy,
     );
 
     _emitRoomsResult(emit, result);
@@ -75,6 +80,7 @@ class RoomListBloc extends Bloc<RoomListEvent, RoomListState> {
       page: nextPage,
       categoryId: state.selectedCategoryId,
       search: state.searchQuery,
+      sortBy: state.sortBy,
     );
 
     _emitRoomsResult(
@@ -120,6 +126,7 @@ class RoomListBloc extends Bloc<RoomListEvent, RoomListState> {
       page: 1,
       categoryId: state.selectedCategoryId,
       search: event.query.isEmpty ? null : event.query,
+      sortBy: state.sortBy,
     );
 
     _emitRoomsResult(emit, result);
@@ -138,6 +145,7 @@ class RoomListBloc extends Bloc<RoomListEvent, RoomListState> {
       page: 1,
       categoryId: event.categoryId,
       search: state.searchQuery,
+      sortBy: state.sortBy,
     );
 
     _emitRoomsResult(emit, result);
@@ -147,7 +155,65 @@ class RoomListBloc extends Bloc<RoomListEvent, RoomListState> {
     ToggleFavoriteEvent event,
     Emitter<RoomListState> emit,
   ) async {
-    await repository.toggleFavorite(event.roomId);
+    final previousRooms = state.rooms;
+    final previousFavorites = state.favoriteRooms;
+
+    final updatedRooms = state.rooms.map((r) {
+      if (r.id == event.roomId) {
+        return r.copyWith(isFavorite: !r.isFavorite);
+      }
+      return r;
+    }).toList();
+
+    final isFavNow = updatedRooms
+        .where((r) => r.id == event.roomId)
+        .firstOrNull
+        ?.isFavorite ?? false;
+
+    List<RoomModel> updatedFavorites;
+    if (isFavNow) {
+      final room = updatedRooms.where((r) => r.id == event.roomId).firstOrNull;
+      updatedFavorites = [
+        ...state.favoriteRooms.map((r) {
+          if (r.id == event.roomId) return r.copyWith(isFavorite: true);
+          return r;
+        }),
+        if (room != null && !state.favoriteRooms.any((r) => r.id == event.roomId)) room,
+      ];
+    } else {
+      updatedFavorites = state.favoriteRooms
+          .where((r) => r.id != event.roomId)
+          .toList();
+    }
+
+    emit(state.copyWith(rooms: updatedRooms, favoriteRooms: updatedFavorites));
+
+    final result = await repository.toggleFavorite(event.roomId);
+    if (result is Failure) {
+      emit(state.copyWith(rooms: previousRooms, favoriteRooms: previousFavorites));
+    }
+  }
+
+  Future<void> _onLoadFavorites(
+    LoadFavoritesEvent event,
+    Emitter<RoomListState> emit,
+  ) async {
+    emit(state.copyWith(favoritesState: RequestState.loading));
+
+    final result = await repository.getFavoriteRooms();
+
+    switch (result) {
+      case Success(data: final data):
+        emit(state.copyWith(
+          favoriteRooms: data.data ?? [],
+          favoritesState: RequestState.loaded,
+        ));
+      case Failure(message: final message):
+        emit(state.copyWith(
+          favoritesState: RequestState.error,
+          message: message,
+        ));
+    }
   }
 
   Future<void> _onLoadMyRoom(
@@ -163,4 +229,35 @@ class RoomListBloc extends Bloc<RoomListEvent, RoomListState> {
         break;
     }
   }
+
+  void _onChangeViewMode(
+    ChangeViewModeEvent event,
+    Emitter<RoomListState> emit,
+  ) {
+    emit(state.copyWith(isGridView: event.isGrid));
+  }
+
+  Future<void> _onChangeSort(
+    ChangeSortEvent event,
+    Emitter<RoomListState> emit,
+  ) async {
+    emit(state.copyWith(sortBy: event.sortBy, roomsState: RequestState.loading));
+
+    final result = await repository.getRooms(
+      page: 1,
+      categoryId: state.selectedCategoryId,
+      search: state.searchQuery,
+      sortBy: event.sortBy,
+    );
+
+    _emitRoomsResult(emit, result);
+  }
+
+  void _onSearchFavorites(
+    SearchFavoritesEvent event,
+    Emitter<RoomListState> emit,
+  ) {
+    emit(state.copyWith(favoritesSearchQuery: event.query));
+  }
+
 }

@@ -49,3 +49,34 @@ class ToggleFavoriteEvent extends RoomListEvent {
 class LoadMyRoomEvent extends RoomListEvent {
   const LoadMyRoomEvent();
 }
+
+class LoadFavoritesEvent extends RoomListEvent {
+  const LoadFavoritesEvent();
+}
+
+class ChangeViewModeEvent extends RoomListEvent {
+  final bool isGrid;
+
+  const ChangeViewModeEvent({required this.isGrid});
+
+  @override
+  List<Object?> get props => [isGrid];
+}
+
+class ChangeSortEvent extends RoomListEvent {
+  final String sortBy;
+
+  const ChangeSortEvent({required this.sortBy});
+
+  @override
+  List<Object?> get props => [sortBy];
+}
+
+class SearchFavoritesEvent extends RoomListEvent {
+  final String query;
+
+  const SearchFavoritesEvent({required this.query});
+
+  @override
+  List<Object?> get props => [query];
+}

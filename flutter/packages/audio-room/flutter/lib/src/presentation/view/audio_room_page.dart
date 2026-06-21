@@ -55,6 +55,7 @@ class _AudioRoomPageState extends State<AudioRoomPage>
   String? _error;
   UTDRoomController? _controller;
   bool _isExiting = false;
+  bool _isFavorite = false;
   VoidCallback? _commentsWatcher;
 
   @override
@@ -112,6 +113,7 @@ class _AudioRoomPageState extends State<AudioRoomPage>
     if (widget.verifiedRoom != null) {
       setState(() {
         _room = widget.verifiedRoom;
+        _isFavorite = widget.verifiedRoom!.isFavorite;
         _isLoading = false;
       });
       notifyPluginsEnter(widget.verifiedRoom!);
@@ -126,6 +128,7 @@ class _AudioRoomPageState extends State<AudioRoomPage>
         if (data.data != null) {
           setState(() {
             _room = data.data;
+            _isFavorite = data.data!.isFavorite;
             _isLoading = false;
           });
           notifyPluginsEnter(data.data!);
@@ -146,6 +149,13 @@ class _AudioRoomPageState extends State<AudioRoomPage>
   void _minimizeRoom() {
     if (_controller == null || !_controller!.isConnected) return;
     UTDMiniOverlayMachine.instance.changeState(UTDMiniOverlayState.minimizing);
+  }
+
+  Future<void> _toggleFavorite() async {
+    if (_room == null) return;
+    setState(() => _isFavorite = !_isFavorite);
+    final repository = context.read<AudioRoomRepository>();
+    await repository.toggleFavorite(_room!.id);
   }
 
   Future<void> _exitRoom() async {
@@ -297,7 +307,7 @@ class _AudioRoomPageState extends State<AudioRoomPage>
       );
     }
 
-    final repository = context.read<AudioRoomRepository>();
+    final serverSecret = streamConfig?['server_secret']?.toString() ?? '';
 
     final userData = CacheManager.getUserData();
     final userId = userData?['id']?.toString() ?? '';
@@ -312,19 +322,7 @@ class _AudioRoomPageState extends State<AudioRoomPage>
 
     Widget audioRoomWidget = UTDAudioRoom(
       appId: appId,
-      tokenProvider: (request) async {
-        final result = await repository.generateToken(room.id, {
-          'identity': request.identity,
-          'service': request.service,
-          'room_owner_id': request.roomOwnerId,
-          if (request.metadata != null) 'metadata': request.metadata,
-        });
-        return switch (result) {
-          Success(data: final data) =>
-            UTDTokenBundle.fromEngineJson(data.data ?? {}),
-          Failure(message: final msg) => throw Exception(msg),
-        };
-      },
+      serverSecret: serverSecret,
       userId: userId,
       userName: userName,
       roomId: room.id.toString(),
@@ -354,6 +352,8 @@ class _AudioRoomPageState extends State<AudioRoomPage>
                   });
                   broadcastRoomSettingsUpdate(_room!);
                 },
+                isFavorite: _isFavorite,
+                onFavoriteTap: _toggleFavorite,
               )
             : const SizedBox.shrink(),
         controlsBarWidget: _controller != null

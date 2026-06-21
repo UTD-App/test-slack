@@ -7,22 +7,34 @@ import '../../domain/room_model.dart';
 class RoomCard extends StatelessWidget {
   final RoomModel room;
   final VoidCallback? onTap;
+  final VoidCallback? onFavoriteTap;
+  final bool showFavorite;
 
-  const RoomCard({super.key, required this.room, this.onTap});
+  const RoomCard({
+    super.key,
+    required this.room,
+    this.onTap,
+    this.onFavoriteTap,
+    this.showFavorite = false,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12.r),
+          borderRadius: BorderRadius.circular(16.r),
           color: Theme.of(context).cardColor,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              color: isDark
+                  ? Colors.black.withValues(alpha: 0.3)
+                  : Colors.black.withValues(alpha: 0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -34,116 +46,194 @@ class RoomCard extends StatelessWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  if (room.roomCover != null)
-                    CachedNetworkImage(
-                      imageUrl: room.roomCover!,
-                      fit: BoxFit.cover,
-                      placeholder: (_, __) => Container(
-                        color: Colors.grey[300],
-                        child: const Center(child: Icon(Icons.mic)),
+                  _CoverImage(url: room.roomCover),
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withValues(alpha: 0.4),
+                          ],
+                          stops: const [0.5, 1.0],
+                        ),
                       ),
-                      errorWidget: (_, __, ___) => Container(
-                        color: Colors.grey[300],
-                        child: const Center(child: Icon(Icons.mic)),
-                      ),
-                    )
-                  else
-                    Container(
-                      color: Colors.grey[300],
-                      child: const Center(child: Icon(Icons.mic, size: 40)),
                     ),
+                  ),
                   if (room.hasPassword)
                     Positioned(
                       top: 8.r,
                       left: 8.r,
-                      child: Container(
-                        padding: EdgeInsets.all(4.r),
-                        decoration: BoxDecoration(
-                          color: Colors.black54,
-                          borderRadius: BorderRadius.circular(4.r),
-                        ),
-                        child: Icon(Icons.lock, color: Colors.white, size: 14.r),
+                      child: _Badge(
+                        child: Icon(Icons.lock_rounded, color: Colors.white, size: 12.r),
                       ),
                     ),
                   Positioned(
                     top: 8.r,
                     right: 8.r,
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 6.w,
-                        vertical: 2.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black54,
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
+                    child: _Badge(
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.people, color: Colors.white, size: 12.r),
-                          SizedBox(width: 2.w),
+                          Icon(Icons.people_alt_rounded, color: Colors.white, size: 11.r),
+                          SizedBox(width: 3.w),
                           Text(
                             '${room.visitorCount}',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 11.sp,
-                            ),
+                            style: TextStyle(color: Colors.white, fontSize: 10.sp, fontWeight: FontWeight.w600),
                           ),
                         ],
                       ),
+                    ),
+                  ),
+                  if (showFavorite)
+                    Positioned(
+                      bottom: 8.r,
+                      right: 8.r,
+                      child: GestureDetector(
+                        onTap: onFavoriteTap,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: EdgeInsets.all(6.r),
+                          decoration: BoxDecoration(
+                            color: room.isFavorite
+                                ? Colors.red.withValues(alpha: 0.85)
+                                : Colors.black.withValues(alpha: 0.45),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            room.isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                            color: Colors.white,
+                            size: 14.r,
+                          ),
+                        ),
+                      ),
+                    ),
+                  Positioned(
+                    bottom: 8.r,
+                    left: 8.r,
+                    right: showFavorite ? 36.r : 8.r,
+                    child: Row(
+                      children: [
+                        _OwnerAvatar(url: room.ownerAvatar, size: 20.r),
+                        SizedBox(width: 6.w),
+                        Expanded(
+                          child: Text(
+                            room.ownerName ?? '',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.9),
+                              fontSize: 10.sp,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
             Padding(
-              padding: EdgeInsets.all(8.r),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    room.roomName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13.sp,
-                    ),
-                  ),
-                  SizedBox(height: 4.h),
-                  Row(
-                    children: [
-                      if (room.ownerAvatar != null)
-                        CircleAvatar(
-                          radius: 10.r,
-                          backgroundImage:
-                              CachedNetworkImageProvider(room.ownerAvatar!),
-                        )
-                      else
-                        CircleAvatar(
-                          radius: 10.r,
-                          child: Icon(Icons.person, size: 12.r),
-                        ),
-                      SizedBox(width: 4.w),
-                      Expanded(
-                        child: Text(
-                          room.ownerName ?? '',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 11.sp,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
+              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 8.h),
+              child: Text(
+                room.roomName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13.sp,
+                ),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _CoverImage extends StatelessWidget {
+  final String? url;
+  const _CoverImage({this.url});
+
+  @override
+  Widget build(BuildContext context) {
+    if (url != null && url!.isNotEmpty) {
+      return CachedNetworkImage(
+        imageUrl: url!,
+        fit: BoxFit.cover,
+        placeholder: (_, __) => _Placeholder(),
+        errorWidget: (_, __, ___) => _Placeholder(),
+      );
+    }
+    return _Placeholder();
+  }
+}
+
+class _Placeholder extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Colors.grey.shade300, Colors.grey.shade400],
+        ),
+      ),
+      child: Center(
+        child: Icon(Icons.mic_rounded, size: 36.r, color: Colors.white54),
+      ),
+    );
+  }
+}
+
+class _Badge extends StatelessWidget {
+  final Widget child;
+  const _Badge({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
+      decoration: BoxDecoration(
+        color: Colors.black.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(10.r),
+      ),
+      child: child,
+    );
+  }
+}
+
+class _OwnerAvatar extends StatelessWidget {
+  final String? url;
+  final double size;
+  const _OwnerAvatar({this.url, required this.size});
+
+  @override
+  Widget build(BuildContext context) {
+    if (url != null && url!.isNotEmpty) {
+      return ClipOval(
+        child: CachedNetworkImage(
+          imageUrl: url!,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorWidget: (_, __, ___) => _avatarFallback(size),
+        ),
+      );
+    }
+    return _avatarFallback(size);
+  }
+
+  static Widget _avatarFallback(double size) {
+    return CircleAvatar(
+      radius: size / 2,
+      backgroundColor: Colors.grey.shade500,
+      child: Icon(Icons.person, size: size * 0.6, color: Colors.white70),
     );
   }
 }

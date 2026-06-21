@@ -1,3 +1,4 @@
+import 'package:audio_room/audio_room.dart';
 import 'package:authentication/authentication.dart';
 import 'package:profile/profile.dart';
 // TEMP: audio_room excluded from the build — the package is committed in an
@@ -55,7 +56,7 @@ void main() async {
       AuthFeature(),
       ProfileFeature(),
       MomentFeature(),
-      // AudioRoomFeature(), // TEMP: see note on the audio_room import above.
+       AudioRoomFeature(), // TEMP: see note on the audio_room import above.
     ];
   }
 

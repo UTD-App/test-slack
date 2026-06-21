@@ -1,3 +1,4 @@
+import 'package:audio_room/audio_room.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -331,7 +332,10 @@ class _AddonPlatformAppState extends State<AddonPlatformApp>
                           );
                         });
                       }
-                      return child ?? const SizedBox.shrink();
+                      return AudioRoomAppOverlay(
+                        router: router,
+                        child: child ?? const SizedBox.shrink(),
+                      );
                     },
                     localizationsDelegates: [
                       AppLocalizationsDelegate(_translations),
