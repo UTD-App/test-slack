@@ -118,7 +118,7 @@ $homeWidgets = [
 //   • name+flag+pencil / uid / bio+pencil + tappable menu cards.
 $profileWidgets = array_merge(
     [
-        'ROOT'        => $node('Container', true, array_merge($style, ['background' => $C['screen'], 'padding' => 16, 'gap' => 14, 'align' => 'stretch', 'flex' => 0]), ['scope', 'mSettings', 'mContact', 'mAbout'], null),
+        'ROOT'        => $node('Container', true, array_merge($style, ['background' => $C['screen'], 'padding' => 16, 'gap' => 14, 'align' => 'stretch', 'flex' => 0]), ['scope', 'mSettings'], null),
         'scope'       => $node('Scope', true, ['source' => 'core.currentUser'], ['header'], 'ROOT'),
         'header'      => $node('Container', true, ['background' => '#00000000', 'padding' => 8, 'gap' => 10, 'align' => 'center', 'flex' => 0], ['avatarStack', 'nameRow', 'uid', 'bioRow'], 'scope'),
 
@@ -143,9 +143,7 @@ $profileWidgets = array_merge(
         'bio'         => $node('Text', false, ['text' => '', 'binding' => 'core.currentUser.bio', 'fontSize' => 14, 'fontWeight' => 400, 'color' => $C['bioText'], 'align' => 'center', 'maxLines' => 0], [], 'bioRow'),
         'bioPencil'   => $node('Icon', false, ['name' => 'edit', 'size' => 14, 'color' => $C['accentLt'], 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/profile', 'mode' => 'push']], [], 'bioRow'),
     ],
-    $mkTile('mSettings', 'settings', '#42A5F5', 'الإعدادات', 'core.navigate', ['route' => '/settings', 'mode' => 'push']),
-    $mkTile('mContact', 'support_agent', '#26C6DA', 'تواصل معنا', 'core.navigate', ['route' => '/contact-us', 'mode' => 'push']),
-    $mkTile('mAbout', 'info', '#7C4DFF', 'عن التطبيق', 'core.navigate', ['route' => '/page/about', 'mode' => 'push'])
+    $mkTile('mSettings', 'settings', '#42A5F5', 'الإعدادات', 'core.navigate', ['route' => '/settings', 'mode' => 'push'])
 );
 
 // settings — in-body title + tappable purple cards + destructive logout.
@@ -386,7 +384,7 @@ return [
             'name'         => 'profile',
             'label'        => 'الملف الشخصي',
             'icon'         => '👤',
-            'version'      => '1.8.0',
+            'version'      => '1.8.1',
             'nav'          => true,
             'navIcon'      => 'person',
             'order'        => 30,
