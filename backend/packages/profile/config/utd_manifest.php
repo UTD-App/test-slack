@@ -51,21 +51,27 @@ $C = [
 // with a close button (core.closeDialog) since it's presented as a dialog.
 // A starting layout the owner refines in UTD Studio (counters/cards need the
 // social/gifts package bindings, added later).
+// IMPORTANT: a Scope (utdObject) renders only ONE child, so ALL bound content
+// must live under a SINGLE wrapper container (`body`) — the same shape the base
+// `profile` screen uses (scope → header → …). Putting multiple nodes directly
+// under the scope makes only the FIRST one render (the close button), leaving
+// the rest of the screen blank.
 $profileWidgets = [
-    'ROOT'        => $node('Container', true, ['background' => $C['screen'], 'padding' => 0, 'gap' => 14, 'align' => 'stretch', 'flex' => 0], ['scope'], null),
-    'scope'       => $node('Scope', true, ['source' => 'profile.user'], ['topBar', 'coverBox', 'header', 'bioCard', 'countryCard'], 'ROOT'),
+    'ROOT'        => $node('Container', true, ['background' => $C['screen'], 'padding' => 0, 'gap' => 0, 'align' => 'stretch', 'flex' => 0], ['scope'], null),
+    'scope'       => $node('Scope', true, ['source' => 'profile.user'], ['body'], 'ROOT'),
+    'body'        => $node('Container', true, ['background' => '#00000000', 'padding' => 0, 'gap' => 14, 'align' => 'stretch', 'flex' => 0], ['topBar', 'coverBox', 'header', 'bioCard', 'countryCard'], 'scope'),
 
     // Close button (dismisses the dialog).
-    'topBar'      => $node('Container', true, ['background' => '#00000000', 'padding' => ['left' => 8, 'top' => 8, 'right' => 8, 'bottom' => 0], 'align' => 'start', 'flex' => 0], ['closeBtn'], 'scope'),
+    'topBar'      => $node('Container', true, ['background' => '#00000000', 'padding' => ['left' => 8, 'top' => 8, 'right' => 8, 'bottom' => 0], 'align' => 'start', 'flex' => 0], ['closeBtn'], 'body'),
     'closeBtn'    => $node('Container', true, ['width' => 38, 'height' => 38, 'radius' => 19, 'background' => $C['card'], 'align' => 'center', 'valign' => 'center', 'flex' => 0, 'onTapAction' => 'core.closeDialog'], ['closeIcon'], 'topBar'),
     'closeIcon'   => $node('Icon', false, ['name' => 'close', 'size' => 20, 'color' => $C['white']], [], 'closeBtn'),
 
     // Cover banner — full width via the column's stretch; hidden when no cover.
-    'coverBox'    => $node('Container', true, ['margin' => ['left' => 16, 'top' => 0, 'right' => 16, 'bottom' => 0], 'padding' => 0, 'radius' => 18, 'background' => $C['card'], 'align' => 'stretch', 'flex' => 0, 'visibleBinding' => 'profile.user.cover'], ['coverImg'], 'scope'),
+    'coverBox'    => $node('Container', true, ['margin' => ['left' => 16, 'top' => 0, 'right' => 16, 'bottom' => 0], 'padding' => 0, 'radius' => 18, 'background' => $C['card'], 'align' => 'stretch', 'flex' => 0, 'visibleBinding' => 'profile.user.cover'], ['coverImg'], 'body'),
     'coverImg'    => $node('Image', false, ['src' => '', 'binding' => 'profile.user.cover', 'height' => 170, 'fit' => 'cover', 'radius' => 18], [], 'coverBox'),
 
     // Identity: gradient-ring avatar + name + flag + UID.
-    'header'      => $node('Container', true, ['background' => '#00000000', 'padding' => ['left' => 16, 'top' => 0, 'right' => 16, 'bottom' => 0], 'gap' => 8, 'align' => 'center', 'flex' => 0], ['avatarRing', 'nameRow', 'uid'], 'scope'),
+    'header'      => $node('Container', true, ['background' => '#00000000', 'padding' => ['left' => 16, 'top' => 0, 'right' => 16, 'bottom' => 0], 'gap' => 8, 'align' => 'center', 'flex' => 0], ['avatarRing', 'nameRow', 'uid'], 'body'),
     'avatarRing'  => $node('Container', true, ['width' => 112, 'height' => 112, 'radius' => 56, 'gradient' => 1, 'gradFrom' => $C['accent'], 'gradTo' => $C['pink'], 'gradDir' => 'to bottom right', 'padding' => 4, 'align' => 'center', 'valign' => 'center', 'flex' => 0], ['avatarImg'], 'header'),
     'avatarImg'   => $node('Image', false, ['src' => '', 'binding' => 'profile.user.avatar', 'width' => 104, 'height' => 104, 'fit' => 'cover', 'shape' => 'circle', 'radius' => 0], [], 'avatarRing'),
     'nameRow'     => $node('Row', true, ['gap' => 6, 'justify' => 'center', 'align' => 'center'], ['name', 'flag'], 'header'),
@@ -74,12 +80,12 @@ $profileWidgets = [
     'uid'         => $node('Text', false, ['text' => '', 'binding' => 'profile.user.uid', 'visibleBinding' => 'profile.user.uid', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'maxLines' => 1], [], 'header'),
 
     // Bio card.
-    'bioCard'     => $node('Container', true, ['margin' => ['left' => 16, 'top' => 0, 'right' => 16, 'bottom' => 0], 'padding' => 16, 'radius' => 16, 'background' => $C['card'], 'borderWidth' => 1, 'borderColor' => $C['cardBd'], 'gap' => 6, 'align' => 'stretch', 'flex' => 0], ['bioTitle', 'bio'], 'scope'),
+    'bioCard'     => $node('Container', true, ['margin' => ['left' => 16, 'top' => 0, 'right' => 16, 'bottom' => 0], 'padding' => 16, 'radius' => 16, 'background' => $C['card'], 'borderWidth' => 1, 'borderColor' => $C['cardBd'], 'gap' => 6, 'align' => 'stretch', 'flex' => 0], ['bioTitle', 'bio'], 'body'),
     'bioTitle'    => $node('Text', false, ['text' => 'النبذة', 'binding' => '', 'fontSize' => 12, 'fontWeight' => 600, 'color' => $C['muted'], 'align' => 'right', 'maxLines' => 1], [], 'bioCard'),
     'bio'         => $node('Text', false, ['text' => '', 'binding' => 'profile.user.bio', 'fontSize' => 14, 'fontWeight' => 400, 'color' => $C['bioText'], 'align' => 'right', 'maxLines' => 0], [], 'bioCard'),
 
     // Country card.
-    'countryCard' => $node('Container', true, ['margin' => ['left' => 16, 'top' => 0, 'right' => 16, 'bottom' => 16], 'padding' => 16, 'radius' => 16, 'background' => $C['card'], 'borderWidth' => 1, 'borderColor' => $C['cardBd'], 'align' => 'stretch', 'flex' => 0, 'visibleBinding' => 'profile.user.country'], ['countryRow'], 'scope'),
+    'countryCard' => $node('Container', true, ['margin' => ['left' => 16, 'top' => 0, 'right' => 16, 'bottom' => 16], 'padding' => 16, 'radius' => 16, 'background' => $C['card'], 'borderWidth' => 1, 'borderColor' => $C['cardBd'], 'align' => 'stretch', 'flex' => 0, 'visibleBinding' => 'profile.user.country'], ['countryRow'], 'body'),
     'countryRow'  => $node('Row', true, ['gap' => 10, 'justify' => 'start', 'align' => 'center'], ['cFlag', 'cName'], 'countryCard'),
     'cFlag'       => $node('Image', false, ['src' => '', 'binding' => 'profile.user.flag', 'visibleBinding' => 'profile.user.flag', 'width' => 28, 'height' => 20, 'fit' => 'cover', 'radius' => 3], [], 'countryRow'),
     'cName'       => $node('Text', false, ['text' => '', 'binding' => 'profile.user.country', 'fontSize' => 14, 'fontWeight' => 500, 'color' => $C['white'], 'align' => 'right', 'maxLines' => 1], [], 'countryRow'),
@@ -131,9 +137,9 @@ return [
     'default_screens' => [
         [
             'name'         => 'user_profile',
-            'label'        => 'الملف الشخصي',
+            'label'        => 'البروفايل الكامل (عند الصورة)',
             'icon'         => '👤',
-            'version'      => '1.7.0',
+            'version'      => '1.7.2',
             'nav'          => false,
             'navIcon'      => 'person',
             'order'        => 31,
