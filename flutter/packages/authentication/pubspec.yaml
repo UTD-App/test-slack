@@ -13,6 +13,10 @@ dependencies:
   # Depends on core app feature contract
   utd_app:
     path: ../../
+  # Server-driven (UTD Studio) screen renderer — used to render the auth screens
+  # (intro/login/register) from Studio with the native pages as fallback.
+  utd_studio_sdk:
+    path: ../utd_studio_sdk
   shared_preferences: ^2.2.0
   provider: ^6.0.0
   flutter_bloc: ^8.1.6

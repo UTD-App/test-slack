@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:utd_app/shared/core/color_manager.dart';
 import 'package:utd_app/shared/widgets/gradient_background.dart';
+import 'package:utd_studio_sdk/utd_studio_sdk.dart';
 
 import '../src/presentation/splash/view/splash_page.dart';
 import '../src/presentation/on_boarding/on_boarding_screen.dart';
@@ -38,22 +39,31 @@ class AuthRoutes {
           path: onBoarding,
           builder: (context, state) => const OnBoardingScreen(),
         ),
+        // intro / login / register render the UTD Studio server-driven screen
+        // (screenName matches the core manifest default_screens), falling back to
+        // the native page when nothing is published yet (or offline on first run)
+        // — so auth never breaks before the screens are Synced+Published.
         GoRoute(
           path: intro,
-          builder: (context, state) => IntroPage(
-            error: state.extra as String?,
+          builder: (context, state) => StacDynamicScreen(
+            screenName: 'intro',
+            fallback: IntroPage(error: state.extra as String?),
           ),
         ),
         GoRoute(
           path: login,
-          builder: (context, state) => const LoginPage(),
+          builder: (context, state) => const StacDynamicScreen(
+            screenName: 'login',
+            fallback: LoginPage(),
+          ),
         ),
         GoRoute(
           path: register,
           builder: (context, state) {
             final args = state.extra as Map<String, dynamic>? ?? {};
-            return RegisterPage(
-              initialEmail: args['email'] as String?,
+            return StacDynamicScreen(
+              screenName: 'register',
+              fallback: RegisterPage(initialEmail: args['email'] as String?),
             );
           },
         ),
