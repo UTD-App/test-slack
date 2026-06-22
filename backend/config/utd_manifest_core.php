@@ -120,13 +120,24 @@ $profileWidgets = array_merge(
     [
         'ROOT'        => $node('Container', true, array_merge($style, ['background' => $C['screen'], 'padding' => 16, 'gap' => 14, 'align' => 'stretch', 'flex' => 0]), ['scope', 'mSettings'], null),
         'scope'       => $node('Scope', true, ['source' => 'core.currentUser'], ['header'], 'ROOT'),
-        'header'      => $node('Container', true, ['background' => '#00000000', 'padding' => 8, 'gap' => 10, 'align' => 'center', 'flex' => 0], ['avatarStack', 'nameRow', 'uid', 'bioRow'], 'scope'),
+        'header'      => $node('Container', true, ['background' => '#00000000', 'padding' => 8, 'gap' => 10, 'align' => 'center', 'flex' => 0], ['avatarBox', 'nameRow', 'uid', 'bioRow'], 'scope'),
 
-        // Avatar: gradient ring + circular image, with an overlapping camera badge.
-        'avatarStack' => $node('Stack', true, ['width' => 124, 'height' => 124], ['ring', 'camBtn'], 'header'),
+        // Avatar: a FIXED-SIZE box → gradient ring + circular image + an
+        // overlapping camera badge. The Stack MUST be wrapped in a 124×124
+        // Container: a Stack has no width/height of its own (the Stac stack
+        // parser ignores them), so the badge's `pos` (which Studio transforms
+        // into a non-positioned `Align`) would expand the Stack to the full
+        // screen width and fling the camera FAR from the circle. The fixed box
+        // bounds the Align so the badge sits ON the ring edge.
+        'avatarBox'   => $node('Container', true, ['width' => 124, 'height' => 124, 'align' => 'center', 'valign' => 'center'], ['avatarStack'], 'header'),
+        'avatarStack' => $node('Stack', true, [], ['ring', 'camBtn'], 'avatarBox'),
         'ring'        => $node('Container', true, array_merge($style, ['width' => 124, 'height' => 124, 'radius' => 62, 'gradient' => 1, 'gradFrom' => $C['accent'], 'gradTo' => $C['pink'], 'gradDir' => 'to bottom right', 'padding' => 4, 'align' => 'center', 'valign' => 'center']), ['avatarImg'], 'avatarStack'),
         'avatarImg'   => $node('Image', false, ['src' => '', 'binding' => 'core.currentUser.avatar', 'width' => 116, 'height' => 116, 'fit' => 'cover', 'shape' => 'circle', 'radius' => 0], [], 'ring'),
-        'camBtn'      => $node('Container', true, array_merge($style, ['width' => 34, 'height' => 34, 'radius' => 17, 'background' => $C['pink'], 'borderWidth' => 2, 'borderColor' => $C['white'], 'align' => 'center', 'valign' => 'center', 'pos' => 'bottom-right', 'onTapAction' => 'core.changeAvatar', 'onTapParams' => ['source' => 'gallery']]), ['camIcon'], 'avatarStack'),
+        // pos:'top-left' → Studio maps left→Start, so in the RTL app Start=RIGHT
+        // → the badge renders physically TOP-RIGHT, snug on the ring (matches the
+        // LTP design). (Studio's LTR web preview mirrors it to top-left — the app
+        // is the source of truth.)
+        'camBtn'      => $node('Container', true, array_merge($style, ['width' => 34, 'height' => 34, 'radius' => 17, 'background' => $C['pink'], 'borderWidth' => 2, 'borderColor' => $C['white'], 'align' => 'center', 'valign' => 'center', 'pos' => 'top-left', 'onTapAction' => 'core.changeAvatar', 'onTapParams' => ['source' => 'gallery']]), ['camIcon'], 'avatarStack'),
         'camIcon'     => $node('Icon', false, ['name' => 'photo_camera', 'size' => 16, 'color' => $C['white']], [], 'camBtn'),
 
         // Name + flag + edit pencil.
