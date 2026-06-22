@@ -30,27 +30,38 @@ void registerCoreStacSources() {
 /// دفاعيًا من أي شكل بيرجع به `/my-data`؛ الناقص → '' (الـ manifest بيخفيه عبر
 /// visibleBinding). الـ bio بياخد placeholder لو فاضي عشان صف التعديل يفضل ذو معنى.
 Map<String, dynamic> _userFields(Map<String, dynamic> user) {
-  final covers = user['covers'];
-  final profile = user['profile'];
-  final rawGender = (profile is Map) ? profile['gender'] : user['gender'];
+  // `/my-data` NESTS media: avatar/cover live under `profile` (with absolute
+  // `image`/`cover_images` URLs built by the Media seam — prefer those over the
+  // raw `avatar`/`covers` paths, which 404 on cloud storage), and the country
+  // flag lives under `country`. Reading the wrong TOP-LEVEL keys is why the outer
+  // Me-landing showed no avatar/flag while the inner full profile (which reads
+  // these same nested keys via the profile API) did.
+  final profile = user['profile'] is Map ? user['profile'] as Map : const {};
+  final country = user['country'] is Map ? user['country'] as Map : const {};
+  final rawGender = profile['gender'] ?? user['gender'];
   final gender =
       rawGender is num ? rawGender.toInt() : int.tryParse('${rawGender ?? ''}');
-  final rawCover = (covers is List && covers.isNotEmpty)
-      ? covers.first.toString()
-      : (user['cover']?.toString() ?? '');
+  final rawAvatar =
+      (profile['image'] ?? profile['avatar'] ?? user['avatar'] ?? user['image'])
+          ?.toString();
+  final coverList =
+      profile['cover_images'] ?? profile['covers'] ?? user['covers'] ?? user['cover'];
+  final rawCover = (coverList is List && coverList.isNotEmpty)
+      ? coverList.first.toString()
+      : (coverList is String ? coverList : '');
   return {
     'name': user['name'] ?? '',
     'email': user['email'] ?? '',
     'bio': (user['bio']?.toString().trim().isNotEmpty ?? false)
         ? user['bio']
         : 'أضف نبذة',
-    // Resolve media to ABSOLUTE /storage URLs — the Stac renderer loads the
-    // value verbatim, so a raw path (`flags/ye.png`) 404s (that was the broken
-    // country flag). Absolute http(s) values pass through untouched.
-    'avatar': _media((user['avatar'] ?? user['image'])?.toString()),
+    // Resolve media to ABSOLUTE URLs — the Stac renderer loads the value
+    // verbatim, so a raw path 404s. Absolute http(s) values pass through.
+    'avatar': _media(rawAvatar),
     'cover': _media(rawCover),
-    'country': user['country_name'] ?? user['country'] ?? '',
-    'flag': _media((user['country_flag'] ?? user['flag'])?.toString()),
+    'country': (country['name'] ?? user['country_name'])?.toString() ?? '',
+    'flag': _media(
+        (country['flag'] ?? user['country_flag'] ?? user['flag'])?.toString()),
     'uid': user['uuid']?.toString() ??
         user['uid']?.toString() ??
         user['id']?.toString() ??

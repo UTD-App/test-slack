@@ -144,30 +144,38 @@ class StacBinding {
       case 'image':
         final url = value?.toString() ?? (node['src'] ?? '');
         if (url.isEmpty) {
-          // لسه مفيش صورة (مستخدم بدون avatar): نرسم placeholder دائري بدل
-          // Image.network('') اللي بتنهار وتنكمش لحجم صفر — فتختفي الصورة
-          // وتبقى مش قابلة للنقر (يبان وكأن مفيش binding ولا action). الحجم
-          // يفضل من width/height عشان منطقة النقر (تغيير الصورة) تفضل موجودة.
-          final w = node['width'];
-          final h = node['height'];
-          final num dim = (w is num) ? w : (h is num ? h : 96);
-          node
-            ..clear()
-            ..['type'] = 'container'
-            ..['alignment'] = 'center'
-            ..['decoration'] = {
-              'type': 'boxDecoration',
-              'color': '#E2E8F0',
-              'shape': 'circle',
-            }
-            ..['child'] = {
-              'type': 'icon',
-              'icon': 'person',
-              'size': dim * 0.6,
-              'color': '#94A3B8',
-            };
-          if (w != null) node['width'] = w;
-          if (h != null) node['height'] = h;
+          // An empty image binding. ONLY the AVATAR keeps a visible round person
+          // placeholder so the "change photo" tap area stays usable when the user
+          // has no picture. Every OTHER empty image (country flag, cover, …) must
+          // VANISH — otherwise it paints a stray gray person circle where a
+          // missing flag/cover should simply be absent. Leaving src empty lets the
+          // image parser render SizedBox.shrink().
+          final isAvatar = binding.toLowerCase().endsWith('avatar');
+          if (isAvatar) {
+            final w = node['width'];
+            final h = node['height'];
+            final num dim = (w is num) ? w : (h is num ? h : 96);
+            node
+              ..clear()
+              ..['type'] = 'container'
+              ..['alignment'] = 'center'
+              ..['decoration'] = {
+                'type': 'boxDecoration',
+                'color': '#E2E8F0',
+                'shape': 'circle',
+              }
+              ..['child'] = {
+                'type': 'icon',
+                'icon': 'person',
+                'size': dim * 0.6,
+                'color': '#94A3B8',
+              };
+            if (w != null) node['width'] = w;
+            if (h != null) node['height'] = h;
+          } else {
+            node['src'] = '';
+            node['imageType'] = 'network';
+          }
         } else {
           node['src'] = url;
           node['imageType'] = 'network';

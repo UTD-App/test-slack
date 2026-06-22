@@ -16,6 +16,12 @@ class StacImageParser extends StacParser<StacImage> {
 
   @override
   Widget parse(BuildContext context, StacImage model) {
+    // Empty/blank src (e.g. a data binding that resolved to '' — an absent
+    // country flag or cover) must render NOTHING. Otherwise a network image with
+    // an empty URL paints a broken/placeholder box (the stray gray-person circle
+    // seen in the server-driven profile). Bound images get their resolved URL
+    // before parse, so a real avatar/flag still renders.
+    if (model.src.trim().isEmpty) return const SizedBox.shrink();
     switch (model.imageType) {
       case StacImageType.network:
         return _networkImage(model, context);

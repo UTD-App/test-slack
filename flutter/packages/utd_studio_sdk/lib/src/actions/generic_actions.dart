@@ -211,10 +211,59 @@ class CoreOpenDialogActionParser extends StacMapActionParser {
     // overflow), and on any rebuild the app shell bleeds through the overlay.
     // Pushing it as a normal full-screen ROUTE renders it exactly like a
     // bottom-nav tab (which works), dismissible with the system back gesture.
+    // Wrapped in [_FullStudioPage] so the screen's content stays clear of the
+    // status bar / camera cutout (SafeArea), the strip behind the status bar is
+    // painted (nothing shows through), and a back button is overlaid (the screen
+    // has no app bar of its own).
     return Navigator.of(context).push(
       MaterialPageRoute<void>(
         fullscreenDialog: true,
-        builder: (ctx) => _content(ctx, screen),
+        builder: (ctx) => _FullStudioPage(child: _content(ctx, screen)),
+      ),
+    );
+  }
+}
+
+/// Chrome for a `style:'full'` Studio screen pushed as a route. The screen is a
+/// bare scaffold with no app bar, so without this its first widget jams under
+/// the status bar / camera cutout. This: (a) insets the content below the status
+/// bar (SafeArea), (b) paints the status-bar strip with the theme background so
+/// nothing behind shows through, (c) overlays a circular back button at the
+/// top-start (physical top-right in RTL) — opposite the screen's own cover tools
+/// (edit/refresh, which sit at top-end).
+class _FullStudioPage extends StatelessWidget {
+  const _FullStudioPage({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return ColoredBox(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: SafeArea(
+        top: true,
+        bottom: false,
+        child: Stack(
+          children: [
+            Positioned.fill(child: child),
+            // Physical top-RIGHT, opposite the screen's own cover tools
+            // (edit/refresh render at the start/left edge).
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Material(
+                color: const Color(0x66000000),
+                shape: const CircleBorder(),
+                clipBehavior: Clip.antiAlias,
+                child: IconButton(
+                  iconSize: 22,
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.of(context).maybePop(),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
