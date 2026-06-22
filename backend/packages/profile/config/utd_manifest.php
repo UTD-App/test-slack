@@ -63,19 +63,25 @@ $C = [
 // a negative top margin on `header` (EdgeInsets supports negatives) — matching
 // the native profile look.
 $profileWidgets = [
-    'ROOT'        => $node('Container', true, ['gradient' => 1, 'gradFrom' => $C['gradTop'], 'gradTo' => $C['gradBot'], 'gradDir' => 'to bottom', 'padding' => 0, 'gap' => 0, 'align' => 'stretch', 'flex' => 0], ['scope'], null),
+    // heightPercent:100 + a SOLID bg under the gradient: opened as a full dialog
+    // via _FullStudioPage (which paints a WHITE ColoredBox behind the body), so
+    // the ROOT must FILL the screen and paint its own purple — otherwise white
+    // shows through wherever the (short) content doesn't reach.
+    'ROOT'        => $node('Container', true, ['heightPercent' => 100, 'background' => $C['gradBot'], 'gradient' => 1, 'gradFrom' => $C['gradTop'], 'gradTo' => $C['gradBot'], 'gradDir' => 'to bottom', 'padding' => 0, 'gap' => 0, 'align' => 'stretch', 'flex' => 0], ['scope'], null),
     'scope'       => $node('Scope', true, ['source' => 'profile.user'], ['body'], 'ROOT'),
     'body'        => $node('Container', true, ['background' => '#00000000', 'padding' => 0, 'gap' => 0, 'align' => 'stretch', 'flex' => 0], ['coverWrap', 'header'], 'scope'),
 
     // Cover banner (full-bleed) with edit + refresh buttons OVER it. The Stack
     // uses fit:expand so the cover image fills it; the tools are a pos'd child.
     // coverWrap has its own bg so the banner shows even when the user has no cover.
-    'coverWrap'   => $node('Container', true, ['width' => 0, 'height' => 184, 'background' => $C['card'], 'align' => 'stretch', 'flex' => 0], ['coverStack'], 'body'),
-    'coverStack'  => $node('Stack', true, ['fit' => 'expand'], ['coverImg', 'scrim', 'tools', 'closeBtn'], 'coverWrap'),
+    // widthPercent:100 gives the cover a DEFINITE width so the fit:expand Stack
+    // bounds the image (width:0/auto let the bound cover render at its intrinsic
+    // size → the 730px bottom overflow). Single non-positioned child (the image);
+    // the scrim was dropped — a 2nd non-positioned child in a fit:expand Stack is
+    // unreliable in the Studio transform.
+    'coverWrap'   => $node('Container', true, ['widthPercent' => 100, 'height' => 170, 'background' => $C['card'], 'align' => 'stretch', 'flex' => 0], ['coverStack'], 'body'),
+    'coverStack'  => $node('Stack', true, ['fit' => 'expand'], ['coverImg', 'tools', 'closeBtn'], 'coverWrap'),
     'coverImg'    => $node('Image', false, ['src' => '', 'binding' => 'profile.user.cover', 'fit' => 'cover', 'radius' => 0], [], 'coverStack'),
-    // Bottom scrim (a 2nd non-positioned child of the fit:expand Stack, so it
-    // fills) so the overlapping avatar stays legible over a bright cover.
-    'scrim'       => $node('Container', true, ['gradient' => 1, 'gradFrom' => '#00000000', 'gradTo' => '#00000066', 'gradDir' => 'to bottom', 'flex' => 0], [], 'coverStack'),
 
     // Close button — this screen opens as a FULL dialog from the base avatar tap
     // (core.openDialog → style:full), so it owns its own close affordance.
@@ -169,7 +175,7 @@ return [
             'name'         => 'user_profile',
             'label'        => 'البروفايل الكامل (عند الصورة)',
             'icon'         => '👤',
-            'version'      => '1.8.0',
+            'version'      => '1.9.0',
             'nav'          => false,
             'navIcon'      => 'person',
             'order'        => 31,
@@ -182,10 +188,16 @@ return [
             // the runtime wraps it in a full scaffold INSIDE the window (the broken
             // "scaffold-in-a-window" look). The dialog has no appBar; the screen
             // owns its close button (closeBtn → core.closeDialog) + its own bg.
+            // Opened as a FULL dialog from the base profile's avatar tap
+            // (core.openDialog → style:full). NOTE: the Flutter runtime ignores
+            // chrome.type and keys off presentation.style only; full → pushed as a
+            // route via _FullStudioPage (white ColoredBox behind), so the ROOT owns
+            // its purple fill. appBar.bg set to solid purple as a scaffold-bg
+            // safety net. The screen owns its close button (closeBtn → core.closeDialog).
             'chrome'       => [
                 'type'         => 'dialog',
                 'presentation' => ['style' => 'full', 'barrierDismissible' => true],
-                'appBar'       => ['enabled' => false, 'title' => 'الملف الشخصي', 'bg' => '#00000000', 'actions' => []],
+                'appBar'       => ['enabled' => false, 'title' => 'الملف الشخصي', 'bg' => $C['gradBot'], 'actions' => []],
             ],
             'widgets'      => $profileWidgets,
         ],
