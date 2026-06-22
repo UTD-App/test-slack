@@ -85,11 +85,14 @@ $profileWidgets = [
     'header'      => $node('Container', true, ['background' => '#00000000', 'margin' => ['left' => 16, 'top' => -58, 'right' => 16, 'bottom' => 16], 'padding' => 0, 'gap' => 8, 'align' => 'center', 'flex' => 0], ['avatarRing', 'nameRow', 'uidRow'], 'body'),
     'avatarRing'  => $node('Container', true, ['width' => 116, 'height' => 116, 'radius' => 58, 'gradient' => 1, 'gradFrom' => $C['accent'], 'gradTo' => $C['pink'], 'gradDir' => 'to bottom right', 'padding' => 4, 'align' => 'center', 'valign' => 'center', 'flex' => 0], ['avatarImg'], 'header'),
     'avatarImg'   => $node('Image', false, ['src' => '', 'binding' => 'profile.user.avatar', 'width' => 108, 'height' => 108, 'fit' => 'cover', 'shape' => 'circle', 'radius' => 0], [], 'avatarRing'),
-    'nameRow'     => $node('Row', true, ['gap' => 6, 'justify' => 'center', 'align' => 'center'], ['flag', 'maleIcon', 'femaleIcon', 'name'], 'header'),
+    'nameRow'     => $node('Row', true, ['gap' => 6, 'justify' => 'center', 'align' => 'center'], ['flag', 'maleSign', 'femaleSign', 'name'], 'header'),
     'flag'        => $node('Image', false, ['src' => '', 'binding' => 'profile.user.flag', 'visibleBinding' => 'profile.user.flag', 'width' => 26, 'height' => 18, 'fit' => 'cover', 'radius' => 3], [], 'nameRow'),
-    // Gender: two icons, only the matching one shows (visibleBinding isMale/isFemale).
-    'maleIcon'    => $node('Icon', false, ['name' => 'male', 'size' => 18, 'color' => '#42A5F5', 'visibleBinding' => 'profile.user.isMale'], [], 'nameRow'),
-    'femaleIcon'  => $node('Icon', false, ['name' => 'female', 'size' => 18, 'color' => '#EC407A', 'visibleBinding' => 'profile.user.isFemale'], [], 'nameRow'),
+    // Gender shown as a colored sign. UTD Studio drops `visibleBinding`, so a gated
+    // Icon can't be hidden — instead bind a Text to a per-gender source field that
+    // holds the symbol for the matching gender and an EMPTY string otherwise (an
+    // empty bound Text renders nothing). So only the user's gender shows, colored.
+    'maleSign'    => $node('Text', false, ['text' => '', 'binding' => 'profile.user.maleSign', 'fontSize' => 20, 'fontWeight' => 700, 'color' => '#42A5F5', 'align' => 'center', 'maxLines' => 1], [], 'nameRow'),
+    'femaleSign'  => $node('Text', false, ['text' => '', 'binding' => 'profile.user.femaleSign', 'fontSize' => 20, 'fontWeight' => 700, 'color' => '#EC407A', 'align' => 'center', 'maxLines' => 1], [], 'nameRow'),
     'name'        => $node('Text', false, ['text' => 'الاسم', 'binding' => 'profile.user.name', 'fontSize' => 22, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'maxLines' => 1], [], 'nameRow'),
     'uidRow'      => $node('Row', true, ['gap' => 4, 'justify' => 'center', 'align' => 'center', 'visibleBinding' => 'profile.user.uid'], ['uidLabel', 'uid'], 'header'),
     'uidLabel'    => $node('Text', false, ['text' => 'الأبدي:', 'binding' => '', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'maxLines' => 1], [], 'uidRow'),
@@ -126,6 +129,8 @@ return [
                 ['key' => 'uid',     'label' => 'المعرّف',    'type' => 'string'],
                 ['key' => 'isMale',   'label' => 'ذكر؟',  'type' => 'string'],
                 ['key' => 'isFemale', 'label' => 'أنثى؟', 'type' => 'string'],
+                ['key' => 'maleSign',   'label' => 'رمز ذكر',  'type' => 'string'],
+                ['key' => 'femaleSign', 'label' => 'رمز أنثى', 'type' => 'string'],
             ],
         ],
     ],
@@ -146,7 +151,7 @@ return [
             'name'         => 'user_profile',
             'label'        => 'البروفايل الكامل (عند الصورة)',
             'icon'         => '👤',
-            'version'      => '1.7.4',
+            'version'      => '1.7.5',
             'nav'          => false,
             'navIcon'      => 'person',
             'order'        => 31,

@@ -203,11 +203,18 @@ class CoreOpenDialogActionParser extends StacMapActionParser {
 
   Future<void> _showFull(
       BuildContext context, Map<String, dynamic> screen, bool dismissible) {
-    return showDialog<void>(
-      context: context,
-      barrierDismissible: dismissible,
-      builder: (ctx) => Dialog.fullscreen(
-        child: SafeArea(child: _content(ctx, screen)),
+    // A `full` Studio screen is itself a complete scaffold (the Studio transform
+    // wraps every screen in scaffold → scrollView). Rendering that scaffold
+    // inside `Dialog.fullscreen` DOUBLE-WRAPS it and breaks badly: the dialog's
+    // own Material surface paints OVER the screen's background (white), the
+    // inner max-size column overflows the dialog's bounded box (RenderFlex
+    // overflow), and on any rebuild the app shell bleeds through the overlay.
+    // Pushing it as a normal full-screen ROUTE renders it exactly like a
+    // bottom-nav tab (which works), dismissible with the system back gesture.
+    return Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        fullscreenDialog: true,
+        builder: (ctx) => _content(ctx, screen),
       ),
     );
   }

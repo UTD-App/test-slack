@@ -50,6 +50,11 @@ void registerProfileStacSources() {
       // Gender → two visibleBinding-gated icons in the manifest (1=male,2=female).
       'isMale': p.gender == 1 ? '1' : '',
       'isFemale': p.gender == 2 ? '1' : '',
+      // Gender sign: symbol for the matching gender, '' otherwise. Bound to a
+      // colored Text in the manifest (UTD Studio drops visibleBinding, so an empty
+      // bound string is how the non-matching one is hidden).
+      'maleSign': p.gender == 1 ? '♂' : '',
+      'femaleSign': p.gender == 2 ? '♀' : '',
     };
   });
 }

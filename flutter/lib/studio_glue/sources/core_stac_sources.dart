@@ -58,6 +58,11 @@ Map<String, dynamic> _userFields(Map<String, dynamic> user) {
     // Gender → two visibleBinding-gated icons in the manifest (1=male,2=female).
     'isMale': gender == 1 ? '1' : '',
     'isFemale': gender == 2 ? '1' : '',
+    // Gender sign: the symbol for the matching gender, '' otherwise. Bound to a
+    // colored Text in the manifest (UTD Studio drops visibleBinding, so a bound
+    // empty string is how we hide the non-matching one).
+    'maleSign': gender == 1 ? '♂' : '',
+    'femaleSign': gender == 2 ? '♀' : '',
   };
 }
 
@@ -98,7 +103,7 @@ bool _sameUser(Map old, Map neu) {
   final b = _userFields(Map<String, dynamic>.from(neu));
   for (final k in const [
     'name', 'email', 'bio', 'avatar', 'cover', 'country', 'flag', 'uid',
-    'isMale', 'isFemale',
+    'isMale', 'isFemale', 'maleSign', 'femaleSign',
   ]) {
     if ((a[k] ?? '').toString() != (b[k] ?? '').toString()) return false;
   }

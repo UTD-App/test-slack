@@ -23,8 +23,12 @@ String resolveMediaUrl(String? path) {
 String avatarUrl(String? image, String? name) {
   final resolved = resolveMediaUrl(image);
   if (resolved.isNotEmpty) return resolved;
-  final n = Uri.encodeComponent(
-    (name == null || name.trim().isEmpty) ? 'User' : name.trim(),
-  );
+  // ui-avatars only handles plain text. A raw emoji in the name (e.g. "mekooo😚")
+  // makes the generated URL 400 → broken image. Keep only letters/digits/spaces
+  // (Latin + Arabic via \p{L}); fall back to "User" when nothing is left.
+  final cleaned = (name ?? '')
+      .replaceAll(RegExp(r'[^\p{L}\p{N} ]', unicode: true), '')
+      .trim();
+  final n = Uri.encodeComponent(cleaned.isEmpty ? 'User' : cleaned);
   return 'https://ui-avatars.com/api/?name=$n&background=4f46e5&color=fff';
 }
