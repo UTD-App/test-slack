@@ -71,9 +71,19 @@ $profileWidgets = [
     // uses fit:expand so the cover image fills it; the tools are a pos'd child.
     // coverWrap has its own bg so the banner shows even when the user has no cover.
     'coverWrap'   => $node('Container', true, ['width' => 0, 'height' => 184, 'background' => $C['card'], 'align' => 'stretch', 'flex' => 0], ['coverStack'], 'body'),
-    'coverStack'  => $node('Stack', true, ['fit' => 'expand'], ['coverImg', 'tools'], 'coverWrap'),
-    'coverImg'    => $node('Image', false, ['src' => '', 'binding' => 'profile.user.cover', 'visibleBinding' => 'profile.user.cover', 'fit' => 'cover', 'radius' => 0], [], 'coverStack'),
-    // Edit + refresh, top-left (pos:'top-right' → physical top-left in the RTL app).
+    'coverStack'  => $node('Stack', true, ['fit' => 'expand'], ['coverImg', 'scrim', 'tools', 'closeBtn'], 'coverWrap'),
+    'coverImg'    => $node('Image', false, ['src' => '', 'binding' => 'profile.user.cover', 'fit' => 'cover', 'radius' => 0], [], 'coverStack'),
+    // Bottom scrim (a 2nd non-positioned child of the fit:expand Stack, so it
+    // fills) so the overlapping avatar stays legible over a bright cover.
+    'scrim'       => $node('Container', true, ['gradient' => 1, 'gradFrom' => '#00000000', 'gradTo' => '#00000066', 'gradDir' => 'to bottom', 'flex' => 0], [], 'coverStack'),
+
+    // Close button — this screen opens as a FULL dialog from the base avatar tap
+    // (core.openDialog → style:full), so it owns its own close affordance.
+    // pos:'top-left' → physical top-RIGHT in the RTL app (matches the native back chevron).
+    'closeBtn'    => $node('Container', true, ['width' => 40, 'height' => 40, 'radius' => 20, 'background' => '#00000066', 'align' => 'center', 'valign' => 'center', 'flex' => 0, 'pos' => 'top-left', 'onTapAction' => 'core.closeDialog'], ['closeIcon'], 'coverStack'),
+    'closeIcon'   => $node('Icon', false, ['name' => 'arrow_back_ios_new', 'size' => 18, 'color' => $C['white']], [], 'closeBtn'),
+
+    // Edit + refresh, pos:'top-right' → physical top-LEFT in the RTL app.
     'tools'       => $node('Row', true, ['gap' => 8, 'pos' => 'top-right', 'padding' => 10], ['editBtn', 'refreshBtn'], 'coverStack'),
     'editBtn'     => $node('Container', true, ['width' => 40, 'height' => 40, 'radius' => 20, 'background' => '#00000066', 'align' => 'center', 'valign' => 'center', 'flex' => 0, 'onTapAction' => 'core.editProfile'], ['editIcon'], 'tools'),
     'editIcon'    => $node('Icon', false, ['name' => 'edit', 'size' => 20, 'color' => $C['white']], [], 'editBtn'),
@@ -82,7 +92,7 @@ $profileWidgets = [
 
     // Identity: gradient-ring avatar OVERLAPPING the cover (negative top margin)
     // + flag + gender icon + name + UID row ("الأبدي: <id>").
-    'header'      => $node('Container', true, ['background' => '#00000000', 'margin' => ['left' => 16, 'top' => -58, 'right' => 16, 'bottom' => 16], 'padding' => 0, 'gap' => 8, 'align' => 'center', 'flex' => 0], ['avatarRing', 'nameRow', 'uidRow'], 'body'),
+    'header'      => $node('Container', true, ['background' => '#00000000', 'margin' => ['left' => 16, 'top' => -60, 'right' => 16, 'bottom' => 16], 'padding' => 0, 'gap' => 8, 'align' => 'center', 'flex' => 0], ['avatarRing', 'nameRow', 'uidRow'], 'body'),
     'avatarRing'  => $node('Container', true, ['width' => 116, 'height' => 116, 'radius' => 58, 'gradient' => 1, 'gradFrom' => $C['accent'], 'gradTo' => $C['pink'], 'gradDir' => 'to bottom right', 'padding' => 4, 'align' => 'center', 'valign' => 'center', 'flex' => 0], ['avatarImg'], 'header'),
     'avatarImg'   => $node('Image', false, ['src' => '', 'binding' => 'profile.user.avatar', 'width' => 108, 'height' => 108, 'fit' => 'cover', 'shape' => 'circle', 'radius' => 0], [], 'avatarRing'),
     'nameRow'     => $node('Row', true, ['gap' => 6, 'justify' => 'center', 'align' => 'center'], ['flag', 'maleSign', 'femaleSign', 'name'], 'header'),
@@ -94,9 +104,13 @@ $profileWidgets = [
     'maleSign'    => $node('Text', false, ['text' => '', 'binding' => 'profile.user.maleSign', 'fontSize' => 20, 'fontWeight' => 700, 'color' => '#42A5F5', 'align' => 'center', 'maxLines' => 1], [], 'nameRow'),
     'femaleSign'  => $node('Text', false, ['text' => '', 'binding' => 'profile.user.femaleSign', 'fontSize' => 20, 'fontWeight' => 700, 'color' => '#EC407A', 'align' => 'center', 'maxLines' => 1], [], 'nameRow'),
     'name'        => $node('Text', false, ['text' => 'الاسم', 'binding' => 'profile.user.name', 'fontSize' => 22, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'maxLines' => 1], [], 'nameRow'),
-    'uidRow'      => $node('Row', true, ['gap' => 4, 'justify' => 'center', 'align' => 'center', 'visibleBinding' => 'profile.user.uid'], ['uidLabel', 'uid'], 'header'),
+    'uidRow'      => $node('Row', true, ['gap' => 4, 'justify' => 'center', 'align' => 'center', 'visibleBinding' => 'profile.user.uid'], ['uidLabel', 'uid', 'copyIcon'], 'header'),
     'uidLabel'    => $node('Text', false, ['text' => 'الأبدي:', 'binding' => '', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'maxLines' => 1], [], 'uidRow'),
     'uid'         => $node('Text', false, ['text' => '', 'binding' => 'profile.user.uid', 'fontSize' => 13, 'fontWeight' => 600, 'color' => $C['muted'], 'align' => 'center', 'maxLines' => 1], [], 'uidRow'),
+    // Decorative copy glyph (matches the native profile). NOTE: there is no
+    // core.copy clipboard action in the SDUI runtime yet, so this is visual-only
+    // until a copy action parser is registered in the base.
+    'copyIcon'    => $node('Icon', false, ['name' => 'content_copy', 'size' => 14, 'color' => $C['muted']], [], 'uidRow'),
 ];
 
 return [
@@ -144,6 +158,10 @@ return [
             'key' => 'refresh', 'label' => 'تحديث',
             'produces' => 'core.refresh', 'default_shape' => 'button', 'screen' => 'user_profile',
         ],
+        [
+            'key' => 'close_dialog', 'label' => 'إغلاق',
+            'produces' => 'core.closeDialog', 'default_shape' => 'button', 'screen' => 'user_profile',
+        ],
     ],
 
     'default_screens' => [
@@ -151,7 +169,7 @@ return [
             'name'         => 'user_profile',
             'label'        => 'البروفايل الكامل (عند الصورة)',
             'icon'         => '👤',
-            'version'      => '1.7.5',
+            'version'      => '1.8.0',
             'nav'          => false,
             'navIcon'      => 'person',
             'order'        => 31,
@@ -159,7 +177,16 @@ return [
             'requiresAuth' => true,
             'showOnce'     => false,
             'opens'        => null,
-            'chrome'       => ['appBar' => ['enabled' => false, 'title' => 'الملف الشخصي', 'bg' => '#00000000', 'actions' => []]],
+            // Opened as a FULL dialog from the base profile's avatar tap
+            // (core.openDialog → style:full). It MUST be type:'dialog' — otherwise
+            // the runtime wraps it in a full scaffold INSIDE the window (the broken
+            // "scaffold-in-a-window" look). The dialog has no appBar; the screen
+            // owns its close button (closeBtn → core.closeDialog) + its own bg.
+            'chrome'       => [
+                'type'         => 'dialog',
+                'presentation' => ['style' => 'full', 'barrierDismissible' => true],
+                'appBar'       => ['enabled' => false, 'title' => 'الملف الشخصي', 'bg' => '#00000000', 'actions' => []],
+            ],
             'widgets'      => $profileWidgets,
         ],
     ],
