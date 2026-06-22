@@ -31,6 +31,13 @@ class AudioRoomFeature extends AppFeature {
   int? activeRoomId;
   final ValueNotifier<Set<String>> commentBannedUsers = ValueNotifier({});
   final ValueNotifier<Map<String, dynamic>?> pinnedMessage = ValueNotifier(null);
+  final Map<String, String> _avatarCache = {};
+
+  void cacheAvatar(String userId, String url) {
+    if (url.isNotEmpty) _avatarCache[userId] = url;
+  }
+
+  String? cachedAvatar(String userId) => _avatarCache[userId];
 
   void setActiveRoom(UTDRoomController controller, RoomModel room, int roomId) {
     activeController = controller;
@@ -44,6 +51,7 @@ class AudioRoomFeature extends AppFeature {
     activeRoomId = null;
     commentBannedUsers.value = {};
     pinnedMessage.value = null;
+    _avatarCache.clear();
   }
 
   AudioRoomFeature() {

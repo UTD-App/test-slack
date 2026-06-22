@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:utd_audio_room_kit/utd_audio_room_kit.dart';
 
 import '../../../audio_room_feature.dart';
+import '../../bloc/admin_bloc.dart';
+import '../../bloc/blacklist_bloc.dart';
 import 'message_input_board.dart';
 import 'message_list.dart';
 import 'room_strings.dart';
+import 'user_profile_sheet.dart';
 
 void openMessageInput(BuildContext context, UTDRoomController controller) {
   Navigator.of(context).push(MessageInputBoard(roomController: controller));
@@ -58,6 +62,9 @@ class _RoomMessagesWidgetState extends State<RoomMessagesWidget> {
             return _PinnedMessageBanner(
               data: pinned,
               isAdmin: widget.controller.isHostOrAdmin,
+              controller: widget.controller,
+              roomId: widget.roomId,
+              isOwner: widget.isOwner,
               onUnpin: () {
                 feature.pinnedMessage.value = null;
                 widget.controller.sendRoomMessage({'type': 'unpinMessage'});
@@ -147,11 +154,17 @@ class _RoomMessagesWidgetState extends State<RoomMessagesWidget> {
 class _PinnedMessageBanner extends StatelessWidget {
   final Map<String, dynamic> data;
   final bool isAdmin;
+  final UTDRoomController controller;
+  final int roomId;
+  final bool isOwner;
   final VoidCallback onUnpin;
 
   const _PinnedMessageBanner({
     required this.data,
     required this.isAdmin,
+    required this.controller,
+    required this.roomId,
+    required this.isOwner,
     required this.onUnpin,
   });
 
@@ -160,64 +173,122 @@ class _PinnedMessageBanner extends StatelessWidget {
     final s = RoomStrings.of(context);
     final senderName = data['senderName']?.toString() ?? '';
     final text = data['text']?.toString() ?? '';
+    final avatar = data['senderAvatar']?.toString() ?? '';
 
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-      decoration: BoxDecoration(
-        color: Colors.amber.withValues(alpha: 0.15),
-        border: Border(
-          bottom: BorderSide(
-            color: Colors.amber.withValues(alpha: 0.3),
-            width: 1,
+    return GestureDetector(
+      onTap: () => _openSenderProfile(context),
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+        decoration: BoxDecoration(
+          color: Colors.amber.withValues(alpha: 0.15),
+          border: Border(
+            bottom: BorderSide(
+              color: Colors.amber.withValues(alpha: 0.3),
+              width: 1,
+            ),
           ),
         ),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.push_pin, color: Colors.amber, size: 16.r),
-          SizedBox(width: 8.w),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  senderName,
-                  style: TextStyle(
-                    color: Colors.amber,
-                    fontSize: 11.sp,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                Text(
-                  text,
-                  style: TextStyle(color: Colors.white, fontSize: 12.sp),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+        child: Row(
+          children: [
+            Icon(Icons.push_pin, color: Colors.amber, size: 16.r),
+            SizedBox(width: 8.w),
+            CircleAvatar(
+              radius: 14.r,
+              backgroundColor:
+                  const Color(0xFF64B5F6).withValues(alpha: 0.3),
+              backgroundImage:
+                  avatar.isNotEmpty ? NetworkImage(avatar) : null,
+              child: avatar.isEmpty
+                  ? Text(
+                      senderName.isNotEmpty
+                          ? senderName[0].toUpperCase()
+                          : '?',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 10.sp,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    )
+                  : null,
             ),
-          ),
-          if (isAdmin)
-            GestureDetector(
-              onTap: () {
-                onUnpin();
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(SnackBar(content: Text(s.messageUnpinned)));
-              },
-              child: Padding(
-                padding: EdgeInsets.only(left: 8.w),
-                child: Icon(
-                  Icons.close,
-                  color: Colors.white.withValues(alpha: 0.6),
-                  size: 18.r,
-                ),
+            SizedBox(width: 8.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    senderName,
+                    style: TextStyle(
+                      color: Colors.amber,
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(
+                    text,
+                    style: TextStyle(color: Colors.white, fontSize: 12.sp),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ),
             ),
-        ],
+            if (isAdmin)
+              GestureDetector(
+                onTap: () {
+                  onUnpin();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(s.messageUnpinned)),
+                  );
+                },
+                child: Padding(
+                  padding: EdgeInsets.only(left: 8.w),
+                  child: Icon(
+                    Icons.close,
+                    color: Colors.white.withValues(alpha: 0.6),
+                    size: 18.r,
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
+    );
+  }
+
+  void _openSenderProfile(BuildContext context) {
+    final senderId = data['senderId']?.toString() ?? '';
+    if (senderId.isEmpty) return;
+    final seatCtrl = controller.seatController;
+    final localId =
+        controller.roomManager.localParticipant?.identity ?? '';
+    final seatIndex = seatCtrl.getSeatIndexByUserId(senderId);
+    final SeatState seat;
+    if (seatIndex >= 0) {
+      seat = seatCtrl.seats.value[seatIndex];
+    } else {
+      seat = SeatState(
+        index: -1,
+        occupantUserId: senderId,
+        attributes: {
+          'name': data['senderName']?.toString() ?? '',
+          'avatar': data['senderAvatar']?.toString() ??
+              AudioRoomFeature.instance?.cachedAvatar(senderId) ??
+              '',
+        },
+      );
+    }
+    showUserProfileSheet(
+      context,
+      controller: controller,
+      seat: seat,
+      localUserId: localId,
+      isOwner: isOwner,
+      roomId: roomId,
+      adminBloc: context.read<AdminBloc>(),
+      blacklistBloc: context.read<BlacklistBloc>(),
     );
   }
 }

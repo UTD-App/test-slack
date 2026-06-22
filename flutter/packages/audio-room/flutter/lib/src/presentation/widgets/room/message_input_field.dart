@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:utd_app/cache/cache_manager.dart';
 import 'package:utd_audio_room_kit/utd_audio_room_kit.dart';
 
+import '../../../audio_room_feature.dart';
 import 'room_strings.dart';
 
 class MessageInputField extends StatefulWidget {
@@ -27,13 +28,18 @@ class _MessageInputFieldState extends State<MessageInputField> {
 
   Map<String, dynamic> _buildUserData() {
     final userData = CacheManager.getUserData();
+    final profile = userData?['profile'];
+    debugPrint('[MSG] userData keys: ${userData?.keys.toList()}');
+    debugPrint('[MSG] profile: $profile');
+    debugPrint('[MSG] profile type: ${profile.runtimeType}');
+    final avatar = userData?['avatar']?.toString() ??
+        userData?['image']?.toString() ??
+        (profile is Map ? profile['image']?.toString() : null) ??
+        '';
     return {
       'senderId': userData?['id']?.toString() ?? '',
       'senderName': userData?['name']?.toString() ?? '',
-      'senderAvatar':
-          userData?['avatar']?.toString() ??
-          userData?['image']?.toString() ??
-          '',
+      'senderAvatar': avatar,
       'type': 'message',
     };
   }
@@ -42,10 +48,14 @@ class _MessageInputFieldState extends State<MessageInputField> {
     final text = _textController.text.trim();
     if (text.isEmpty) return;
 
-    widget.controller.chatController.sendMessage(
-      text,
-      userData: _buildUserData(),
-    );
+    final userData = _buildUserData();
+    final senderId = userData['senderId']?.toString() ?? '';
+    final avatar = userData['senderAvatar']?.toString() ?? '';
+    if (senderId.isNotEmpty) {
+      AudioRoomFeature.instance?.cacheAvatar(senderId, avatar);
+    }
+
+    widget.controller.chatController.sendMessage(text, userData: userData);
     _textController.clear();
     setState(() => _isEmpty = true);
     widget.onSubmit?.call();

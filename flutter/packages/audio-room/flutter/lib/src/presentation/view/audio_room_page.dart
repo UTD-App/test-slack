@@ -318,7 +318,8 @@ class _AudioRoomPageState extends State<AudioRoomPage>
     final userData = CacheManager.getUserData();
     final userId = userData?['id']?.toString() ?? '';
     final userName = userData?['name']?.toString() ?? '';
-    final userAvatar = userData?['avatar']?.toString() ?? '';
+    final profile = userData?['profile'] as Map?;
+    final userAvatar = profile?['image']?.toString() ?? '';
 
     final locale = Localizations.localeOf(context).languageCode;
     final kitStrings = locale == 'ar'

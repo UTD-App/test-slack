@@ -98,17 +98,27 @@ class _MessageBubbleState extends State<MessageBubble> {
   }
 
   String? get _avatarUrl {
-    final url = message.userData['senderAvatar']?.toString();
-    if (url != null && url.isNotEmpty) return url;
     final senderId =
         message.userData['senderId']?.toString() ?? message.senderUserId;
+    final feature = AudioRoomFeature.instance;
+
+    final url = message.userData['senderAvatar']?.toString();
+    if (url != null && url.isNotEmpty) {
+      feature?.cacheAvatar(senderId, url);
+      return url;
+    }
+
     final seatCtrl = widget.controller.seatController;
     final idx = seatCtrl.getSeatIndexByUserId(senderId);
     if (idx >= 0) {
       final av = seatCtrl.seats.value[idx].attributes['avatar'];
-      if (av != null && av.isNotEmpty) return av;
+      if (av != null && av.isNotEmpty) {
+        feature?.cacheAvatar(senderId, av);
+        return av;
+      }
     }
-    return null;
+
+    return feature?.cachedAvatar(senderId);
   }
 
   static String _relativeTime(DateTime timestamp, RoomStrings s) {
@@ -128,6 +138,14 @@ class _MessageBubbleState extends State<MessageBubble> {
     );
   }
 
+  bool get _isPinned {
+    final pinned = AudioRoomFeature.instance?.pinnedMessage.value;
+    if (pinned == null) return false;
+    return pinned['text'] == message.text &&
+        pinned['senderName'] == message.senderName &&
+        pinned['timestamp'] == message.timestamp.millisecondsSinceEpoch;
+  }
+
   Widget _buildUserMessage(BuildContext context) {
     _disposeRecognizers();
     final s = RoomStrings.of(context);
@@ -136,88 +154,129 @@ class _MessageBubbleState extends State<MessageBubble> {
         ? message.senderName[0].toUpperCase()
         : '?';
 
-    return GestureDetector(
-      onLongPress: widget.controller.isHostOrAdmin
-          ? () => _onPinMessage(context)
-          : null,
-      child: Padding(
-        padding: EdgeInsets.symmetric(vertical: 2.h),
-        child: Container(
-          padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-          decoration: BoxDecoration(
-            color: const Color(0xFFD9D9D9).withValues(alpha: 0.25),
-            borderRadius: BorderRadius.circular(8.r),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              GestureDetector(
-                onTap: () => _onSenderTap(context),
-                child: CircleAvatar(
-                  radius: 16.r,
-                  backgroundColor: const Color(
-                    0xFF64B5F6,
-                  ).withValues(alpha: 0.3),
-                  backgroundImage: avatar != null ? NetworkImage(avatar) : null,
-                  child: avatar == null
-                      ? Text(
-                          initial,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12.sp,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        )
-                      : null,
-                ),
+    return ValueListenableBuilder<Map<String, dynamic>?>(
+      valueListenable: AudioRoomFeature.instance!.pinnedMessage,
+      builder: (context, _, __) {
+        final pinned = _isPinned;
+        return GestureDetector(
+          onLongPress: widget.controller.isHostOrAdmin
+              ? () => _onPinMessage(context)
+              : null,
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: 2.h),
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
+              decoration: BoxDecoration(
+                color: pinned
+                    ? Colors.amber.withValues(alpha: 0.12)
+                    : const Color(0xFFD9D9D9).withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(8.r),
+                border: pinned
+                    ? Border.all(
+                        color: Colors.amber.withValues(alpha: 0.3),
+                        width: 1,
+                      )
+                    : null,
               ),
-              SizedBox(width: 8.w),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: GestureDetector(
-                            onTap: () => _onSenderTap(context),
-                            child: Text(
-                              message.senderName,
-                              style: TextStyle(
-                                color: const Color(0xFF64B5F6),
-                                fontSize: 13.sp,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: 6.w),
-                        ValueListenableBuilder<int>(
-                          valueListenable: widget.timeTick,
-                          builder: (_, __, ___) => Text(
-                            _relativeTime(message.timestamp, s),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (pinned)
+                    Padding(
+                      padding: EdgeInsets.only(bottom: 4.h),
+                      child: Row(
+                        children: [
+                          Icon(Icons.push_pin,
+                              color: Colors.amber, size: 12.r),
+                          SizedBox(width: 4.w),
+                          Text(
+                            s.pinMessage,
                             style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.4),
+                              color: Colors.amber,
                               fontSize: 10.sp,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 2.h),
-                    Text.rich(
-                      TextSpan(
-                        children: _buildStyledSpans(context, message.text),
+                        ],
                       ),
                     ),
-                  ],
-                ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      GestureDetector(
+                        onTap: () => _onSenderTap(context),
+                        child: CircleAvatar(
+                          radius: 16.r,
+                          backgroundColor: const Color(
+                            0xFF64B5F6,
+                          ).withValues(alpha: 0.3),
+                          backgroundImage:
+                              avatar != null ? NetworkImage(avatar) : null,
+                          child: avatar == null
+                              ? Text(
+                                  initial,
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12.sp,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                )
+                              : null,
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: GestureDetector(
+                                    onTap: () => _onSenderTap(context),
+                                    child: Text(
+                                      message.senderName,
+                                      style: TextStyle(
+                                        color: const Color(0xFF64B5F6),
+                                        fontSize: 13.sp,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(width: 6.w),
+                                ValueListenableBuilder<int>(
+                                  valueListenable: widget.timeTick,
+                                  builder: (_, __, ___) => Text(
+                                    _relativeTime(message.timestamp, s),
+                                    style: TextStyle(
+                                      color:
+                                          Colors.white.withValues(alpha: 0.4),
+                                      fontSize: 10.sp,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: 2.h),
+                            Text.rich(
+                              TextSpan(
+                                children:
+                                    _buildStyledSpans(context, message.text),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -238,31 +297,48 @@ class _MessageBubbleState extends State<MessageBubble> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              ListTile(
-                leading: const Icon(Icons.push_pin, color: Colors.amber),
-                title: Text(
-                  s.pinMessage,
-                  style: const TextStyle(color: Colors.white),
+              if (_isPinned)
+                ListTile(
+                  leading: const Icon(Icons.push_pin_outlined, color: Colors.red),
+                  title: Text(
+                    s.unpinMessage,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    feature.pinnedMessage.value = null;
+                    widget.controller.sendRoomMessage({'type': 'unpinMessage'});
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(s.messageUnpinned)));
+                  },
+                )
+              else
+                ListTile(
+                  leading: const Icon(Icons.push_pin, color: Colors.amber),
+                  title: Text(
+                    s.pinMessage,
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                  onTap: () {
+                    Navigator.pop(context);
+                    final data = {
+                      'senderId': message.userData['senderId']?.toString() ?? message.senderUserId,
+                      'senderName': message.senderName,
+                      'text': message.text,
+                      'senderAvatar': _avatarUrl ?? '',
+                      'timestamp': message.timestamp.millisecondsSinceEpoch,
+                    };
+                    feature.pinnedMessage.value = data;
+                    widget.controller.sendRoomMessage({
+                      'type': 'pinMessage',
+                      'data': data,
+                    });
+                    ScaffoldMessenger.of(
+                      context,
+                    ).showSnackBar(SnackBar(content: Text(s.messagePinned)));
+                  },
                 ),
-                onTap: () {
-                  Navigator.pop(context);
-                  final data = {
-                    'senderName': message.senderName,
-                    'text': message.text,
-                    'senderAvatar':
-                        message.userData['senderAvatar']?.toString() ?? '',
-                    'timestamp': message.timestamp.millisecondsSinceEpoch,
-                  };
-                  feature.pinnedMessage.value = data;
-                  widget.controller.sendRoomMessage({
-                    'type': 'pinMessage',
-                    'data': data,
-                  });
-                  ScaffoldMessenger.of(
-                    context,
-                  ).showSnackBar(SnackBar(content: Text(s.messagePinned)));
-                },
-              ),
               ListTile(
                 leading: const Icon(Icons.delete_outline, color: Colors.red),
                 title: Text(
@@ -352,7 +428,7 @@ class _MessageBubbleState extends State<MessageBubble> {
         occupantUserId: senderId,
         attributes: {
           'name': message.senderName,
-          'avatar': message.userData['senderAvatar']?.toString() ?? '',
+          'avatar': _avatarUrl ?? '',
         },
       );
     }
