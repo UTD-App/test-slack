@@ -65,38 +65,35 @@ $C = [
 $profileWidgets = [
     'ROOT'        => $node('Container', true, ['background' => $C['gradBot'], 'gradient' => 1, 'gradFrom' => $C['gradTop'], 'gradTo' => $C['gradBot'], 'gradDir' => 'to bottom', 'padding' => 0, 'gap' => 0, 'align' => 'stretch', 'flex' => 0], ['scope'], null),
     'scope'       => $node('Scope', true, ['source' => 'profile.user'], ['body'], 'ROOT'),
-    'body'        => $node('Container', true, ['background' => '#00000000', 'padding' => 0, 'gap' => 0, 'align' => 'stretch', 'flex' => 0], ['coverWrap', 'header'], 'scope'),
+    // BODY IS A STACK: cover = base layer; the identity column sits ON TOP with a
+    // fixed-height `spacer` that pushes the avatar down so only its TOP QUARTER
+    // overlaps the cover bottom. (Negative margin can't do the overlap — Flutter's
+    // Container asserts margin.isNonNegative and CRASHES. A Stack doesn't clip, so
+    // the column's avatar/name/uid/bio paint over + below the cover.)
+    'body'        => $node('Stack', true, ['fit' => 'expand'], ['coverImgBox', 'content', 'tools'], 'scope'),
 
-    // Cover banner — full width, FIXED height (the transform drops Stack fit:expand
-    // so the bound image needs an explicit height or it overflows). Edit + refresh
-    // sit over it (pos:'top-right' → physical top-LEFT in the RTL app).
-    'coverWrap'   => $node('Container', true, ['widthPercent' => 100, 'height' => 180, 'background' => $C['card'], 'align' => 'stretch', 'flex' => 0], ['coverStack'], 'body'),
-    'coverStack'  => $node('Stack', true, ['fit' => 'expand'], ['coverImgBox', 'tools'], 'coverWrap'),
-    // FULL-WIDTH cover: a Stack does NOT stretch its children, so a bare image
-    // stayed at its intrinsic width (a small box). Wrapping it in a
-    // widthPercent:100 + align:'stretch' Container makes that container's column
-    // (crossAxisAlignment:stretch) stretch the image across the whole cover width.
-    'coverImgBox' => $node('Container', true, ['widthPercent' => 100, 'height' => 180, 'align' => 'stretch', 'flex' => 0], ['coverImg'], 'coverStack'),
+    // Cover (base, top-left, full width). FIXED height; the image is stretched to
+    // full width by its OWN column (align:'stretch') — a Stack won't stretch it.
+    'coverImgBox' => $node('Container', true, ['widthPercent' => 100, 'height' => 180, 'background' => $C['card'], 'align' => 'stretch', 'flex' => 0], ['coverImg'], 'body'),
     'coverImg'    => $node('Image', false, ['src' => '', 'binding' => 'profile.user.cover', 'fit' => 'cover', 'radius' => 0, 'height' => 180], [], 'coverImgBox'),
-    'tools'       => $node('Row', true, ['gap' => 8, 'pos' => 'top-right', 'padding' => 10], ['editBtn', 'refreshBtn'], 'coverStack'),
+
+    // Edit + refresh over the cover (pos:'top-right' → physical top-LEFT in RTL).
+    'tools'       => $node('Row', true, ['gap' => 8, 'pos' => 'top-right', 'padding' => 10], ['editBtn', 'refreshBtn'], 'body'),
     'editBtn'     => $node('Container', true, ['width' => 40, 'height' => 40, 'radius' => 20, 'background' => '#00000066', 'align' => 'center', 'valign' => 'center', 'flex' => 0, 'onTapAction' => 'core.editProfile'], ['editIcon'], 'tools'),
     'editIcon'    => $node('Icon', false, ['name' => 'edit', 'size' => 20, 'color' => $C['white']], [], 'editBtn'),
     'refreshBtn'  => $node('Container', true, ['width' => 40, 'height' => 40, 'radius' => 20, 'background' => '#00000066', 'align' => 'center', 'valign' => 'center', 'flex' => 0, 'onTapAction' => 'core.refresh'], ['refreshIcon'], 'tools'),
     'refreshIcon' => $node('Icon', false, ['name' => 'refresh', 'size' => 20, 'color' => $C['white']], [], 'refreshBtn'),
 
-    // Identity — pulled UP by ~a quarter of the avatar (124/4 ≈ 31) so the
-    // avatar's TOP QUARTER overlaps the cover bottom and the rest sits below.
-    // marMode/marT is the CORRECT margin syntax (the `'margin' => [...]` literal
-    // is silently dropped by the transform — that's why the avatar wasn't
-    // overlapping). marT -31 pulls the header up ~a quarter of the 124 avatar so
-    // its top quarter sits over the cover bottom.
-    'header'      => $node('Container', true, ['background' => '#00000000', 'marMode' => 'sides', 'marL' => 16, 'marT' => -31, 'marR' => 16, 'marB' => 16, 'padding' => 0, 'gap' => 10, 'align' => 'center', 'flex' => 0], ['avatarBox', 'nameRow', 'uidRow', 'bioRow'], 'body'),
+    // Identity column ON TOP of the cover. `spacer` = cover 180 − overlap 31 = 149,
+    // so the avatar starts 149px down → its top quarter (31px) overlaps the cover.
+    'content'     => $node('Container', true, ['background' => '#00000000', 'widthPercent' => 100, 'padMode' => 'sides', 'padL' => 16, 'padT' => 0, 'padR' => 16, 'padB' => 16, 'gap' => 10, 'align' => 'center', 'flex' => 0], ['spacer', 'avatarBox', 'nameRow', 'uidRow', 'bioRow'], 'body'),
+    'spacer'      => $node('Container', true, ['height' => 149, 'background' => '#00000000', 'flex' => 0], [], 'content'),
 
     // Avatar: a FIXED-SIZE 124×124 box → gradient ring + circular image + camera
     // badge. The Stack MUST be wrapped in the fixed box (the Stac stack parser
     // ignores Stack w/h), so the badge's pos sits ON the ring edge instead of
     // flinging to the screen corner.
-    'avatarBox'   => $node('Container', true, ['width' => 124, 'height' => 124, 'align' => 'center', 'valign' => 'center', 'flex' => 0], ['avatarStack'], 'header'),
+    'avatarBox'   => $node('Container', true, ['width' => 124, 'height' => 124, 'align' => 'center', 'valign' => 'center', 'flex' => 0], ['avatarStack'], 'content'),
     'avatarStack' => $node('Stack', true, [], ['ring', 'camBtn'], 'avatarBox'),
     'ring'        => $node('Container', true, ['width' => 124, 'height' => 124, 'radius' => 62, 'gradient' => 1, 'gradFrom' => $C['accent'], 'gradTo' => $C['pink'], 'gradDir' => 'to bottom right', 'padding' => 4, 'align' => 'center', 'valign' => 'center', 'flex' => 0], ['avatarImg'], 'avatarStack'),
     'avatarImg'   => $node('Image', false, ['src' => '', 'binding' => 'profile.user.avatar', 'width' => 116, 'height' => 116, 'fit' => 'cover', 'shape' => 'circle', 'radius' => 0], [], 'ring'),
@@ -105,7 +102,7 @@ $profileWidgets = [
     'camIcon'     => $node('Icon', false, ['name' => 'photo_camera', 'size' => 16, 'color' => $C['white']], [], 'camBtn'),
 
     // Name + flag + gender sign + edit pencil.
-    'nameRow'     => $node('Row', true, ['gap' => 6, 'justify' => 'center', 'align' => 'center'], ['name', 'flag', 'maleSign', 'femaleSign', 'namePencil'], 'header'),
+    'nameRow'     => $node('Row', true, ['gap' => 6, 'justify' => 'center', 'align' => 'center'], ['name', 'flag', 'maleSign', 'femaleSign', 'namePencil'], 'content'),
     'name'        => $node('Text', false, ['text' => 'الاسم', 'binding' => 'profile.user.name', 'fontSize' => 22, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'maxLines' => 1], [], 'nameRow'),
     'flag'        => $node('Image', false, ['src' => '', 'binding' => 'profile.user.flag', 'visibleBinding' => 'profile.user.flag', 'width' => 26, 'height' => 18, 'fit' => 'cover', 'radius' => 3], [], 'nameRow'),
     // Gender sign: the symbol for the matching gender, '' otherwise (Studio drops
@@ -115,13 +112,13 @@ $profileWidgets = [
     'namePencil'  => $node('Icon', false, ['name' => 'edit', 'size' => 16, 'color' => $C['accent'], 'onTapAction' => 'core.editProfile'], [], 'nameRow'),
 
     // UID + copy glyph.
-    'uidRow'      => $node('Row', true, ['gap' => 4, 'justify' => 'center', 'align' => 'center', 'visibleBinding' => 'profile.user.uid'], ['uidLabel', 'uid', 'copyIcon'], 'header'),
+    'uidRow'      => $node('Row', true, ['gap' => 4, 'justify' => 'center', 'align' => 'center', 'visibleBinding' => 'profile.user.uid'], ['uidLabel', 'uid', 'copyIcon'], 'content'),
     'uidLabel'    => $node('Text', false, ['text' => 'الأبدي:', 'binding' => '', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'maxLines' => 1], [], 'uidRow'),
     'uid'         => $node('Text', false, ['text' => '', 'binding' => 'profile.user.uid', 'fontSize' => 13, 'fontWeight' => 600, 'color' => $C['muted'], 'align' => 'center', 'maxLines' => 1], [], 'uidRow'),
     'copyIcon'    => $node('Icon', false, ['name' => 'content_copy', 'size' => 14, 'color' => $C['muted']], [], 'uidRow'),
 
     // Bio + edit pencil.
-    'bioRow'      => $node('Row', true, ['gap' => 6, 'justify' => 'center', 'align' => 'center'], ['bio', 'bioPencil'], 'header'),
+    'bioRow'      => $node('Row', true, ['gap' => 6, 'justify' => 'center', 'align' => 'center'], ['bio', 'bioPencil'], 'content'),
     'bio'         => $node('Text', false, ['text' => '', 'binding' => 'profile.user.bio', 'fontSize' => 14, 'fontWeight' => 400, 'color' => $C['bioText'], 'align' => 'center', 'maxLines' => 0], [], 'bioRow'),
     'bioPencil'   => $node('Icon', false, ['name' => 'edit', 'size' => 14, 'color' => $C['accent'], 'onTapAction' => 'core.editProfile'], [], 'bioRow'),
 ];
@@ -186,7 +183,7 @@ return [
             'name'         => 'user_profile',
             'label'        => 'البروفايل الكامل (عند الصورة)',
             'icon'         => '👤',
-            'version'      => '1.13.0',
+            'version'      => '1.14.0',
             'nav'          => false,
             'navIcon'      => 'person',
             'order'        => 31,
