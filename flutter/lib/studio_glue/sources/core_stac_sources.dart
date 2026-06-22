@@ -31,23 +31,45 @@ void registerCoreStacSources() {
 /// visibleBinding). الـ bio بياخد placeholder لو فاضي عشان صف التعديل يفضل ذو معنى.
 Map<String, dynamic> _userFields(Map<String, dynamic> user) {
   final covers = user['covers'];
+  final profile = user['profile'];
+  final rawGender = (profile is Map) ? profile['gender'] : user['gender'];
+  final gender =
+      rawGender is num ? rawGender.toInt() : int.tryParse('${rawGender ?? ''}');
+  final rawCover = (covers is List && covers.isNotEmpty)
+      ? covers.first.toString()
+      : (user['cover']?.toString() ?? '');
   return {
     'name': user['name'] ?? '',
     'email': user['email'] ?? '',
     'bio': (user['bio']?.toString().trim().isNotEmpty ?? false)
         ? user['bio']
         : 'أضف نبذة',
-    'avatar': user['avatar'] ?? user['image'] ?? '',
-    'cover': (covers is List && covers.isNotEmpty)
-        ? covers.first.toString()
-        : (user['cover']?.toString() ?? ''),
+    // Resolve media to ABSOLUTE /storage URLs — the Stac renderer loads the
+    // value verbatim, so a raw path (`flags/ye.png`) 404s (that was the broken
+    // country flag). Absolute http(s) values pass through untouched.
+    'avatar': _media((user['avatar'] ?? user['image'])?.toString()),
+    'cover': _media(rawCover),
     'country': user['country_name'] ?? user['country'] ?? '',
-    'flag': user['country_flag'] ?? user['flag'] ?? '',
+    'flag': _media((user['country_flag'] ?? user['flag'])?.toString()),
     'uid': user['uuid']?.toString() ??
         user['uid']?.toString() ??
         user['id']?.toString() ??
         '',
+    // Gender → two visibleBinding-gated icons in the manifest (1=male,2=female).
+    'isMale': gender == 1 ? '1' : '',
+    'isFemale': gender == 2 ? '1' : '',
   };
+}
+
+/// Resolve a backend media path to an absolute `…/storage/…` URL (mirrors the
+/// profile package's resolveMediaUrl). Absolute http(s) values pass through.
+String _media(String? v) {
+  final s = (v ?? '').trim();
+  if (s.isEmpty) return '';
+  if (s.startsWith('http://') || s.startsWith('https://')) return s;
+  var clean = s.startsWith('/') ? s.substring(1) : s;
+  if (!clean.startsWith('storage/')) clean = 'storage/$clean';
+  return '${_apiOrigin()}/$clean';
 }
 
 /// يسحب `/my-data` في الخلفية (fire-and-forget) ويكاشه؛ يعمل invalidate بس لو حقل
@@ -76,6 +98,7 @@ bool _sameUser(Map old, Map neu) {
   final b = _userFields(Map<String, dynamic>.from(neu));
   for (final k in const [
     'name', 'email', 'bio', 'avatar', 'cover', 'country', 'flag', 'uid',
+    'isMale', 'isFemale',
   ]) {
     if ((a[k] ?? '').toString() != (b[k] ?? '').toString()) return false;
   }

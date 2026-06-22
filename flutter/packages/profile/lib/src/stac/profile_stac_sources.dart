@@ -4,6 +4,7 @@ import 'package:utd_app/shared/stac/stac_data_registry.dart';
 import '../data/profile_api_service.dart';
 import '../data/profile_remote_datasource.dart';
 import '../domain/profile_repository.dart';
+import '../presentation/utils/media.dart';
 
 /// Wires the profile package's data into the Stac renderer for the UTD Studio
 /// `profile` package.
@@ -34,12 +35,21 @@ void registerProfileStacSources() {
 
     return {
       'name': p.name ?? '',
-      'bio': p.bio ?? '',
-      'avatar': p.avatar ?? '',
-      'cover': p.covers.isNotEmpty ? p.covers.first : '',
+      // Placeholder when empty so the profile's bio + edit-pencil row stays
+      // meaningful (tap → edit). A real bio overrides it.
+      'bio': (p.bio?.trim().isNotEmpty ?? false) ? p.bio : 'أضف نبذة',
+      // Resolve media to ABSOLUTE URLs — the Stac renderer loads the value
+      // verbatim, so a raw path (`avatars/x.jpg`, `flags/ye.png`) 404s. This is
+      // why the avatar/country flag showed broken. avatarUrl adds a generated
+      // fallback so the avatar is never blank.
+      'avatar': avatarUrl(p.avatar, p.name),
+      'cover': p.covers.isNotEmpty ? resolveMediaUrl(p.covers.first) : '',
       'country': p.countryName ?? '',
-      'flag': p.countryFlag ?? '',
+      'flag': resolveMediaUrl(p.countryFlag),
       'uid': p.uuid ?? '',
+      // Gender → two visibleBinding-gated icons in the manifest (1=male,2=female).
+      'isMale': p.gender == 1 ? '1' : '',
+      'isFemale': p.gender == 2 ? '1' : '',
     };
   });
 }

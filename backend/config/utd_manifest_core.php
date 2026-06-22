@@ -143,10 +143,13 @@ $profileWidgets = array_merge(
         'camBtn'      => $node('Container', true, array_merge($style, ['width' => 34, 'height' => 34, 'radius' => 17, 'background' => $C['pink'], 'borderWidth' => 2, 'borderColor' => $C['white'], 'align' => 'center', 'valign' => 'center', 'pos' => 'top-left', 'onTapAction' => 'core.changeAvatar', 'onTapParams' => ['source' => 'gallery']]), ['camIcon'], 'avatarStack'),
         'camIcon'     => $node('Icon', false, ['name' => 'photo_camera', 'size' => 16, 'color' => $C['white']], [], 'camBtn'),
 
-        // Name + flag + edit pencil.
-        'nameRow'     => $node('Row', true, ['gap' => 6, 'justify' => 'center', 'align' => 'center'], ['name', 'flag', 'namePencil'], 'header'),
+        // Name + flag + gender icon + edit pencil.
+        'nameRow'     => $node('Row', true, ['gap' => 6, 'justify' => 'center', 'align' => 'center'], ['name', 'flag', 'maleIcon', 'femaleIcon', 'namePencil'], 'header'),
         'name'        => $node('Text', false, ['text' => 'الملف الشخصي', 'binding' => 'core.currentUser.name', 'fontSize' => 22, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'maxLines' => 1], [], 'nameRow'),
         'flag'        => $node('Image', false, ['src' => '', 'binding' => 'core.currentUser.flag', 'visibleBinding' => 'core.currentUser.flag', 'width' => 24, 'height' => 16, 'fit' => 'cover', 'radius' => 3], [], 'nameRow'),
+        // Gender: two icons, only the matching one shows (visibleBinding isMale/isFemale).
+        'maleIcon'    => $node('Icon', false, ['name' => 'male', 'size' => 16, 'color' => '#42A5F5', 'visibleBinding' => 'core.currentUser.isMale'], [], 'nameRow'),
+        'femaleIcon'  => $node('Icon', false, ['name' => 'female', 'size' => 16, 'color' => '#EC407A', 'visibleBinding' => 'core.currentUser.isFemale'], [], 'nameRow'),
         'namePencil'  => $node('Icon', false, ['name' => 'edit', 'size' => 16, 'color' => $C['accentLt'], 'onTapAction' => 'core.editProfile'], [], 'nameRow'),
 
         // UID.
@@ -204,6 +207,8 @@ return [
         ['key' => 'country', 'label' => 'الدولة',        'type' => 'string',    'screen' => 'profile'],
         ['key' => 'flag',    'label' => 'علم الدولة',    'type' => 'image_url', 'screen' => 'profile'],
         ['key' => 'uid',     'label' => 'المعرّف',       'type' => 'string',    'screen' => 'profile'],
+        ['key' => 'isMale',   'label' => 'ذكر؟',  'type' => 'string', 'screen' => 'profile'],
+        ['key' => 'isFemale', 'label' => 'أنثى؟', 'type' => 'string', 'screen' => 'profile'],
     ],
 
     // Single-object source: the signed-in user. Resolved on the client by
@@ -221,6 +226,8 @@ return [
                 ['key' => 'country', 'label' => 'الدولة',     'type' => 'string'],
                 ['key' => 'flag',    'label' => 'علم الدولة', 'type' => 'image_url'],
                 ['key' => 'uid',     'label' => 'المعرّف',    'type' => 'string'],
+                ['key' => 'isMale',   'label' => 'ذكر؟',  'type' => 'string'],
+                ['key' => 'isFemale', 'label' => 'أنثى؟', 'type' => 'string'],
             ],
         ],
         // App-level branding (logo / name / tagline) for server-driven screens
@@ -411,7 +418,7 @@ return [
             'name'         => 'profile',
             'label'        => 'الملف الشخصي (تبويب)',
             'icon'         => '👤',
-            'version'      => '1.8.5',
+            'version'      => '1.8.6',
             'nav'          => true,
             'navIcon'      => 'person',
             'order'        => 30,

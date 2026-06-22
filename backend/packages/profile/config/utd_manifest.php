@@ -65,34 +65,35 @@ $C = [
 $profileWidgets = [
     'ROOT'        => $node('Container', true, ['gradient' => 1, 'gradFrom' => $C['gradTop'], 'gradTo' => $C['gradBot'], 'gradDir' => 'to bottom', 'padding' => 0, 'gap' => 0, 'align' => 'stretch', 'flex' => 0], ['scope'], null),
     'scope'       => $node('Scope', true, ['source' => 'profile.user'], ['body'], 'ROOT'),
-    'body'        => $node('Container', true, ['background' => '#00000000', 'padding' => 0, 'gap' => 14, 'align' => 'stretch', 'flex' => 0], ['coverBox', 'header', 'bioCard', 'countryCard'], 'scope'),
+    'body'        => $node('Container', true, ['background' => '#00000000', 'padding' => 0, 'gap' => 0, 'align' => 'stretch', 'flex' => 0], ['coverWrap', 'header'], 'scope'),
 
-    // Cover banner — FULL-BLEED (edge to edge) via the column's stretch.
-    'coverBox'    => $node('Container', true, ['margin' => 0, 'padding' => 0, 'radius' => 0, 'background' => $C['card'], 'align' => 'stretch', 'flex' => 0, 'visibleBinding' => 'profile.user.cover'], ['coverImg'], 'body'),
-    'coverImg'    => $node('Image', false, ['src' => '', 'binding' => 'profile.user.cover', 'height' => 180, 'fit' => 'cover', 'radius' => 0], [], 'coverBox'),
+    // Cover banner (full-bleed) with edit + refresh buttons OVER it. The Stack
+    // uses fit:expand so the cover image fills it; the tools are a pos'd child.
+    // coverWrap has its own bg so the banner shows even when the user has no cover.
+    'coverWrap'   => $node('Container', true, ['width' => 0, 'height' => 184, 'background' => $C['card'], 'align' => 'stretch', 'flex' => 0], ['coverStack'], 'body'),
+    'coverStack'  => $node('Stack', true, ['fit' => 'expand'], ['coverImg', 'tools'], 'coverWrap'),
+    'coverImg'    => $node('Image', false, ['src' => '', 'binding' => 'profile.user.cover', 'visibleBinding' => 'profile.user.cover', 'fit' => 'cover', 'radius' => 0], [], 'coverStack'),
+    // Edit + refresh, top-left (pos:'top-right' → physical top-left in the RTL app).
+    'tools'       => $node('Row', true, ['gap' => 8, 'pos' => 'top-right', 'padding' => 10], ['editBtn', 'refreshBtn'], 'coverStack'),
+    'editBtn'     => $node('Container', true, ['width' => 40, 'height' => 40, 'radius' => 20, 'background' => '#00000066', 'align' => 'center', 'valign' => 'center', 'flex' => 0, 'onTapAction' => 'core.editProfile'], ['editIcon'], 'tools'),
+    'editIcon'    => $node('Icon', false, ['name' => 'edit', 'size' => 20, 'color' => $C['white']], [], 'editBtn'),
+    'refreshBtn'  => $node('Container', true, ['width' => 40, 'height' => 40, 'radius' => 20, 'background' => '#00000066', 'align' => 'center', 'valign' => 'center', 'flex' => 0, 'onTapAction' => 'core.refresh'], ['refreshIcon'], 'tools'),
+    'refreshIcon' => $node('Icon', false, ['name' => 'refresh', 'size' => 20, 'color' => $C['white']], [], 'refreshBtn'),
 
     // Identity: gradient-ring avatar OVERLAPPING the cover (negative top margin)
-    // + name + flag + UID row ("الأبدي: <id>").
-    'header'      => $node('Container', true, ['background' => '#00000000', 'margin' => ['left' => 16, 'top' => -58, 'right' => 16, 'bottom' => 0], 'padding' => 0, 'gap' => 8, 'align' => 'center', 'flex' => 0], ['avatarRing', 'nameRow', 'uidRow'], 'body'),
+    // + flag + gender icon + name + UID row ("الأبدي: <id>").
+    'header'      => $node('Container', true, ['background' => '#00000000', 'margin' => ['left' => 16, 'top' => -58, 'right' => 16, 'bottom' => 16], 'padding' => 0, 'gap' => 8, 'align' => 'center', 'flex' => 0], ['avatarRing', 'nameRow', 'uidRow'], 'body'),
     'avatarRing'  => $node('Container', true, ['width' => 116, 'height' => 116, 'radius' => 58, 'gradient' => 1, 'gradFrom' => $C['accent'], 'gradTo' => $C['pink'], 'gradDir' => 'to bottom right', 'padding' => 4, 'align' => 'center', 'valign' => 'center', 'flex' => 0], ['avatarImg'], 'header'),
     'avatarImg'   => $node('Image', false, ['src' => '', 'binding' => 'profile.user.avatar', 'width' => 108, 'height' => 108, 'fit' => 'cover', 'shape' => 'circle', 'radius' => 0], [], 'avatarRing'),
-    'nameRow'     => $node('Row', true, ['gap' => 6, 'justify' => 'center', 'align' => 'center'], ['flag', 'name'], 'header'),
+    'nameRow'     => $node('Row', true, ['gap' => 6, 'justify' => 'center', 'align' => 'center'], ['flag', 'maleIcon', 'femaleIcon', 'name'], 'header'),
     'flag'        => $node('Image', false, ['src' => '', 'binding' => 'profile.user.flag', 'visibleBinding' => 'profile.user.flag', 'width' => 26, 'height' => 18, 'fit' => 'cover', 'radius' => 3], [], 'nameRow'),
+    // Gender: two icons, only the matching one shows (visibleBinding isMale/isFemale).
+    'maleIcon'    => $node('Icon', false, ['name' => 'male', 'size' => 18, 'color' => '#42A5F5', 'visibleBinding' => 'profile.user.isMale'], [], 'nameRow'),
+    'femaleIcon'  => $node('Icon', false, ['name' => 'female', 'size' => 18, 'color' => '#EC407A', 'visibleBinding' => 'profile.user.isFemale'], [], 'nameRow'),
     'name'        => $node('Text', false, ['text' => 'الاسم', 'binding' => 'profile.user.name', 'fontSize' => 22, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'maxLines' => 1], [], 'nameRow'),
     'uidRow'      => $node('Row', true, ['gap' => 4, 'justify' => 'center', 'align' => 'center', 'visibleBinding' => 'profile.user.uid'], ['uidLabel', 'uid'], 'header'),
     'uidLabel'    => $node('Text', false, ['text' => 'الأبدي:', 'binding' => '', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'maxLines' => 1], [], 'uidRow'),
     'uid'         => $node('Text', false, ['text' => '', 'binding' => 'profile.user.uid', 'fontSize' => 13, 'fontWeight' => 600, 'color' => $C['muted'], 'align' => 'center', 'maxLines' => 1], [], 'uidRow'),
-
-    // Bio card.
-    'bioCard'     => $node('Container', true, ['margin' => ['left' => 16, 'top' => 0, 'right' => 16, 'bottom' => 0], 'padding' => 16, 'radius' => 16, 'background' => $C['card'], 'borderWidth' => 1, 'borderColor' => $C['cardBd'], 'gap' => 6, 'align' => 'stretch', 'flex' => 0], ['bioTitle', 'bio'], 'body'),
-    'bioTitle'    => $node('Text', false, ['text' => 'النبذة', 'binding' => '', 'fontSize' => 12, 'fontWeight' => 600, 'color' => $C['muted'], 'align' => 'right', 'maxLines' => 1], [], 'bioCard'),
-    'bio'         => $node('Text', false, ['text' => '', 'binding' => 'profile.user.bio', 'fontSize' => 14, 'fontWeight' => 400, 'color' => $C['bioText'], 'align' => 'right', 'maxLines' => 0], [], 'bioCard'),
-
-    // Country card.
-    'countryCard' => $node('Container', true, ['margin' => ['left' => 16, 'top' => 0, 'right' => 16, 'bottom' => 16], 'padding' => 16, 'radius' => 16, 'background' => $C['card'], 'borderWidth' => 1, 'borderColor' => $C['cardBd'], 'align' => 'stretch', 'flex' => 0, 'visibleBinding' => 'profile.user.country'], ['countryRow'], 'body'),
-    'countryRow'  => $node('Row', true, ['gap' => 10, 'justify' => 'start', 'align' => 'center'], ['cFlag', 'cName'], 'countryCard'),
-    'cFlag'       => $node('Image', false, ['src' => '', 'binding' => 'profile.user.flag', 'visibleBinding' => 'profile.user.flag', 'width' => 28, 'height' => 20, 'fit' => 'cover', 'radius' => 3], [], 'countryRow'),
-    'cName'       => $node('Text', false, ['text' => '', 'binding' => 'profile.user.country', 'fontSize' => 14, 'fontWeight' => 500, 'color' => $C['white'], 'align' => 'right', 'maxLines' => 1], [], 'countryRow'),
 ];
 
 return [
@@ -123,18 +124,20 @@ return [
                 ['key' => 'country', 'label' => 'الدولة',     'type' => 'string'],
                 ['key' => 'flag',    'label' => 'علم الدولة', 'type' => 'image_url'],
                 ['key' => 'uid',     'label' => 'المعرّف',    'type' => 'string'],
+                ['key' => 'isMale',   'label' => 'ذكر؟',  'type' => 'string'],
+                ['key' => 'isFemale', 'label' => 'أنثى؟', 'type' => 'string'],
             ],
         ],
     ],
 
     'action_elements' => [
         [
-            'key' => 'open_edit', 'label' => 'تعديل الملف',
-            'produces' => 'core.navigate', 'default_shape' => 'button', 'screen' => 'user_profile',
-            'params' => [
-                ['key' => 'route', 'label' => 'الشاشة', 'type' => 'route'],
-                ['key' => 'mode',  'label' => 'النمط (go/push/replace)', 'type' => 'string'],
-            ],
+            'key' => 'edit_profile', 'label' => 'تعديل الملف (مودال)',
+            'produces' => 'core.editProfile', 'default_shape' => 'button', 'screen' => 'user_profile',
+        ],
+        [
+            'key' => 'refresh', 'label' => 'تحديث',
+            'produces' => 'core.refresh', 'default_shape' => 'button', 'screen' => 'user_profile',
         ],
     ],
 
@@ -143,7 +146,7 @@ return [
             'name'         => 'user_profile',
             'label'        => 'البروفايل الكامل (عند الصورة)',
             'icon'         => '👤',
-            'version'      => '1.7.3',
+            'version'      => '1.7.4',
             'nav'          => false,
             'navIcon'      => 'person',
             'order'        => 31,

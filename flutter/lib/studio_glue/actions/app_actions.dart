@@ -442,6 +442,22 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
   }
 }
 
+/// `core.refresh` — re-fetches the server-driven data sources (core.currentUser,
+/// profile.user, …) so the screen reflects the latest backend state. Wired to a
+/// refresh button on the profile.
+class CoreRefreshActionParser extends StacMapActionParser {
+  const CoreRefreshActionParser();
+
+  @override
+  String get actionType => 'core.refresh';
+
+  @override
+  void onCall(BuildContext context, Map<String, dynamic> model) {
+    StacDataRegistry.instance.invalidate();
+    ToastManager.showToast(context, message: 'تم التحديث');
+  }
+}
+
 /// The app-specific core actions, passed to `StudioConfig.extraActions`.
 const List<StacActionParser> appCoreActionParsers = [
   CoreLoginActionParser(),
@@ -451,5 +467,6 @@ const List<StacActionParser> appCoreActionParsers = [
   CoreChangeAvatarActionParser(),
   CoreOpenProfileActionParser(),
   CoreEditProfileActionParser(),
+  CoreRefreshActionParser(),
   CoreLogoutActionParser(),
 ];
