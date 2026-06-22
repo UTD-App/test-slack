@@ -601,8 +601,10 @@ return [
             'name'         => 'settings',
             'label'        => 'الإعدادات',
             'icon'         => '⚙️',
-            'version'      => '1.7.0',
-            'nav'          => true,
+            'version'      => '1.7.1',
+            // Removed from the bottom nav (owner's request) — it's opened from the
+            // profile's "الإعدادات" card (core.navigate → /settings) instead.
+            'nav'          => false,
             'navIcon'      => 'settings',
             'order'        => 40,
             'role'         => 'app.settings',
