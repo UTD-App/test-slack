@@ -263,21 +263,55 @@ $profileWidgets = array_merge(
     $mkTile('mSettings', 'settings_rounded', '#42A5F5', 'الإعدادات', 'core.navigate', ['route' => '/settings', 'mode' => 'push'])
 );
 
-// settings — in-body title + tappable purple cards + destructive logout.
+// settings — polished list matching the native design: an in-body app bar
+// (back + title), then GROUPED frosted cards where each row is a TINTED ICON BOX
+// + label + chevron. (Block List is intentionally omitted — it needs the block
+// package, which isn't built yet.)
+//
+// Row helper: tinted icon box + label + chevron, tappable, parented to its card.
+$mkSetRow = function (string $id, string $icon, string $tint, string $tintBg, string $label, string $tap, array $params, string $parent) use ($node, $C): array {
+    return [
+        $id        => $node('Container', true, ['background' => '#00000000', 'padMode' => 'sides', 'padL' => 12, 'padT' => 12, 'padR' => 12, 'padB' => 12, 'align' => 'stretch', 'flex' => 0, 'onTapAction' => $tap, 'onTapParams' => $params], [$id . 'R'], $parent),
+        $id . 'R'  => $node('Row', true, ['gap' => 12, 'align' => 'center'], [$id . 'Bx', $id . 'Lb', $id . 'Ch'], $id),
+        $id . 'Bx' => $node('Container', true, ['width' => 38, 'height' => 38, 'radius' => 11, 'background' => $tintBg, 'align' => 'center', 'valign' => 'center', 'flex' => 0], [$id . 'Ic'], $id . 'R'),
+        $id . 'Ic' => $node('Icon', false, ['name' => $icon, 'size' => 20, 'color' => $tint], [], $id . 'Bx'),
+        $id . 'Lb' => $node('Text', false, ['text' => $label, 'binding' => '', 'fontSize' => 15, 'fontWeight' => 500, 'color' => $C['white'], 'align' => 'right', 'maxLines' => 1, 'flex' => 1], [], $id . 'R'),
+        $id . 'Ch' => $node('Icon', false, ['name' => 'chevron_left_rounded', 'size' => 20, 'color' => $C['muted']], [], $id . 'R'),
+    ];
+};
+$divRow = fn (string $id, string $parent) => [$id => $node('Divider', false, ['color' => '#22FFFFFF', 'thickness' => 1], [], $parent)];
+$cardBg = '#1FFFFFFF'; // frosted white (~12%) over the purple shell
+$cardBd = '#2EFFFFFF';
+
 $settingsWidgets = array_merge(
     [
-        'ROOT'   => $node('Container', true, array_merge($style, ['background' => $C['screen'], 'padding' => 16, 'gap' => 12, 'align' => 'stretch', 'flex' => 0]), ['sTitle', 'tLang', 'tPrivacy', 'tTerms', 'tContact', 'tAbout', 'tAccount', 'btnLogout'], null),
-        'sTitle' => $node('Text', false, ['text' => 'الإعدادات', 'fontSize' => 22, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'right', 'binding' => '', 'maxLines' => 1], [], 'ROOT'),
+        'ROOT'       => $node('Container', true, array_merge($style, ['background' => $C['screen'], 'padding' => 16, 'gap' => 16, 'align' => 'stretch', 'flex' => 0]), ['hdr', 'langCard', 'grpCard', 'logoutCard'], null),
+
+        // In-body app bar: back + title.
+        'hdr'        => $node('Row', true, ['gap' => 12, 'align' => 'center'], ['hdrBack', 'hdrTitle'], 'ROOT'),
+        'hdrBack'    => $node('Icon', false, ['name' => 'arrow_back_rounded', 'size' => 24, 'color' => $C['white'], 'onTapAction' => 'core.back'], [], 'hdr'),
+        'hdrTitle'   => $node('Text', false, ['text' => 'الإعدادات', 'binding' => '', 'fontSize' => 22, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'right', 'maxLines' => 1, 'flex' => 1], [], 'hdr'),
+
+        // Language — standalone frosted card.
+        'langCard'   => $node('Container', true, array_merge($style, ['background' => $cardBg, 'borderWidth' => 1, 'borderColor' => $cardBd, 'radius' => 16, 'padding' => 4, 'align' => 'stretch', 'flex' => 0]), ['rLang'], 'ROOT'),
+
+        // Grouped frosted card (rows + dividers).
+        'grpCard'    => $node('Container', true, array_merge($style, ['background' => $cardBg, 'borderWidth' => 1, 'borderColor' => $cardBd, 'radius' => 16, 'padding' => 4, 'align' => 'stretch', 'flex' => 0]), ['rPriv', 'd1', 'rTerms', 'd2', 'rContact', 'd3', 'rAbout', 'd4', 'rDelete'], 'ROOT'),
+
+        // Logout — standalone frosted card (destructive).
+        'logoutCard' => $node('Container', true, array_merge($style, ['background' => $cardBg, 'borderWidth' => 1, 'borderColor' => $cardBd, 'radius' => 16, 'padMode' => 'sides', 'padL' => 14, 'padT' => 15, 'padR' => 14, 'padB' => 15, 'align' => 'center', 'flex' => 0, 'onTapAction' => 'core.logout', 'onTapParams' => ['confirm' => true]]), ['logoutT'], 'ROOT'),
+        'logoutT'    => $node('Text', false, ['text' => 'تسجيل الخروج', 'binding' => '', 'fontSize' => 15, 'fontWeight' => 700, 'color' => $C['red'], 'align' => 'center', 'maxLines' => 1], [], 'logoutCard'),
     ],
-    $mkTile('tLang', 'language', '#26C6DA', 'اللغة', 'core.setLocale', ['code' => 'ar']),
-    $mkTile('tPrivacy', 'privacy_tip', '#66BB6A', 'سياسة الخصوصية', 'core.navigate', ['route' => '/page/privacy', 'mode' => 'push']),
-    $mkTile('tTerms', 'description', '#26A69A', 'شروط الاستخدام', 'core.navigate', ['route' => '/page/terms', 'mode' => 'push']),
-    $mkTile('tContact', 'support_agent', '#42A5F5', 'تواصل معنا', 'core.navigate', ['route' => '/contact-us', 'mode' => 'push']),
-    $mkTile('tAbout', 'info', '#7C4DFF', 'عن التطبيق', 'core.navigate', ['route' => '/page/about', 'mode' => 'push']),
-    $mkTile('tAccount', 'person', '#5C6BC0', 'الحساب', 'core.navigate', ['route' => '/profile', 'mode' => 'push']),
-    [
-        'btnLogout' => $node('Button', false, array_merge($style, ['label' => 'تسجيل الخروج', 'background' => $C['card'], 'color' => $C['red'], 'radius' => 14, 'flex' => 0, 'onTapAction' => 'core.logout', 'onTapParams' => ['confirm' => true]]), [], 'ROOT'),
-    ]
+    $mkSetRow('rLang', 'language_rounded', '#26C6DA', '#3326C6DA', 'اللغة', 'core.navigate', ['route' => '/language-screen', 'mode' => 'push'], 'langCard'),
+    $mkSetRow('rPriv', 'shield_rounded', '#66BB6A', '#3366BB6A', 'سياسة الخصوصية', 'core.navigate', ['route' => '/page/privacy', 'mode' => 'push'], 'grpCard'),
+    $divRow('d1', 'grpCard'),
+    $mkSetRow('rTerms', 'description_rounded', '#26A69A', '#3326A69A', 'شروط الاستخدام', 'core.navigate', ['route' => '/page/terms', 'mode' => 'push'], 'grpCard'),
+    $divRow('d2', 'grpCard'),
+    $mkSetRow('rContact', 'support_agent_rounded', '#42A5F5', '#3342A5F5', 'تواصل معنا', 'core.navigate', ['route' => '/contact-us', 'mode' => 'push'], 'grpCard'),
+    $divRow('d3', 'grpCard'),
+    $mkSetRow('rAbout', 'info_rounded', '#7C4DFF', '#337C4DFF', 'عن التطبيق', 'core.navigate', ['route' => '/page/about', 'mode' => 'push'], 'grpCard'),
+    $divRow('d4', 'grpCard'),
+    $mkSetRow('rDelete', 'delete_outline_rounded', '#FF5A6E', '#33FF5A6E', 'حذف الحساب', 'core.navigate', ['route' => '/delete', 'mode' => 'push'], 'grpCard'),
 );
 
 // audio — bottom-nav tab placeholder for the audio-room feature (Eng-Hazem is
@@ -567,7 +601,7 @@ return [
             'name'         => 'settings',
             'label'        => 'الإعدادات',
             'icon'         => '⚙️',
-            'version'      => '1.6.0',
+            'version'      => '1.7.0',
             'nav'          => true,
             'navIcon'      => 'settings',
             'order'        => 40,
