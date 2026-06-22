@@ -107,6 +107,16 @@ class _AppShellState extends State<AppShell> {
     );
   }
 
+  /// Server nav tabs authored as `stac` that are actually owned by a NATIVE
+  /// package feature (a full-functionality screen primitives can't host — e.g.
+  /// the audio-room). Maps the tab `screen` → the feature id whose bottom-nav
+  /// contribution renders it. Falls back to the published Stac screen when the
+  /// package isn't installed/enabled. (Without this, a Studio app_layout that
+  /// marks the tab `stac` would show our placeholder instead of the real screen.)
+  static const Map<String, String> _nativeScreenFeatures = {
+    'audio': 'com.utd.audio_room',
+  };
+
   Widget _tabBody(NavTab tab) {
     if (tab.isNative) {
       final builder = _nativeBuilder(tab.featureId);
@@ -114,6 +124,18 @@ class _AppShellState extends State<AppShell> {
       return Center(
         child: Text('تبويب native غير متاح: ${tab.featureId ?? tab.screen}'),
       );
+    }
+    // A `stac` tab whose screen is owned by a native package feature → render the
+    // feature's real screen (STRICT match: only when that exact feature is
+    // present/enabled; otherwise fall through to the published Stac screen).
+    final nativeFeatureId = _nativeScreenFeatures[tab.screen];
+    if (nativeFeatureId != null) {
+      for (final d
+          in widget.registry.getUiContributionDescriptors(UiSlot.bottomNav)) {
+        if (d.featureId == nativeFeatureId) {
+          return Builder(builder: d.contribution.builder);
+        }
+      }
     }
     // The self-profile screen is too rich for Stac primitives (gradient avatar
     // ring, camera badge, gender/level badges, feature grid, avatar→full-profile,
