@@ -395,7 +395,7 @@ return [
             'name'         => 'profile',
             'label'        => 'الملف الشخصي',
             'icon'         => '👤',
-            'version'      => '1.8.1',
+            'version'      => '1.8.2',
             'nav'          => true,
             'navIcon'      => 'person',
             'order'        => 30,
