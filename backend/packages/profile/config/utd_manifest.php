@@ -80,9 +80,9 @@ $profileWidgets = [
     // Edit + refresh over the cover (pos:'top-right' → physical top-LEFT in RTL).
     'tools'       => $node('Row', true, ['gap' => 8, 'pos' => 'top-right', 'padding' => 10], ['editBtn', 'refreshBtn'], 'body'),
     'editBtn'     => $node('Container', true, ['width' => 40, 'height' => 40, 'radius' => 20, 'background' => '#00000066', 'align' => 'center', 'valign' => 'center', 'flex' => 0, 'onTapAction' => 'core.editProfile'], ['editIcon'], 'tools'),
-    'editIcon'    => $node('Icon', false, ['name' => 'edit', 'size' => 20, 'color' => $C['white']], [], 'editBtn'),
+    'editIcon'    => $node('Icon', false, ['name' => 'edit_rounded', 'size' => 20, 'color' => $C['white']], [], 'editBtn'),
     'refreshBtn'  => $node('Container', true, ['width' => 40, 'height' => 40, 'radius' => 20, 'background' => '#00000066', 'align' => 'center', 'valign' => 'center', 'flex' => 0, 'onTapAction' => 'core.refresh'], ['refreshIcon'], 'tools'),
-    'refreshIcon' => $node('Icon', false, ['name' => 'refresh', 'size' => 20, 'color' => $C['white']], [], 'refreshBtn'),
+    'refreshIcon' => $node('Icon', false, ['name' => 'refresh_rounded', 'size' => 20, 'color' => $C['white']], [], 'refreshBtn'),
 
     // Identity column ON TOP of the cover. `spacer` = cover 180 − overlap 31 = 149,
     // so the avatar starts 149px down → its top quarter (31px) overlaps the cover.
@@ -99,7 +99,7 @@ $profileWidgets = [
     'avatarImg'   => $node('Image', false, ['src' => '', 'binding' => 'profile.user.avatar', 'width' => 116, 'height' => 116, 'fit' => 'cover', 'shape' => 'circle', 'radius' => 0], [], 'ring'),
     // Camera badge on the avatar's BOTTOM-RIGHT corner (matches the target).
     'camBtn'      => $node('Container', true, ['width' => 34, 'height' => 34, 'radius' => 17, 'background' => $C['pink'], 'borderWidth' => 2, 'borderColor' => $C['white'], 'align' => 'center', 'valign' => 'center', 'flex' => 0, 'pos' => 'bottom-right', 'onTapAction' => 'core.changeAvatar', 'onTapParams' => ['source' => 'gallery']], ['camIcon'], 'avatarStack'),
-    'camIcon'     => $node('Icon', false, ['name' => 'photo_camera', 'size' => 16, 'color' => $C['white']], [], 'camBtn'),
+    'camIcon'     => $node('Icon', false, ['name' => 'photo_camera_rounded', 'size' => 16, 'color' => $C['white']], [], 'camBtn'),
 
     // Name + flag + gender sign + edit pencil.
     'nameRow'     => $node('Row', true, ['gap' => 6, 'justify' => 'center', 'align' => 'center'], ['name', 'flag', 'maleSign', 'femaleSign', 'namePencil'], 'content'),
@@ -109,18 +109,18 @@ $profileWidgets = [
     // visibleBinding, so an empty bound Text is how the other one stays hidden).
     'maleSign'    => $node('Text', false, ['text' => '', 'binding' => 'profile.user.maleSign', 'fontSize' => 20, 'fontWeight' => 700, 'color' => '#42A5F5', 'align' => 'center', 'maxLines' => 1], [], 'nameRow'),
     'femaleSign'  => $node('Text', false, ['text' => '', 'binding' => 'profile.user.femaleSign', 'fontSize' => 20, 'fontWeight' => 700, 'color' => '#EC407A', 'align' => 'center', 'maxLines' => 1], [], 'nameRow'),
-    'namePencil'  => $node('Icon', false, ['name' => 'edit', 'size' => 16, 'color' => $C['accent'], 'onTapAction' => 'core.editProfile'], [], 'nameRow'),
+    'namePencil'  => $node('Icon', false, ['name' => 'edit_rounded', 'size' => 16, 'color' => $C['accent'], 'onTapAction' => 'core.editProfile'], [], 'nameRow'),
 
     // UID + copy glyph.
     'uidRow'      => $node('Row', true, ['gap' => 4, 'justify' => 'center', 'align' => 'center', 'visibleBinding' => 'profile.user.uid'], ['uidLabel', 'uid', 'copyIcon'], 'content'),
     'uidLabel'    => $node('Text', false, ['text' => 'الأبدي:', 'binding' => '', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'maxLines' => 1], [], 'uidRow'),
     'uid'         => $node('Text', false, ['text' => '', 'binding' => 'profile.user.uid', 'fontSize' => 13, 'fontWeight' => 600, 'color' => $C['muted'], 'align' => 'center', 'maxLines' => 1], [], 'uidRow'),
-    'copyIcon'    => $node('Icon', false, ['name' => 'content_copy', 'size' => 14, 'color' => $C['muted']], [], 'uidRow'),
+    'copyIcon'    => $node('Icon', false, ['name' => 'content_copy_rounded', 'size' => 14, 'color' => $C['muted']], [], 'uidRow'),
 
     // Bio + edit pencil.
     'bioRow'      => $node('Row', true, ['gap' => 6, 'justify' => 'center', 'align' => 'center'], ['bio', 'bioPencil'], 'content'),
     'bio'         => $node('Text', false, ['text' => '', 'binding' => 'profile.user.bio', 'fontSize' => 14, 'fontWeight' => 400, 'color' => $C['bioText'], 'align' => 'center', 'maxLines' => 0], [], 'bioRow'),
-    'bioPencil'   => $node('Icon', false, ['name' => 'edit', 'size' => 14, 'color' => $C['accent'], 'onTapAction' => 'core.editProfile'], [], 'bioRow'),
+    'bioPencil'   => $node('Icon', false, ['name' => 'edit_rounded', 'size' => 14, 'color' => $C['accent'], 'onTapAction' => 'core.editProfile'], [], 'bioRow'),
 ];
 
 return [
@@ -183,7 +183,7 @@ return [
             'name'         => 'user_profile',
             'label'        => 'البروفايل الكامل (عند الصورة)',
             'icon'         => '👤',
-            'version'      => '1.14.0',
+            'version'      => '1.15.0',
             'nav'          => false,
             'navIcon'      => 'person',
             'order'        => 31,

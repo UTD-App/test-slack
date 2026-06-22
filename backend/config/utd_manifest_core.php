@@ -88,7 +88,7 @@ $mkTile = function (string $id, string $icon, string $tint, string $label, strin
         $id . 'Row' => $node('Row', true, ['gap' => 12, 'align' => 'center'], [$id . 'Ic', $id . 'Lb', $id . 'Ch'], $id),
         $id . 'Ic'  => $node('Icon', false, ['name' => $icon, 'size' => 20, 'color' => $tint], [], $id . 'Row'),
         $id . 'Lb'  => $node('Text', false, ['text' => $label, 'fontSize' => 14, 'fontWeight' => 500, 'color' => $C['white'], 'align' => 'right', 'binding' => '', 'maxLines' => 1, 'flex' => 1], [], $id . 'Row'),
-        $id . 'Ch'  => $node('Icon', false, ['name' => 'chevron_left', 'size' => 18, 'color' => $C['muted']], [], $id . 'Row'),
+        $id . 'Ch'  => $node('Icon', false, ['name' => 'chevron_left_rounded', 'size' => 18, 'color' => $C['muted']], [], $id . 'Row'),
     ];
 };
 
@@ -237,7 +237,7 @@ $profileWidgets = array_merge(
         // LTP design). (Studio's LTR web preview mirrors it to top-left — the app
         // is the source of truth.)
         'camBtn'      => $node('Container', true, array_merge($style, ['width' => 34, 'height' => 34, 'radius' => 17, 'background' => $C['pink'], 'borderWidth' => 2, 'borderColor' => $C['white'], 'align' => 'center', 'valign' => 'center', 'pos' => 'top-left', 'onTapAction' => 'core.changeAvatar', 'onTapParams' => ['source' => 'gallery']]), ['camIcon'], 'avatarStack'),
-        'camIcon'     => $node('Icon', false, ['name' => 'photo_camera', 'size' => 16, 'color' => $C['white']], [], 'camBtn'),
+        'camIcon'     => $node('Icon', false, ['name' => 'photo_camera_rounded', 'size' => 16, 'color' => $C['white']], [], 'camBtn'),
 
         // Name + flag + gender sign + edit pencil.
         'nameRow'     => $node('Row', true, ['gap' => 6, 'justify' => 'center', 'align' => 'center'], ['name', 'flag', 'maleSign', 'femaleSign', 'namePencil'], 'header'),
@@ -250,7 +250,7 @@ $profileWidgets = array_merge(
         // the user's gender shows, in its own colour.
         'maleSign'    => $node('Text', false, ['text' => '', 'binding' => 'core.currentUser.maleSign', 'fontSize' => 20, 'fontWeight' => 700, 'color' => '#42A5F5', 'align' => 'center', 'maxLines' => 1], [], 'nameRow'),
         'femaleSign'  => $node('Text', false, ['text' => '', 'binding' => 'core.currentUser.femaleSign', 'fontSize' => 20, 'fontWeight' => 700, 'color' => '#EC407A', 'align' => 'center', 'maxLines' => 1], [], 'nameRow'),
-        'namePencil'  => $node('Icon', false, ['name' => 'edit', 'size' => 16, 'color' => $C['accentLt'], 'onTapAction' => 'core.editProfile'], [], 'nameRow'),
+        'namePencil'  => $node('Icon', false, ['name' => 'edit_rounded', 'size' => 16, 'color' => $C['accentLt'], 'onTapAction' => 'core.editProfile'], [], 'nameRow'),
 
         // UID.
         'uid'         => $node('Text', false, ['text' => '', 'binding' => 'core.currentUser.uid', 'visibleBinding' => 'core.currentUser.uid', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'maxLines' => 1], [], 'header'),
@@ -258,9 +258,9 @@ $profileWidgets = array_merge(
         // Bio + edit pencil.
         'bioRow'      => $node('Row', true, ['gap' => 6, 'justify' => 'center', 'align' => 'center'], ['bio', 'bioPencil'], 'header'),
         'bio'         => $node('Text', false, ['text' => '', 'binding' => 'core.currentUser.bio', 'fontSize' => 14, 'fontWeight' => 400, 'color' => $C['bioText'], 'align' => 'center', 'maxLines' => 0], [], 'bioRow'),
-        'bioPencil'   => $node('Icon', false, ['name' => 'edit', 'size' => 14, 'color' => $C['accentLt'], 'onTapAction' => 'core.editProfile'], [], 'bioRow'),
+        'bioPencil'   => $node('Icon', false, ['name' => 'edit_rounded', 'size' => 14, 'color' => $C['accentLt'], 'onTapAction' => 'core.editProfile'], [], 'bioRow'),
     ],
-    $mkTile('mSettings', 'settings', '#42A5F5', 'الإعدادات', 'core.navigate', ['route' => '/settings', 'mode' => 'push'])
+    $mkTile('mSettings', 'settings_rounded', '#42A5F5', 'الإعدادات', 'core.navigate', ['route' => '/settings', 'mode' => 'push'])
 );
 
 // settings — in-body title + tappable purple cards + destructive logout.
@@ -552,7 +552,7 @@ return [
             'name'         => 'profile',
             'label'        => 'الملف الشخصي (تبويب)',
             'icon'         => '👤',
-            'version'      => '1.8.7',
+            'version'      => '1.8.8',
             'nav'          => true,
             'navIcon'      => 'person',
             'order'        => 30,
