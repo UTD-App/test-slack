@@ -317,8 +317,6 @@ class _AddonPlatformAppState extends State<AddonPlatformApp>
                     debugShowCheckedModeBanner: false,
                     locale: localeNotifier.locale,
                     supportedLocales: localeNotifier.supportedLocales,
-                    // Optional (non-blocking) "update available" prompt — shown
-                    // once, only when the gate isn't already forcing/maintaining.
                     builder: (context, child) {
                       if (!_gate.blocks &&
                           _gate.updateAvailable &&
@@ -343,8 +341,6 @@ class _AddonPlatformAppState extends State<AddonPlatformApp>
                       GlobalWidgetsLocalizations.delegate,
                       GlobalCupertinoLocalizations.delegate,
                     ],
-                    // Dark-purple "lumia" theme applied to both slots so the
-                    // look holds regardless of the light/dark toggle.
                     theme: _lumiaTheme(),
                     darkTheme: _lumiaTheme(),
                     themeMode: themeNotifier.themeMode,

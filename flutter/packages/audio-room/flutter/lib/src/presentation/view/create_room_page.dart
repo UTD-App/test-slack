@@ -10,6 +10,9 @@ import 'package:utd_app/shared/core/enums.dart';
 import '../bloc/create_room_bloc.dart';
 import '../widgets/audio_room_app_overlay.dart';
 import '../widgets/room/room_strings.dart';
+import '../widgets/room/seat_icon_picker.dart';
+import '../widgets/room/seat_icon_row.dart';
+import '../widgets/room/seat_mode_selector.dart';
 
 class CreateRoomPage extends StatefulWidget {
   const CreateRoomPage({super.key});
@@ -27,6 +30,8 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
   int? _selectedType;
   File? _coverImage;
   bool _hasPassword = false;
+  SeatIconChoice? _emptySeatChoice;
+  SeatIconChoice? _lockedSeatChoice;
 
   @override
   void initState() {
@@ -64,6 +69,22 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
         roomType: _selectedType,
         password: _hasPassword ? _passwordController.text.trim() : null,
         cover: _coverImage,
+        emptySeatIcon: _emptySeatChoice?.type == SeatIconChoiceType.custom
+            ? _emptySeatChoice!.file
+            : null,
+        lockedSeatIcon: _lockedSeatChoice?.type == SeatIconChoiceType.custom
+            ? _lockedSeatChoice!.file
+            : null,
+        emptySeatIconPreset: _emptySeatChoice?.type == SeatIconChoiceType.preset
+            ? _emptySeatChoice!.presetName
+            : _emptySeatChoice?.type == SeatIconChoiceType.defaultIcon
+                ? ''
+                : null,
+        lockedSeatIconPreset: _lockedSeatChoice?.type == SeatIconChoiceType.preset
+            ? _lockedSeatChoice!.presetName
+            : _lockedSeatChoice?.type == SeatIconChoiceType.defaultIcon
+                ? ''
+                : null,
       ),
     );
   }
@@ -189,9 +210,33 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                 },
               ),
               SizedBox(height: 12.h),
-              _SeatModeSelector(
+              SeatModeSelector(
                 selectedMode: _selectedMode,
                 onChanged: (mode) => setState(() => _selectedMode = mode),
+              ),
+              SizedBox(height: 12.h),
+              SeatIconRow(
+                label: s.emptySeatIcon,
+                choice: _emptySeatChoice,
+                iconType: SeatIconType.empty,
+                onTap: () async {
+                  final result = await showSeatIconPicker(context, iconType: SeatIconType.empty);
+                  if (result != null) {
+                    setState(() => _emptySeatChoice = result);
+                  }
+                },
+              ),
+              SizedBox(height: 12.h),
+              SeatIconRow(
+                label: s.lockedSeatIcon,
+                choice: _lockedSeatChoice,
+                iconType: SeatIconType.locked,
+                onTap: () async {
+                  final result = await showSeatIconPicker(context, iconType: SeatIconType.locked);
+                  if (result != null) {
+                    setState(() => _lockedSeatChoice = result);
+                  }
+                },
               ),
               SizedBox(height: 12.h),
               SwitchListTile(
@@ -225,48 +270,6 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _SeatModeSelector extends StatelessWidget {
-  final int selectedMode;
-  final ValueChanged<int> onChanged;
-
-  const _SeatModeSelector({
-    required this.selectedMode,
-    required this.onChanged,
-  });
-
-  static const _modes = [
-    (mode: 9, label: '9'),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final s = RoomStrings.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          s.seatMode,
-          style: Theme.of(context).textTheme.titleSmall,
-        ),
-        SizedBox(height: 8.h),
-        Wrap(
-          spacing: 8.w,
-          runSpacing: 8.h,
-          children: _modes.map((m) {
-            final isSelected = m.mode == selectedMode;
-            return ChoiceChip(
-              label: Text(s.seats(m.label)),
-              selected: isSelected,
-              onSelected: (_) => onChanged(m.mode),
-            );
-          }).toList(),
-        ),
-      ],
     );
   }
 }

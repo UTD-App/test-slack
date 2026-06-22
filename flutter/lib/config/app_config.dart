@@ -13,6 +13,9 @@ class AppConfig {
   /// UTD Stream app ID for audio rooms
   final String utdStreamAppId;
 
+  /// UTD Stream app key for audio rooms
+  final String utdStreamAppKey;
+
   /// Storage bucket URL for file uploads/downloads
   final String storageBucketUrl;
 
@@ -50,6 +53,7 @@ class AppConfig {
     required this.privacyPolicyUrl,
     required this.environment,
     this.utdStreamAppId = '',
+    this.utdStreamAppKey = '',
     this.appBuildNumber = 1,
     this.useDeviceLocale = true,
     this.enableDebugFeatures = false,
@@ -66,6 +70,7 @@ class AppConfig {
       domainUrl: 'http://192.168.1.5:8000',
       privacyPolicyUrl: 'http://192.168.1.5:8000/api/privacy-policy',
       utdStreamAppId: '3019100698',
+      utdStreamAppKey: 'dfc0353eac12dc038ccd4787ff3706c8',
       appBuildNumber: int.fromEnvironment('APP_BUILD_NUMBER', defaultValue: 1),
       environment: Environment.development,
       enableDebugFeatures: true,
@@ -82,6 +87,7 @@ class AppConfig {
       domainUrl: 'https://project-x.utdsoftware.com',
       privacyPolicyUrl: 'https://project-x.utdsoftware.com/api/privacy-policy',
       utdStreamAppId: '4602085317',
+      utdStreamAppKey: 'dfc0353eac12dc038ccd4787ff3706c8',
       appBuildNumber: int.fromEnvironment('APP_BUILD_NUMBER', defaultValue: 1),
       environment: Environment.production,
       enableDebugFeatures: false,
@@ -111,6 +117,7 @@ class AppConfig {
     String? appName,
     String? baseUrl,
     String? utdStreamAppId,
+    String? utdStreamAppKey,
     String? storageBucketUrl,
     String? domainUrl,
     String? privacyPolicyUrl,
@@ -125,6 +132,7 @@ class AppConfig {
       appName: appName ?? this.appName,
       baseUrl: baseUrl ?? this.baseUrl,
       utdStreamAppId: utdStreamAppId ?? this.utdStreamAppId,
+      utdStreamAppKey: utdStreamAppKey ?? this.utdStreamAppKey,
       storageBucketUrl: storageBucketUrl ?? this.storageBucketUrl,
       domainUrl: domainUrl ?? this.domainUrl,
       privacyPolicyUrl: privacyPolicyUrl ?? this.privacyPolicyUrl,

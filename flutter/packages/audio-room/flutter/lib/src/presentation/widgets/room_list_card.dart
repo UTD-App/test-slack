@@ -1,8 +1,10 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../domain/room_model.dart';
+import 'list_card_owner_avatar.dart';
+import 'room_cover_image.dart';
+import 'room_placeholder.dart';
 
 class RoomListCard extends StatelessWidget {
   final RoomModel room;
@@ -48,14 +50,9 @@ class RoomListCard extends StatelessWidget {
                   fit: StackFit.expand,
                   children: [
                     if (room.roomCover != null && room.roomCover!.isNotEmpty)
-                      CachedNetworkImage(
-                        imageUrl: room.roomCover!,
-                        fit: BoxFit.cover,
-                        placeholder: (_, __) => _placeholder(),
-                        errorWidget: (_, __, ___) => _placeholder(),
-                      )
+                      RoomCoverImage(url: room.roomCover)
                     else
-                      _placeholder(),
+                      const RoomPlaceholder(),
                     if (room.hasPassword)
                       Positioned(
                         top: 6.r,
@@ -116,7 +113,7 @@ class RoomListCard extends StatelessWidget {
                       SizedBox(height: 6.h),
                       Row(
                         children: [
-                          _OwnerAvatar(url: room.ownerAvatar, size: 18.r),
+                          ListCardOwnerAvatar(url: room.ownerAvatar, size: 18.r),
                           SizedBox(width: 6.w),
                           Expanded(
                             child: Text(
@@ -166,51 +163,6 @@ class RoomListCard extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-
-  static Widget _placeholder() {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Colors.grey.shade300, Colors.grey.shade400],
-        ),
-      ),
-      child: Center(
-        child: Icon(Icons.mic_rounded, size: 28.r, color: Colors.white54),
-      ),
-    );
-  }
-}
-
-class _OwnerAvatar extends StatelessWidget {
-  final String? url;
-  final double size;
-  const _OwnerAvatar({this.url, required this.size});
-
-  @override
-  Widget build(BuildContext context) {
-    if (url != null && url!.isNotEmpty) {
-      return ClipOval(
-        child: CachedNetworkImage(
-          imageUrl: url!,
-          width: size,
-          height: size,
-          fit: BoxFit.cover,
-          errorWidget: (_, __, ___) => CircleAvatar(
-            radius: size / 2,
-            backgroundColor: Colors.grey.shade500,
-            child: Icon(Icons.person, size: size * 0.6, color: Colors.white70),
-          ),
-        ),
-      );
-    }
-    return CircleAvatar(
-      radius: size / 2,
-      backgroundColor: Colors.grey.shade500,
-      child: Icon(Icons.person, size: size * 0.6, color: Colors.white70),
     );
   }
 }

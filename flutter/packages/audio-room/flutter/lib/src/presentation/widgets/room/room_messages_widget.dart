@@ -1,134 +1,142 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:utd_audio_room_kit/utd_audio_room_kit.dart';
 
+import '../../../audio_room_feature.dart';
+import 'message_input_board.dart';
+import 'message_list.dart';
 import 'room_strings.dart';
 
-class RoomMessagesWidget extends StatelessWidget {
+void openMessageInput(BuildContext context, UTDRoomController controller) {
+  Navigator.of(context).push(MessageInputBoard(roomController: controller));
+}
+
+enum _MessageTab { all, messages }
+
+class RoomMessagesWidget extends StatefulWidget {
   final UTDRoomController controller;
+  final int roomId;
+  final bool isOwner;
 
-  const RoomMessagesWidget({super.key, required this.controller});
+  const RoomMessagesWidget({
+    super.key,
+    required this.controller,
+    required this.roomId,
+    required this.isOwner,
+  });
 
   @override
-  Widget build(BuildContext context) {
-    return ValueListenableBuilder<List<UTDChatMessage>>(
-      valueListenable: controller.chatController.messages,
-      builder: (context, messages, _) {
-        return Column(
-          children: [
-            Expanded(
-              child: messages.isEmpty
-                  ? const SizedBox.shrink()
-                  : _MessageList(messages: messages),
-            ),
-            _MessageInput(controller: controller),
-          ],
-        );
-      },
-    );
-  }
+  State<RoomMessagesWidget> createState() => _RoomMessagesWidgetState();
 }
 
-class _MessageList extends StatefulWidget {
-  final List<UTDChatMessage> messages;
+class _RoomMessagesWidgetState extends State<RoomMessagesWidget> {
+  _MessageTab _selectedTab = _MessageTab.all;
 
-  const _MessageList({required this.messages});
-
-  @override
-  State<_MessageList> createState() => _MessageListState();
-}
-
-class _MessageListState extends State<_MessageList> {
-  final ScrollController _scrollController = ScrollController();
-
-  @override
-  void didUpdateWidget(_MessageList oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.messages.length > oldWidget.messages.length) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_scrollController.hasClients) {
-          _scrollController.animateTo(
-            _scrollController.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOut,
-          );
-        }
-      });
-    }
+  bool _isChatMessage(UTDChatMessage m) {
+    return m.senderUserId != 'system' &&
+        m.userData['type'] != 'join' &&
+        !m.text.contains('joinRoom');
   }
 
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
+  List<UTDChatMessage> _applyTabFilter(List<UTDChatMessage> messages) {
+    if (_selectedTab == _MessageTab.all) return messages;
+    return messages.where(_isChatMessage).toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      itemCount: widget.messages.length,
-      itemBuilder: (context, index) {
-        return _MessageBubble(message: widget.messages[index]);
-      },
-    );
-  }
-}
+    final feature = AudioRoomFeature.instance;
+    if (feature == null) return const SizedBox.shrink();
 
-class _MessageBubble extends StatelessWidget {
-  final UTDChatMessage message;
-
-  const _MessageBubble({required this.message});
-
-  bool get _isSystem => message.senderUserId == 'system';
-
-  @override
-  Widget build(BuildContext context) {
-    if (_isSystem) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: 2),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.08),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            message.text,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.6),
-              fontSize: 12,
-              fontStyle: FontStyle.italic,
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ValueListenableBuilder<Map<String, dynamic>?>(
+          valueListenable: feature.pinnedMessage,
+          builder: (context, pinned, _) {
+            if (pinned == null) return const SizedBox.shrink();
+            return _PinnedMessageBanner(
+              data: pinned,
+              isAdmin: widget.controller.isHostOrAdmin,
+              onUnpin: () {
+                feature.pinnedMessage.value = null;
+                widget.controller.sendRoomMessage({'type': 'unpinMessage'});
+              },
+            );
+          },
+        ),
+        _buildTabBar(context),
+        Expanded(
+          child: ValueListenableBuilder<List<UTDChatMessage>>(
+            valueListenable: widget.controller.chatController.messages,
+            builder: (context, messages, _) {
+              if (messages.isEmpty) return const SizedBox.shrink();
+              return ValueListenableBuilder<Set<String>>(
+                valueListenable: feature.commentBannedUsers,
+                builder: (context, bannedIds, _) {
+                  var filtered = bannedIds.isEmpty
+                      ? messages
+                      : messages
+                            .where(
+                              (m) => !bannedIds.contains(
+                                m.userData['senderId']?.toString() ??
+                                    m.senderUserId,
+                              ),
+                            )
+                            .toList();
+                  filtered = _applyTabFilter(filtered);
+                  if (filtered.isEmpty) return const SizedBox.shrink();
+                  return MessageList(
+                    messages: filtered,
+                    controller: widget.controller,
+                    roomId: widget.roomId,
+                    isOwner: widget.isOwner,
+                  );
+                },
+              );
+            },
           ),
         ),
-      );
-    }
+      ],
+    );
+  }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+  Widget _buildTabBar(BuildContext context) {
+    final s = RoomStrings.of(context);
+    return Container(
+      height: 32.h,
+      margin: EdgeInsets.symmetric(horizontal: 12.w),
+      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.3)),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildTabItem(title: s.allTab, type: _MessageTab.all),
+          _buildTabItem(title: s.messagesTab, type: _MessageTab.messages),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTabItem({required String title, required _MessageTab type}) {
+    final isSelected = _selectedTab == type;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedTab = type),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
         decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.25),
-          borderRadius: BorderRadius.circular(12),
+          border: isSelected
+              ? Border(
+                  bottom: BorderSide(color: Colors.white, width: 2.h),
+                )
+              : null,
         ),
-        child: Text.rich(
-          TextSpan(
-            children: [
-              TextSpan(
-                text: '${message.senderName}  ',
-                style: const TextStyle(
-                  color: Color(0xFF64B5F6),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              TextSpan(
-                text: message.text,
-                style: const TextStyle(color: Colors.white, fontSize: 13),
-              ),
-            ],
+        child: Text(
+          title,
+          style: TextStyle(
+            color: isSelected ? Colors.white : Colors.white70,
+            fontSize: 12.sp,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ),
@@ -136,119 +144,80 @@ class _MessageBubble extends StatelessWidget {
   }
 }
 
-class _MessageInput extends StatefulWidget {
-  final UTDRoomController controller;
+class _PinnedMessageBanner extends StatelessWidget {
+  final Map<String, dynamic> data;
+  final bool isAdmin;
+  final VoidCallback onUnpin;
 
-  const _MessageInput({required this.controller});
-
-  @override
-  State<_MessageInput> createState() => _MessageInputState();
-}
-
-class _MessageInputState extends State<_MessageInput> {
-  final _textController = TextEditingController();
-  bool _isEmpty = true;
-
-  void _send() {
-    final text = _textController.text.trim();
-    if (text.isEmpty) return;
-
-    widget.controller.chatController.sendMessage(text);
-    _textController.clear();
-    setState(() => _isEmpty = true);
-  }
-
-  @override
-  void dispose() {
-    _textController.dispose();
-    super.dispose();
-  }
+  const _PinnedMessageBanner({
+    required this.data,
+    required this.isAdmin,
+    required this.onUnpin,
+  });
 
   @override
   Widget build(BuildContext context) {
     final s = RoomStrings.of(context);
+    final senderName = data['senderName']?.toString() ?? '';
+    final text = data['text']?.toString() ?? '';
 
-    return ValueListenableBuilder<bool>(
-      valueListenable: widget.controller.commentsLocked,
-      builder: (context, isLocked, _) {
-        final canComment = widget.controller.canIComment;
-
-        if (isLocked && !canComment) {
-          return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+      decoration: BoxDecoration(
+        color: Colors.amber.withValues(alpha: 0.15),
+        border: Border(
+          bottom: BorderSide(
+            color: Colors.amber.withValues(alpha: 0.3),
+            width: 1,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.push_pin, color: Colors.amber, size: 16.r),
+          SizedBox(width: 8.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.lock_outline, color: Colors.white38, size: 16),
-                const SizedBox(width: 6),
                 Text(
-                  s.commentsLocked,
+                  senderName,
                   style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.4),
-                    fontSize: 13,
+                    color: Colors.amber,
+                    fontSize: 11.sp,
+                    fontWeight: FontWeight.w600,
                   ),
+                ),
+                Text(
+                  text,
+                  style: TextStyle(color: Colors.white, fontSize: 12.sp),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
-          );
-        }
-
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          child: Row(
-            children: [
-              Expanded(
-                child: Container(
-                  height: 38,
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(19),
-                  ),
-                  child: TextField(
-                    controller: _textController,
-                    style:
-                        const TextStyle(color: Colors.white, fontSize: 14),
-                    decoration: InputDecoration(
-                      hintText: s.sendMessageHint,
-                      hintStyle: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.4),
-                        fontSize: 14,
-                      ),
-                      border: InputBorder.none,
-                      contentPadding:
-                          const EdgeInsets.symmetric(vertical: 10),
-                    ),
-                    textInputAction: TextInputAction.send,
-                    onChanged: (v) =>
-                        setState(() => _isEmpty = v.trim().isEmpty),
-                    onSubmitted: (_) => _send(),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              GestureDetector(
-                onTap: _isEmpty ? null : _send,
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: _isEmpty
-                        ? Colors.white.withValues(alpha: 0.1)
-                        : Theme.of(context).primaryColor,
-                  ),
-                  child: Icon(
-                    Icons.send,
-                    color: _isEmpty ? Colors.white38 : Colors.white,
-                    size: 18,
-                  ),
-                ),
-              ),
-            ],
           ),
-        );
-      },
+          if (isAdmin)
+            GestureDetector(
+              onTap: () {
+                onUnpin();
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text(s.messageUnpinned)));
+              },
+              child: Padding(
+                padding: EdgeInsets.only(left: 8.w),
+                child: Icon(
+                  Icons.close,
+                  color: Colors.white.withValues(alpha: 0.6),
+                  size: 18.r,
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

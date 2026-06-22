@@ -41,8 +41,6 @@ dependencies:
   permission_handler: ^12.0.1 # base uses ^11.3.1, but utd_audio_room_kit needs ^12
   flutter_image_compress: ^2.3.0
   webview_flutter: ^4.14.0
-  utd_audio_room_kit: ^1.3.0
-
   authentication:
     path: packages/authentication
   profile:

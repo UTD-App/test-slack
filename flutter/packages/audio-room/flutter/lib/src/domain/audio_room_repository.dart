@@ -27,6 +27,10 @@ abstract class AudioRoomRepository {
     int? roomClass,
     String? password,
     File? cover,
+    File? emptySeatIcon,
+    File? lockedSeatIcon,
+    String? emptySeatIconPreset,
+    String? lockedSeatIconPreset,
   });
 
   Future<Result<BaseResponse<RoomModel>>> updateRoom(
@@ -42,6 +46,10 @@ abstract class AudioRoomRepository {
     bool? isCommentsClosed,
     bool? freeMic,
     File? cover,
+    File? emptySeatIcon,
+    File? lockedSeatIcon,
+    String? emptySeatIconPreset,
+    String? lockedSeatIconPreset,
   });
 
   Future<Result<BaseResponse>> deleteRoom(int id);
@@ -114,6 +122,10 @@ class AudioRoomRepositoryImpl implements AudioRoomRepository {
     int? roomClass,
     String? password,
     File? cover,
+    File? emptySeatIcon,
+    File? lockedSeatIcon,
+    String? emptySeatIconPreset,
+    String? lockedSeatIconPreset,
   }) =>
       remoteDataSource.createRoom(
         name: name,
@@ -123,6 +135,10 @@ class AudioRoomRepositoryImpl implements AudioRoomRepository {
         roomClass: roomClass,
         password: password,
         cover: cover,
+        emptySeatIcon: emptySeatIcon,
+        lockedSeatIcon: lockedSeatIcon,
+        emptySeatIconPreset: emptySeatIconPreset,
+        lockedSeatIconPreset: lockedSeatIconPreset,
       );
 
   @override
@@ -139,6 +155,10 @@ class AudioRoomRepositoryImpl implements AudioRoomRepository {
     bool? isCommentsClosed,
     bool? freeMic,
     File? cover,
+    File? emptySeatIcon,
+    File? lockedSeatIcon,
+    String? emptySeatIconPreset,
+    String? lockedSeatIconPreset,
   }) =>
       remoteDataSource.updateRoom(
         id,
@@ -153,6 +173,10 @@ class AudioRoomRepositoryImpl implements AudioRoomRepository {
         isCommentsClosed: isCommentsClosed,
         freeMic: freeMic,
         cover: cover,
+        emptySeatIcon: emptySeatIcon,
+        lockedSeatIcon: lockedSeatIcon,
+        emptySeatIconPreset: emptySeatIconPreset,
+        lockedSeatIconPreset: lockedSeatIconPreset,
       );
 
   @override
@@ -235,8 +259,8 @@ class AudioRoomRepositoryImpl implements AudioRoomRepository {
 abstract class AudioRoomRemoteDataSource {
   Future<Result<BaseResponse<List<RoomModel>>>> getRooms({int page, int? categoryId, String? search, String? sortBy});
   Future<Result<BaseResponse<RoomModel>>> getRoom(int id);
-  Future<Result<BaseResponse<RoomModel>>> createRoom({required String name, required int mode, String? intro, int? roomType, int? roomClass, String? password, File? cover});
-  Future<Result<BaseResponse<RoomModel>>> updateRoom(int id, {String? name, String? intro, String? rule, String? background, String? password, int? mode, int? roomType, int? roomClass, bool? isCommentsClosed, bool? freeMic, File? cover});
+  Future<Result<BaseResponse<RoomModel>>> createRoom({required String name, required int mode, String? intro, int? roomType, int? roomClass, String? password, File? cover, File? emptySeatIcon, File? lockedSeatIcon, String? emptySeatIconPreset, String? lockedSeatIconPreset});
+  Future<Result<BaseResponse<RoomModel>>> updateRoom(int id, {String? name, String? intro, String? rule, String? background, String? password, int? mode, int? roomType, int? roomClass, bool? isCommentsClosed, bool? freeMic, File? cover, File? emptySeatIcon, File? lockedSeatIcon, String? emptySeatIconPreset, String? lockedSeatIconPreset});
   Future<Result<BaseResponse>> deleteRoom(int id);
   Future<Result<BaseResponse<RoomModel>>> enterRoom(int id, {String? password});
   Future<Result<BaseResponse>> exitRoom(int id);

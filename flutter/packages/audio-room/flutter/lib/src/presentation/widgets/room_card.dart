@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import '../../domain/room_model.dart';
+import 'room_badge.dart';
+import 'room_cover_image.dart';
 
 class RoomCard extends StatelessWidget {
   final RoomModel room;
@@ -46,7 +48,7 @@ class RoomCard extends StatelessWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  _CoverImage(url: room.roomCover),
+                  RoomCoverImage(url: room.roomCover),
                   Positioned.fill(
                     child: DecoratedBox(
                       decoration: BoxDecoration(
@@ -66,14 +68,14 @@ class RoomCard extends StatelessWidget {
                     Positioned(
                       top: 8.r,
                       left: 8.r,
-                      child: _Badge(
+                      child: RoomBadge(
                         child: Icon(Icons.lock_rounded, color: Colors.white, size: 12.r),
                       ),
                     ),
                   Positioned(
                     top: 8.r,
                     right: 8.r,
-                    child: _Badge(
+                    child: RoomBadge(
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -151,59 +153,6 @@ class RoomCard extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _CoverImage extends StatelessWidget {
-  final String? url;
-  const _CoverImage({this.url});
-
-  @override
-  Widget build(BuildContext context) {
-    if (url != null && url!.isNotEmpty) {
-      return CachedNetworkImage(
-        imageUrl: url!,
-        fit: BoxFit.cover,
-        placeholder: (_, __) => _Placeholder(),
-        errorWidget: (_, __, ___) => _Placeholder(),
-      );
-    }
-    return _Placeholder();
-  }
-}
-
-class _Placeholder extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Colors.grey.shade300, Colors.grey.shade400],
-        ),
-      ),
-      child: Center(
-        child: Icon(Icons.mic_rounded, size: 36.r, color: Colors.white54),
-      ),
-    );
-  }
-}
-
-class _Badge extends StatelessWidget {
-  final Widget child;
-  const _Badge({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 6.w, vertical: 3.h),
-      decoration: BoxDecoration(
-        color: Colors.black.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(10.r),
-      ),
-      child: child,
     );
   }
 }

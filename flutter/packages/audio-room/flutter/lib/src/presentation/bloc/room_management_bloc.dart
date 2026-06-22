@@ -46,6 +46,10 @@ class RoomManagementBloc
       isCommentsClosed: event.isCommentsClosed,
       freeMic: event.freeMic,
       cover: event.cover,
+      emptySeatIcon: event.emptySeatIcon,
+      lockedSeatIcon: event.lockedSeatIcon,
+      emptySeatIconPreset: event.emptySeatIconPreset,
+      lockedSeatIconPreset: event.lockedSeatIconPreset,
     );
 
     switch (result) {

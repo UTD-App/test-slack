@@ -35,6 +35,10 @@ class CreateRoomBloc extends Bloc<CreateRoomEvent, CreateRoomState> {
       roomClass: event.roomClass,
       password: event.password,
       cover: event.cover,
+      emptySeatIcon: event.emptySeatIcon,
+      lockedSeatIcon: event.lockedSeatIcon,
+      emptySeatIconPreset: event.emptySeatIconPreset,
+      lockedSeatIconPreset: event.lockedSeatIconPreset,
     );
 
     switch (result) {

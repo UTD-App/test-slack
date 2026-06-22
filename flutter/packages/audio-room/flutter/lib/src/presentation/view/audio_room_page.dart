@@ -25,6 +25,7 @@ import '../widgets/room/room_controls_bar.dart';
 import '../widgets/room/room_header_widget.dart';
 import '../widgets/room/room_messages_widget.dart';
 import '../widgets/room/room_strings.dart';
+import '../widgets/room/custom_seat_icon_widget.dart';
 import '../widgets/room/seat_avatar_widget.dart';
 import '../widgets/room/seat_mode_sheet.dart';
 import '../widgets/room/seat_options_sheet.dart';
@@ -230,6 +231,8 @@ class _AudioRoomPageState extends State<AudioRoomPage>
                     freeMic: updated.freeMic,
                     isCommentsClosed: updated.isCommentsClosed,
                     hasPassword: updated.hasPassword,
+                    emptySeatIcon: () => updated.emptySeatIcon,
+                    lockedSeatIcon: () => updated.lockedSeatIcon,
                   );
                 });
               }
@@ -300,6 +303,9 @@ class _AudioRoomPageState extends State<AudioRoomPage>
     final streamAppId = streamConfig?['app_id']?.toString() ?? '';
     final appId = streamAppId.isNotEmpty ? streamAppId : config.utdStreamAppId;
 
+    final streamAppKey = streamConfig?['app_key']?.toString() ?? '';
+    final appKey = streamAppKey.isNotEmpty ? streamAppKey : config.utdStreamAppKey;
+
     if (appId.isEmpty) {
       return Scaffold(
         appBar: AppBar(),
@@ -322,7 +328,7 @@ class _AudioRoomPageState extends State<AudioRoomPage>
 
     Widget audioRoomWidget = UTDAudioRoom(
       appId: appId,
-      serverSecret: serverSecret,
+      appKey: appKey,
       userId: userId,
       userName: userName,
       roomId: room.id.toString(),
@@ -379,7 +385,11 @@ class _AudioRoomPageState extends State<AudioRoomPage>
               )
             : const SizedBox.shrink(),
         messagesWidget: _controller != null
-            ? RoomMessagesWidget(controller: _controller!)
+            ? RoomMessagesWidget(
+                controller: _controller!,
+                roomId: widget.roomId,
+                isOwner: room.ownerId.toString() == userId,
+              )
             : const SizedBox.shrink(),
         avatarBuilder: _controller != null
             ? (userId, size, attributes, isMuted, seatIndex, userName) =>
@@ -396,12 +406,22 @@ class _AudioRoomPageState extends State<AudioRoomPage>
             : null,
         emptySeatBuilder: (index, size) {
           if (index == 0) {
+            if (room.lockedSeatIcon != null) {
+              return CustomSeatIconWidget(index: index, size: size, iconValue: room.lockedSeatIcon!);
+            }
             return LockedSeatWidget(index: index, size: size);
+          }
+          if (room.emptySeatIcon != null) {
+            return CustomSeatIconWidget(index: index, size: size, iconValue: room.emptySeatIcon!);
           }
           return EmptySeatWidget(index: index, size: size);
         },
-        lockedSeatBuilder: (index, size) =>
-            LockedSeatWidget(index: index, size: size),
+        lockedSeatBuilder: (index, size) {
+          if (room.lockedSeatIcon != null) {
+            return CustomSeatIconWidget(index: index, size: size, iconValue: room.lockedSeatIcon!);
+          }
+          return LockedSeatWidget(index: index, size: size);
+        },
       ),
       onSeatTap: _controller != null
           ? (index, seat) => handleSeatTap(

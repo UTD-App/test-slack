@@ -22,6 +22,10 @@ class UpdateRoomEvent extends RoomManagementEvent {
   final bool? isCommentsClosed;
   final bool? freeMic;
   final File? cover;
+  final File? emptySeatIcon;
+  final File? lockedSeatIcon;
+  final String? emptySeatIconPreset;
+  final String? lockedSeatIconPreset;
 
   const UpdateRoomEvent({
     required this.roomId,
@@ -36,12 +40,17 @@ class UpdateRoomEvent extends RoomManagementEvent {
     this.isCommentsClosed,
     this.freeMic,
     this.cover,
+    this.emptySeatIcon,
+    this.lockedSeatIcon,
+    this.emptySeatIconPreset,
+    this.lockedSeatIconPreset,
   });
 
   @override
   List<Object?> get props => [
         roomId, name, intro, rule, background, password,
         mode, roomType, roomClass, isCommentsClosed, freeMic, cover,
+        emptySeatIcon, lockedSeatIcon, emptySeatIconPreset, lockedSeatIconPreset,
       ];
 }
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:utd_audio_room_kit/utd_audio_room_kit.dart';
 
+import 'inviter_avatar.dart';
 import 'room_strings.dart';
 
 Future<bool> showSpeakerInvitationDialog(
@@ -36,7 +37,7 @@ Future<bool> showSpeakerInvitationDialog(
         mainAxisSize: MainAxisSize.min,
         children: [
           const SizedBox(height: 8),
-          _InviterAvatar(url: inviterAvatar),
+          InviterAvatar(url: inviterAvatar),
           const SizedBox(height: 12),
           Text(
             inviterName,
@@ -95,23 +96,4 @@ Future<bool> showSpeakerInvitationDialog(
   );
 
   return result ?? false;
-}
-
-class _InviterAvatar extends StatelessWidget {
-  final String? url;
-
-  const _InviterAvatar({this.url});
-
-  @override
-  Widget build(BuildContext context) {
-    final hasImage = url != null && url!.isNotEmpty;
-    return CircleAvatar(
-      radius: 36,
-      backgroundColor: Colors.grey.shade700,
-      backgroundImage: hasImage ? NetworkImage(url!) : null,
-      child: hasImage
-          ? null
-          : const Icon(Icons.person, size: 36, color: Colors.white70),
-    );
-  }
 }

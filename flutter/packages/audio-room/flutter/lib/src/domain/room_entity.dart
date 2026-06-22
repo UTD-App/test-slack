@@ -25,6 +25,8 @@ class RoomEntity extends Equatable {
   final String? ownerAvatar;
   final String? ownerCountryFlag;
   final DateTime? createdAt;
+  final String? emptySeatIcon;
+  final String? lockedSeatIcon;
 
   const RoomEntity({
     required this.id,
@@ -51,6 +53,8 @@ class RoomEntity extends Equatable {
     this.ownerAvatar,
     this.ownerCountryFlag,
     this.createdAt,
+    this.emptySeatIcon,
+    this.lockedSeatIcon,
   });
 
   @override

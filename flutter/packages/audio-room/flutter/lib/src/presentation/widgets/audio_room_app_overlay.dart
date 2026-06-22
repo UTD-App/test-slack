@@ -16,6 +16,7 @@ import '../bloc/room_management_bloc.dart';
 import '../view/audio_room_page.dart';
 import 'audio_room_mini_overlay.dart';
 import 'audio_room_pip_view.dart';
+import 'exit_dialog_option.dart';
 
 class AudioRoomAppOverlay extends StatefulWidget {
   final Widget child;
@@ -36,6 +37,8 @@ class AudioRoomAppOverlay extends StatefulWidget {
   static void closeRoom() {
     _state?._closeRoom();
   }
+
+  static VoidCallback? onRoomClosed;
 
   @override
   State<AudioRoomAppOverlay> createState() => _AudioRoomAppOverlayState();
@@ -92,7 +95,7 @@ class _AudioRoomAppOverlayState extends State<AudioRoomAppOverlay>
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _ExitDialogOption(
+            ExitDialogOption(
               icon: Icons.picture_in_picture_alt,
               label: isAr ? 'تصغير' : 'Minimize',
               color: Colors.blue,
@@ -101,7 +104,7 @@ class _AudioRoomAppOverlayState extends State<AudioRoomAppOverlay>
                 _minimizeRoom();
               },
             ),
-            _ExitDialogOption(
+            ExitDialogOption(
               icon: Icons.exit_to_app,
               label: isAr ? 'مغادرة' : 'Leave',
               color: Colors.red,
@@ -312,6 +315,7 @@ class _AudioRoomAppOverlayState extends State<AudioRoomAppOverlay>
     _roomPage = null;
     _pages = null;
     setState(() {});
+    AudioRoomAppOverlay.onRoomClosed?.call();
   }
 
   @override
@@ -351,49 +355,6 @@ class _AudioRoomAppOverlayState extends State<AudioRoomAppOverlay>
           },
         );
       },
-    );
-  }
-}
-
-class _ExitDialogOption extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _ExitDialogOption({
-    required this.icon,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.2),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, size: 32, color: Colors.white),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

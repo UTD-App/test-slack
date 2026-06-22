@@ -14,3 +14,7 @@ export 'src/domain/audio_room_repository.dart';
 export 'src/data/pip_manager.dart';
 export 'src/presentation/widgets/audio_room_app_overlay.dart';
 export 'src/plugin_setting_row.dart';
+export 'src/data/audio_room_api_service.dart';
+export 'src/data/audio_room_remote_datasource.dart';
+export 'src/presentation/bloc/room_list_bloc.dart';
+export 'src/presentation/view/room_list_page.dart';

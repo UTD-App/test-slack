@@ -101,8 +101,32 @@ class RoomStrings {
   String expiresAt(String date) => _isAr ? 'ينتهي في: $date' : 'Expires: $date';
   String get unknown => _isAr ? 'غير معروف' : 'Unknown';
 
+  // ── Pinned Message ──
+  String get pinMessage => _isAr ? 'تثبيت الرسالة' : 'Pin Message';
+  String get unpinMessage => _isAr ? 'إلغاء التثبيت' : 'Unpin';
+  String get messagePinned => _isAr ? 'تم تثبيت الرسالة' : 'Message pinned';
+  String get messageUnpinned => _isAr ? 'تم إلغاء التثبيت' : 'Message unpinned';
+
+  // ── Comment Ban ──
+  String get banComments => _isAr ? 'حظر التعليقات' : 'Ban Comments';
+  String get unbanComments => _isAr ? 'فك حظر التعليقات' : 'Unban Comments';
+  String get commentsBanned =>
+      _isAr ? 'تم حظر تعليقاتك' : 'Your comments are banned';
+  String get commentsBannedSuccess =>
+      _isAr ? 'تم حظر تعليقات المستخدم' : 'User comments banned';
+  String get commentsUnbannedSuccess =>
+      _isAr ? 'تم فك حظر تعليقات المستخدم' : 'User comments unbanned';
+
   // ── Messages ──
+  String get allTab => _isAr ? 'الكل' : 'All';
+  String get messagesTab => _isAr ? 'الرسائل' : 'Messages';
+  String get deleteMessage => _isAr ? 'حذف الرسالة' : 'Delete Message';
+  String get messageDeleted => _isAr ? 'تم حذف الرسالة' : 'Message deleted';
   String get sendMessageHint => _isAr ? 'أرسل رسالة...' : 'Send a message...';
+  String get justNow => _isAr ? 'الآن' : 'just now';
+  String minutesAgo(int n) => _isAr ? 'منذ $n د' : '${n}m ago';
+  String hoursAgo(int n) => _isAr ? 'منذ $n س' : '${n}h ago';
+  String daysAgo(int n) => _isAr ? 'منذ $n ي' : '${n}d ago';
 
   // ── Participant Events ──
   String userJoined(String name) =>
@@ -148,6 +172,34 @@ class RoomStrings {
       _isAr ? 'جاري التحميل...' : 'Loading...';
   String get changeSeatMode => _isAr ? 'تغيير المقاعد' : 'Change Seat Mode';
   String get currentMode => _isAr ? 'الحالي' : 'Current';
+
+  // ── Seat Icons ──
+  String get emptySeatIcon => _isAr ? 'أيقونة الكرسي الفاضي' : 'Empty Seat Icon';
+  String get lockedSeatIcon => _isAr ? 'أيقونة الكرسي المغلق' : 'Locked Seat Icon';
+  String get defaultIcon => _isAr ? 'الافتراضي' : 'Default';
+  String get uploadIcon => _isAr ? 'رفع صورة' : 'Upload Image';
+  String get chooseSeatIcon => _isAr ? 'اختر أيقونة الكرسي' : 'Choose Seat Icon';
+  String get presets => _isAr ? 'أيقونات جاهزة' : 'Presets';
+
+  // ── Room Settings ──
+  String get roomInfo => _isAr ? 'معلومات الغرفة' : 'Room Info';
+  String get roomImage => _isAr ? 'صورة الغرفة' : 'Room Image';
+  String get roomNumber => _isAr ? 'رقم الغرفة' : 'Room Number';
+  String get roomAnnouncement => _isAr ? 'إعلان الغرفة' : 'Room Announcement';
+  String get roomRules => _isAr ? 'قوانين الغرفة' : 'Room Rules';
+  String get closeComments => _isAr ? 'إغلاق التعليقات' : 'Close Comments';
+  String get deleteRoom => _isAr ? 'حذف الغرفة' : 'Delete Room';
+  String get deleteRoomConfirm => _isAr
+      ? 'هل أنت متأكد من حذف هذه الغرفة؟\nلا يمكن التراجع عن هذا الإجراء.'
+      : 'Are you sure you want to delete this room?\nThis action cannot be undone.';
+  String get delete => _isAr ? 'حذف' : 'Delete';
+  String get saved => _isAr ? 'تم الحفظ' : 'Saved';
+  String get copied => _isAr ? 'تم النسخ' : 'Copied';
+  String get roomDeleted => _isAr ? 'تم حذف الغرفة' : 'Room deleted';
+  String get deleteRoomFailed => _isAr ? 'فشل حذف الغرفة' : 'Failed to delete room';
+  String get none => _isAr ? 'لا يوجد' : 'None';
+  String get takePhoto => _isAr ? 'التقاط صورة' : 'Take Photo';
+  String get chooseFromGallery => _isAr ? 'اختيار من المعرض' : 'Choose from Gallery';
 
   // ── Room Page ──
   String get bannedFromRoom =>

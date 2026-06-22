@@ -29,6 +29,8 @@ class AudioRoomFeature extends AppFeature {
   UTDRoomController? activeController;
   RoomModel? activeRoom;
   int? activeRoomId;
+  final ValueNotifier<Set<String>> commentBannedUsers = ValueNotifier({});
+  final ValueNotifier<Map<String, dynamic>?> pinnedMessage = ValueNotifier(null);
 
   void setActiveRoom(UTDRoomController controller, RoomModel room, int roomId) {
     activeController = controller;
@@ -40,6 +42,8 @@ class AudioRoomFeature extends AppFeature {
     activeController = null;
     activeRoom = null;
     activeRoomId = null;
+    commentBannedUsers.value = {};
+    pinnedMessage.value = null;
   }
 
   AudioRoomFeature() {
@@ -54,6 +58,9 @@ class AudioRoomFeature extends AppFeature {
 
   @override
   String get version => '1.0.0';
+
+  @override
+  String? get packageSlug => 'audio-room';
 
   @override
   List<String> get dependencies => const [];

@@ -31,6 +31,8 @@ class RoomModel extends RoomEntity {
     super.ownerAvatar,
     super.ownerCountryFlag,
     super.createdAt,
+    super.emptySeatIcon,
+    super.lockedSeatIcon,
     this.isOwner,
     this.isAdmin,
     this.isFavorite = false,
@@ -70,6 +72,8 @@ class RoomModel extends RoomEntity {
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString())
           : null,
+      emptySeatIcon: json['empty_seat_icon']?.toString(),
+      lockedSeatIcon: json['locked_seat_icon']?.toString(),
       isOwner: _toBool(json['is_owner']),
       isAdmin: _toBool(json['is_admin']),
       isFavorite: _toBool(json['is_favorite']) ?? false,
@@ -107,6 +111,8 @@ class RoomModel extends RoomEntity {
     String? ownerAvatar,
     bool? isAdmin,
     bool? isFavorite,
+    String? Function()? emptySeatIcon,
+    String? Function()? lockedSeatIcon,
   }) {
     return RoomModel(
       id: id,
@@ -133,6 +139,8 @@ class RoomModel extends RoomEntity {
       ownerAvatar: ownerAvatar ?? this.ownerAvatar,
       ownerCountryFlag: ownerCountryFlag,
       createdAt: createdAt,
+      emptySeatIcon: emptySeatIcon != null ? emptySeatIcon() : this.emptySeatIcon,
+      lockedSeatIcon: lockedSeatIcon != null ? lockedSeatIcon() : this.lockedSeatIcon,
       isOwner: isOwner,
       isAdmin: isAdmin ?? this.isAdmin,
       isFavorite: isFavorite ?? this.isFavorite,

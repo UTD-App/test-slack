@@ -1,6 +1,7 @@
+import 'package:audio_room/audio_room.dart';
+import 'package:audio_room_charisma/audio_room_charisma.dart';
 import 'package:authentication/authentication.dart';
 import 'package:profile/profile.dart';
-import 'package:audio_room/audio_room.dart';
 import 'package:moment/moment.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -53,23 +54,25 @@ void main() async {
   await CacheManager.init();
   AppCacheManager.instance.init();
 
-  // Build features once up-front so packages can contribute custom Stac
-  // widget/action parsers. (Parsers are stateless and resolve their deps from
-  // context at parse time, so building here — before feature.initialize() — is
-  // safe.) The widget tree builds its own feature instances below.
+  // Create AudioRoomFeature once and register plugins on it so the same
+  // instance (with plugins attached) is reused across buildFeatures() calls.
+  final audioRoom = AudioRoomFeature();
+  audioRoom.registerPlugin(CharismaPlugin());
+
   List<AppFeature> buildFeatures() {
-    // Add your purchased packages here — see README for instructions
     return [
       AuthFeature(),
       NotificationsFeature(),
       ProfileFeature(),
       MomentFeature(),
-      AudioRoomFeature(),
+      audioRoom,
     ];
   }
 
   final parserFeatures = buildFeatures();
-  final featureParsers = [for (final f in parserFeatures) ...f.getStacParsers()];
+  final featureParsers = [
+    for (final f in parserFeatures) ...f.getStacParsers(),
+  ];
   final featureActionParsers = [
     for (final f in parserFeatures) ...f.getStacActionParsers(),
   ];

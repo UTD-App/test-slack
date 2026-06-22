@@ -61,6 +61,10 @@ class AudioRoomRemoteDataSourceImpl implements AudioRoomRemoteDataSource {
     int? roomClass,
     String? password,
     File? cover,
+    File? emptySeatIcon,
+    File? lockedSeatIcon,
+    String? emptySeatIconPreset,
+    String? lockedSeatIconPreset,
   }) async {
     final formMap = <String, dynamic>{
       'room_name': name,
@@ -73,6 +77,8 @@ class AudioRoomRemoteDataSourceImpl implements AudioRoomRemoteDataSource {
     if (cover != null) {
       formMap['room_cover'] = await MultipartFile.fromFile(cover.path);
     }
+    await _addSeatIconFields(formMap, emptySeatIcon, emptySeatIconPreset, 'empty_seat_icon');
+    await _addSeatIconFields(formMap, lockedSeatIcon, lockedSeatIconPreset, 'locked_seat_icon');
 
     return apiService.post(
       apiService.roomsPath(),
@@ -98,6 +104,10 @@ class AudioRoomRemoteDataSourceImpl implements AudioRoomRemoteDataSource {
     bool? isCommentsClosed,
     bool? freeMic,
     File? cover,
+    File? emptySeatIcon,
+    File? lockedSeatIcon,
+    String? emptySeatIconPreset,
+    String? lockedSeatIconPreset,
   }) async {
     final formMap = <String, dynamic>{};
     if (name != null) formMap['room_name'] = name;
@@ -113,6 +123,8 @@ class AudioRoomRemoteDataSourceImpl implements AudioRoomRemoteDataSource {
     if (cover != null) {
       formMap['room_cover'] = await MultipartFile.fromFile(cover.path);
     }
+    await _addSeatIconFields(formMap, emptySeatIcon, emptySeatIconPreset, 'empty_seat_icon');
+    await _addSeatIconFields(formMap, lockedSeatIcon, lockedSeatIconPreset, 'locked_seat_icon');
 
     return apiService.post(
       apiService.roomPath(id),
@@ -343,5 +355,18 @@ class AudioRoomRemoteDataSourceImpl implements AudioRoomRemoteDataSource {
         fromJsonT: (data) => data as Map<String, dynamic>,
       ),
     );
+  }
+
+  Future<void> _addSeatIconFields(
+    Map<String, dynamic> formMap,
+    File? file,
+    String? preset,
+    String fieldName,
+  ) async {
+    if (file != null) {
+      formMap[fieldName] = await MultipartFile.fromFile(file.path);
+    } else if (preset != null) {
+      formMap[fieldName] = preset;
+    }
   }
 }
