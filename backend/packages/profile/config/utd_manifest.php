@@ -31,19 +31,20 @@ $node = function (string $name, bool $canvas, array $props, array $kids = [], ?s
     return $n;
 };
 
-// ── Lumia palette ──────────────────────────────────────────────────────────
-// `screen` is a SOLID deep purple (not transparent): this screen opens as a
-// full dialog from the avatar tap (core.openDialog style:full), so it can't
-// inherit the AppShell's purple Scaffold — it must paint its own background.
+// ── Lumia palette (EXACT app colors, from ColorManager) ─────────────────────
+// This screen opens as a full dialog from the avatar tap, so it paints its own
+// background — the SAME purple gradient the native profile uses (lumiaBgGradient
+// #7E3E97 → #3D2D86) so it matches the old look precisely.
 $C = [
-    'screen'  => '#241B45', // solid deep purple (dialog-safe background)
+    'gradTop' => '#7E3E97', // lumiaBgGradient top
+    'gradBot' => '#3D2D86', // lumiaBgGradient bottom
     'white'   => '#FFFFFF',
-    'muted'   => '#CDBFEE',
+    'muted'   => '#D0C0EE', // lumiaTextSecondary
     'bioText' => '#E3D8FB',
-    'accent'  => '#BE4AFF',
+    'accent'  => '#BE4AFF', // lumiaAccent
     'pink'    => '#EC4899',
-    'card'    => '#5B4399',
-    'cardBd'  => '#8E72D2',
+    'card'    => '#6750AE', // lumiaCardBg
+    'cardBd'  => '#8E72D2', // lumiaCardBorder
 ];
 
 // user_profile — RICH profile bound to profile.user (primitives only): cover
@@ -56,28 +57,31 @@ $C = [
 // `profile` screen uses (scope → header → …). Putting multiple nodes directly
 // under the scope makes only the FIRST one render (the close button), leaving
 // the rest of the screen blank.
+// IMPORTANT: a Scope (utdObject) renders only ONE child, so ALL bound content
+// lives under a SINGLE wrapper container (`body`). The ROOT paints the app's
+// exact purple gradient; the cover is full-bleed and the avatar OVERLAPS it via
+// a negative top margin on `header` (EdgeInsets supports negatives) — matching
+// the native profile look.
 $profileWidgets = [
-    'ROOT'        => $node('Container', true, ['background' => $C['screen'], 'padding' => 0, 'gap' => 0, 'align' => 'stretch', 'flex' => 0], ['scope'], null),
+    'ROOT'        => $node('Container', true, ['gradient' => 1, 'gradFrom' => $C['gradTop'], 'gradTo' => $C['gradBot'], 'gradDir' => 'to bottom', 'padding' => 0, 'gap' => 0, 'align' => 'stretch', 'flex' => 0], ['scope'], null),
     'scope'       => $node('Scope', true, ['source' => 'profile.user'], ['body'], 'ROOT'),
-    'body'        => $node('Container', true, ['background' => '#00000000', 'padding' => 0, 'gap' => 14, 'align' => 'stretch', 'flex' => 0], ['topBar', 'coverBox', 'header', 'bioCard', 'countryCard'], 'scope'),
+    'body'        => $node('Container', true, ['background' => '#00000000', 'padding' => 0, 'gap' => 14, 'align' => 'stretch', 'flex' => 0], ['coverBox', 'header', 'bioCard', 'countryCard'], 'scope'),
 
-    // Close button (dismisses the dialog).
-    'topBar'      => $node('Container', true, ['background' => '#00000000', 'padding' => ['left' => 8, 'top' => 8, 'right' => 8, 'bottom' => 0], 'align' => 'start', 'flex' => 0], ['closeBtn'], 'body'),
-    'closeBtn'    => $node('Container', true, ['width' => 38, 'height' => 38, 'radius' => 19, 'background' => $C['card'], 'align' => 'center', 'valign' => 'center', 'flex' => 0, 'onTapAction' => 'core.closeDialog'], ['closeIcon'], 'topBar'),
-    'closeIcon'   => $node('Icon', false, ['name' => 'close', 'size' => 20, 'color' => $C['white']], [], 'closeBtn'),
+    // Cover banner — FULL-BLEED (edge to edge) via the column's stretch.
+    'coverBox'    => $node('Container', true, ['margin' => 0, 'padding' => 0, 'radius' => 0, 'background' => $C['card'], 'align' => 'stretch', 'flex' => 0, 'visibleBinding' => 'profile.user.cover'], ['coverImg'], 'body'),
+    'coverImg'    => $node('Image', false, ['src' => '', 'binding' => 'profile.user.cover', 'height' => 180, 'fit' => 'cover', 'radius' => 0], [], 'coverBox'),
 
-    // Cover banner — full width via the column's stretch; hidden when no cover.
-    'coverBox'    => $node('Container', true, ['margin' => ['left' => 16, 'top' => 0, 'right' => 16, 'bottom' => 0], 'padding' => 0, 'radius' => 18, 'background' => $C['card'], 'align' => 'stretch', 'flex' => 0, 'visibleBinding' => 'profile.user.cover'], ['coverImg'], 'body'),
-    'coverImg'    => $node('Image', false, ['src' => '', 'binding' => 'profile.user.cover', 'height' => 170, 'fit' => 'cover', 'radius' => 18], [], 'coverBox'),
-
-    // Identity: gradient-ring avatar + name + flag + UID.
-    'header'      => $node('Container', true, ['background' => '#00000000', 'padding' => ['left' => 16, 'top' => 0, 'right' => 16, 'bottom' => 0], 'gap' => 8, 'align' => 'center', 'flex' => 0], ['avatarRing', 'nameRow', 'uid'], 'body'),
-    'avatarRing'  => $node('Container', true, ['width' => 112, 'height' => 112, 'radius' => 56, 'gradient' => 1, 'gradFrom' => $C['accent'], 'gradTo' => $C['pink'], 'gradDir' => 'to bottom right', 'padding' => 4, 'align' => 'center', 'valign' => 'center', 'flex' => 0], ['avatarImg'], 'header'),
-    'avatarImg'   => $node('Image', false, ['src' => '', 'binding' => 'profile.user.avatar', 'width' => 104, 'height' => 104, 'fit' => 'cover', 'shape' => 'circle', 'radius' => 0], [], 'avatarRing'),
-    'nameRow'     => $node('Row', true, ['gap' => 6, 'justify' => 'center', 'align' => 'center'], ['name', 'flag'], 'header'),
-    'name'        => $node('Text', false, ['text' => 'الاسم', 'binding' => 'profile.user.name', 'fontSize' => 22, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'maxLines' => 1], [], 'nameRow'),
+    // Identity: gradient-ring avatar OVERLAPPING the cover (negative top margin)
+    // + name + flag + UID row ("الأبدي: <id>").
+    'header'      => $node('Container', true, ['background' => '#00000000', 'margin' => ['left' => 16, 'top' => -58, 'right' => 16, 'bottom' => 0], 'padding' => 0, 'gap' => 8, 'align' => 'center', 'flex' => 0], ['avatarRing', 'nameRow', 'uidRow'], 'body'),
+    'avatarRing'  => $node('Container', true, ['width' => 116, 'height' => 116, 'radius' => 58, 'gradient' => 1, 'gradFrom' => $C['accent'], 'gradTo' => $C['pink'], 'gradDir' => 'to bottom right', 'padding' => 4, 'align' => 'center', 'valign' => 'center', 'flex' => 0], ['avatarImg'], 'header'),
+    'avatarImg'   => $node('Image', false, ['src' => '', 'binding' => 'profile.user.avatar', 'width' => 108, 'height' => 108, 'fit' => 'cover', 'shape' => 'circle', 'radius' => 0], [], 'avatarRing'),
+    'nameRow'     => $node('Row', true, ['gap' => 6, 'justify' => 'center', 'align' => 'center'], ['flag', 'name'], 'header'),
     'flag'        => $node('Image', false, ['src' => '', 'binding' => 'profile.user.flag', 'visibleBinding' => 'profile.user.flag', 'width' => 26, 'height' => 18, 'fit' => 'cover', 'radius' => 3], [], 'nameRow'),
-    'uid'         => $node('Text', false, ['text' => '', 'binding' => 'profile.user.uid', 'visibleBinding' => 'profile.user.uid', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'maxLines' => 1], [], 'header'),
+    'name'        => $node('Text', false, ['text' => 'الاسم', 'binding' => 'profile.user.name', 'fontSize' => 22, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'maxLines' => 1], [], 'nameRow'),
+    'uidRow'      => $node('Row', true, ['gap' => 4, 'justify' => 'center', 'align' => 'center', 'visibleBinding' => 'profile.user.uid'], ['uidLabel', 'uid'], 'header'),
+    'uidLabel'    => $node('Text', false, ['text' => 'الأبدي:', 'binding' => '', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'maxLines' => 1], [], 'uidRow'),
+    'uid'         => $node('Text', false, ['text' => '', 'binding' => 'profile.user.uid', 'fontSize' => 13, 'fontWeight' => 600, 'color' => $C['muted'], 'align' => 'center', 'maxLines' => 1], [], 'uidRow'),
 
     // Bio card.
     'bioCard'     => $node('Container', true, ['margin' => ['left' => 16, 'top' => 0, 'right' => 16, 'bottom' => 0], 'padding' => 16, 'radius' => 16, 'background' => $C['card'], 'borderWidth' => 1, 'borderColor' => $C['cardBd'], 'gap' => 6, 'align' => 'stretch', 'flex' => 0], ['bioTitle', 'bio'], 'body'),
@@ -139,7 +143,7 @@ return [
             'name'         => 'user_profile',
             'label'        => 'البروفايل الكامل (عند الصورة)',
             'icon'         => '👤',
-            'version'      => '1.7.2',
+            'version'      => '1.7.3',
             'nav'          => false,
             'navIcon'      => 'person',
             'order'        => 31,
