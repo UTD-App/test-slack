@@ -71,8 +71,13 @@ $profileWidgets = [
     // so the bound image needs an explicit height or it overflows). Edit + refresh
     // sit over it (pos:'top-right' → physical top-LEFT in the RTL app).
     'coverWrap'   => $node('Container', true, ['widthPercent' => 100, 'height' => 180, 'background' => $C['card'], 'align' => 'stretch', 'flex' => 0], ['coverStack'], 'body'),
-    'coverStack'  => $node('Stack', true, ['fit' => 'expand'], ['coverImg', 'tools'], 'coverWrap'),
-    'coverImg'    => $node('Image', false, ['src' => '', 'binding' => 'profile.user.cover', 'fit' => 'cover', 'radius' => 0, 'height' => 180, 'widthPercent' => 100], [], 'coverStack'),
+    'coverStack'  => $node('Stack', true, ['fit' => 'expand'], ['coverImgBox', 'tools'], 'coverWrap'),
+    // FULL-WIDTH cover: a Stack does NOT stretch its children, so a bare image
+    // stayed at its intrinsic width (a small box). Wrapping it in a
+    // widthPercent:100 + align:'stretch' Container makes that container's column
+    // (crossAxisAlignment:stretch) stretch the image across the whole cover width.
+    'coverImgBox' => $node('Container', true, ['widthPercent' => 100, 'height' => 180, 'align' => 'stretch', 'flex' => 0], ['coverImg'], 'coverStack'),
+    'coverImg'    => $node('Image', false, ['src' => '', 'binding' => 'profile.user.cover', 'fit' => 'cover', 'radius' => 0, 'height' => 180], [], 'coverImgBox'),
     'tools'       => $node('Row', true, ['gap' => 8, 'pos' => 'top-right', 'padding' => 10], ['editBtn', 'refreshBtn'], 'coverStack'),
     'editBtn'     => $node('Container', true, ['width' => 40, 'height' => 40, 'radius' => 20, 'background' => '#00000066', 'align' => 'center', 'valign' => 'center', 'flex' => 0, 'onTapAction' => 'core.editProfile'], ['editIcon'], 'tools'),
     'editIcon'    => $node('Icon', false, ['name' => 'edit', 'size' => 20, 'color' => $C['white']], [], 'editBtn'),
@@ -81,7 +86,11 @@ $profileWidgets = [
 
     // Identity — pulled UP by ~a quarter of the avatar (124/4 ≈ 31) so the
     // avatar's TOP QUARTER overlaps the cover bottom and the rest sits below.
-    'header'      => $node('Container', true, ['background' => '#00000000', 'margin' => ['left' => 16, 'top' => -31, 'right' => 16, 'bottom' => 16], 'padding' => 0, 'gap' => 10, 'align' => 'center', 'flex' => 0], ['avatarBox', 'nameRow', 'uidRow', 'bioRow'], 'body'),
+    // marMode/marT is the CORRECT margin syntax (the `'margin' => [...]` literal
+    // is silently dropped by the transform — that's why the avatar wasn't
+    // overlapping). marT -31 pulls the header up ~a quarter of the 124 avatar so
+    // its top quarter sits over the cover bottom.
+    'header'      => $node('Container', true, ['background' => '#00000000', 'marMode' => 'sides', 'marL' => 16, 'marT' => -31, 'marR' => 16, 'marB' => 16, 'padding' => 0, 'gap' => 10, 'align' => 'center', 'flex' => 0], ['avatarBox', 'nameRow', 'uidRow', 'bioRow'], 'body'),
 
     // Avatar: a FIXED-SIZE 124×124 box → gradient ring + circular image + camera
     // badge. The Stack MUST be wrapped in the fixed box (the Stac stack parser
@@ -91,8 +100,8 @@ $profileWidgets = [
     'avatarStack' => $node('Stack', true, [], ['ring', 'camBtn'], 'avatarBox'),
     'ring'        => $node('Container', true, ['width' => 124, 'height' => 124, 'radius' => 62, 'gradient' => 1, 'gradFrom' => $C['accent'], 'gradTo' => $C['pink'], 'gradDir' => 'to bottom right', 'padding' => 4, 'align' => 'center', 'valign' => 'center', 'flex' => 0], ['avatarImg'], 'avatarStack'),
     'avatarImg'   => $node('Image', false, ['src' => '', 'binding' => 'profile.user.avatar', 'width' => 116, 'height' => 116, 'fit' => 'cover', 'shape' => 'circle', 'radius' => 0], [], 'ring'),
-    // pos:'top-left' → physical top-RIGHT (RTL), snug on the ring — same as base.
-    'camBtn'      => $node('Container', true, ['width' => 34, 'height' => 34, 'radius' => 17, 'background' => $C['pink'], 'borderWidth' => 2, 'borderColor' => $C['white'], 'align' => 'center', 'valign' => 'center', 'flex' => 0, 'pos' => 'top-left', 'onTapAction' => 'core.changeAvatar', 'onTapParams' => ['source' => 'gallery']], ['camIcon'], 'avatarStack'),
+    // Camera badge on the avatar's BOTTOM-RIGHT corner (matches the target).
+    'camBtn'      => $node('Container', true, ['width' => 34, 'height' => 34, 'radius' => 17, 'background' => $C['pink'], 'borderWidth' => 2, 'borderColor' => $C['white'], 'align' => 'center', 'valign' => 'center', 'flex' => 0, 'pos' => 'bottom-right', 'onTapAction' => 'core.changeAvatar', 'onTapParams' => ['source' => 'gallery']], ['camIcon'], 'avatarStack'),
     'camIcon'     => $node('Icon', false, ['name' => 'photo_camera', 'size' => 16, 'color' => $C['white']], [], 'camBtn'),
 
     // Name + flag + gender sign + edit pencil.
@@ -177,7 +186,7 @@ return [
             'name'         => 'user_profile',
             'label'        => 'البروفايل الكامل (عند الصورة)',
             'icon'         => '👤',
-            'version'      => '1.12.0',
+            'version'      => '1.13.0',
             'nav'          => false,
             'navIcon'      => 'person',
             'order'        => 31,
