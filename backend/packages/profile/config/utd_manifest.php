@@ -63,11 +63,11 @@ $C = [
 // a negative top margin on `header` (EdgeInsets supports negatives) — matching
 // the native profile look.
 $profileWidgets = [
-    // heightPercent:100 + a SOLID bg under the gradient: opened as a full dialog
-    // via _FullStudioPage (which paints a WHITE ColoredBox behind the body), so
-    // the ROOT must FILL the screen and paint its own purple — otherwise white
-    // shows through wherever the (short) content doesn't reach.
-    'ROOT'        => $node('Container', true, ['heightPercent' => 100, 'background' => $C['gradBot'], 'gradient' => 1, 'gradFrom' => $C['gradTop'], 'gradTo' => $C['gradBot'], 'gradDir' => 'to bottom', 'padding' => 0, 'gap' => 0, 'align' => 'stretch', 'flex' => 0], ['scope'], null),
+    // Opened as a full dialog via _FullStudioPage, which gives this ROOT a
+    // Positioned.fill (TIGHT full-screen constraints) — so a plain gradient
+    // Container fills the whole screen on its own (no heightPercent needed; that
+    // utdSized wrapper mis-sized it). SOLID bg under the gradient as a fallback.
+    'ROOT'        => $node('Container', true, ['background' => $C['gradBot'], 'gradient' => 1, 'gradFrom' => $C['gradTop'], 'gradTo' => $C['gradBot'], 'gradDir' => 'to bottom', 'padding' => 0, 'gap' => 0, 'align' => 'stretch', 'flex' => 0], ['scope'], null),
     'scope'       => $node('Scope', true, ['source' => 'profile.user'], ['body'], 'ROOT'),
     'body'        => $node('Container', true, ['background' => '#00000000', 'padding' => 0, 'gap' => 0, 'align' => 'stretch', 'flex' => 0], ['coverWrap', 'header'], 'scope'),
 
@@ -81,7 +81,11 @@ $profileWidgets = [
     // unreliable in the Studio transform.
     'coverWrap'   => $node('Container', true, ['widthPercent' => 100, 'height' => 170, 'background' => $C['card'], 'align' => 'stretch', 'flex' => 0], ['coverStack'], 'body'),
     'coverStack'  => $node('Stack', true, ['fit' => 'expand'], ['coverImg', 'tools', 'closeBtn'], 'coverWrap'),
-    'coverImg'    => $node('Image', false, ['src' => '', 'binding' => 'profile.user.cover', 'fit' => 'cover', 'radius' => 0], [], 'coverStack'),
+    // EXPLICIT height (+ widthPercent) — the Studio transform DROPS the Stack's
+    // fit:expand, so without a bound height the bound cover image renders at its
+    // intrinsic size (~900px) and overflows the 170 box by ~744px (verified in the
+    // served /api/stac/user_profile JSON). The explicit height caps it.
+    'coverImg'    => $node('Image', false, ['src' => '', 'binding' => 'profile.user.cover', 'fit' => 'cover', 'radius' => 0, 'height' => 170, 'widthPercent' => 100], [], 'coverStack'),
 
     // Close button — this screen opens as a FULL dialog from the base avatar tap
     // (core.openDialog → style:full), so it owns its own close affordance.
@@ -175,7 +179,7 @@ return [
             'name'         => 'user_profile',
             'label'        => 'البروفايل الكامل (عند الصورة)',
             'icon'         => '👤',
-            'version'      => '1.9.0',
+            'version'      => '1.10.0',
             'nav'          => false,
             'navIcon'      => 'person',
             'order'        => 31,
