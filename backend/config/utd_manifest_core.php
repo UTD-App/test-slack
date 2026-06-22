@@ -107,32 +107,41 @@ $homeWidgets = [
     'cardSub'   => $node('Text', false, ['text' => 'ابدأ استكشاف كل المميزات', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => '', 'maxLines' => 0], [], 'card'),
 ];
 
-// profile — primitive "Me hub" (Studio-safe): centered identity header (avatar +
-// name + uid + bio bound to core.currentUser) + tappable menu cards.
-//
-// NOTE: a richer pixel-match needs a CUSTOM native widget (`core.selfProfile`,
-// SelfProfileCardParser is shipped + registered in Flutter) — but UTD Studio's
-// Craft editor currently crashes deserializing a node of an unregistered custom
-// type (no resolver). So until the Studio editor supports custom package
-// widgets, the profile stays primitives. See the message to the Studio owner.
+// profile — RICH "Me" landing, COMPOSED from Studio primitives only (§5 of
+// PACKAGE-DEFAULT-SCREENS.md), NO custom widget → Studio-safe (every
+// type.resolvedName is in the locked resolver set; every binding is declared in
+// core.currentUser):
+//   • gradient avatar ring  = circular gradient Container (radius = ½ size)
+//                             wrapping a circular Image (the doc's ring recipe).
+//   • camera badge          = a Stack child with `pos:'bottom-right'` overlapping
+//                             the avatar (pos is honoured only on a Stack child).
+//   • name+flag+pencil / uid / bio+pencil + tappable menu cards.
 $profileWidgets = array_merge(
     [
-        'ROOT'       => $node('Container', true, array_merge($style, ['background' => $C['screen'], 'padding' => 20, 'gap' => 14, 'align' => 'stretch', 'flex' => 0]), ['scope', 'mSettings', 'mContact', 'mAbout'], null),
-        'scope'      => $node('Scope', true, ['source' => 'core.currentUser'], ['header'], 'ROOT'),
-        'header'     => $node('Container', true, ['background' => '#00000000', 'padding' => 8, 'gap' => 8, 'align' => 'center', 'flex' => 0], ['avatar', 'photoLink', 'nameRow', 'uid', 'bioRow'], 'scope'),
-        'avatar'     => $node('Image', false, ['src' => '', 'width' => 116, 'height' => 116, 'fit' => 'cover', 'shape' => 'circle', 'radius' => 0, 'binding' => 'core.currentUser.avatar', 'onTapAction' => 'core.changeAvatar', 'onTapTarget' => '', 'onTapParams' => ['source' => 'gallery']], [], 'header'),
-        'photoLink'  => $node('Container', true, array_merge($style, ['background' => '#00000000', 'padding' => 2, 'gap' => 0, 'align' => 'center', 'onTapAction' => 'core.changeAvatar', 'onTapParams' => ['source' => 'gallery']]), ['photoRow'], 'header'),
-        'photoRow'   => $node('Row', true, ['gap' => 4, 'align' => 'center'], ['camIcon', 'camText'], 'photoLink'),
-        'camIcon'    => $node('Icon', false, ['name' => 'photo_camera', 'size' => 15, 'color' => $C['accentLt']], [], 'photoRow'),
-        'camText'    => $node('Text', false, ['text' => 'تغيير الصورة', 'fontSize' => 13, 'fontWeight' => 500, 'color' => $C['accentLt'], 'align' => 'center', 'binding' => '', 'maxLines' => 1], [], 'photoRow'),
-        'nameRow'    => $node('Row', true, ['gap' => 6, 'align' => 'center'], ['name', 'flag', 'namePencil'], 'header'),
-        'name'       => $node('Text', false, ['text' => 'الملف الشخصي', 'fontSize' => 22, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'binding' => 'core.currentUser.name', 'maxLines' => 1], [], 'nameRow'),
-        'flag'       => $node('Image', false, ['src' => '', 'width' => 24, 'height' => 16, 'fit' => 'cover', 'radius' => 3, 'binding' => 'core.currentUser.flag', 'visibleBinding' => 'core.currentUser.flag'], [], 'nameRow'),
-        'namePencil' => $node('Icon', false, ['name' => 'edit', 'size' => 16, 'color' => $C['accentLt'], 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/profile', 'mode' => 'push']], [], 'nameRow'),
-        'uid'        => $node('Text', false, ['text' => '', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => 'core.currentUser.uid', 'visibleBinding' => 'core.currentUser.uid', 'maxLines' => 1], [], 'header'),
-        'bioRow'     => $node('Row', true, ['gap' => 6, 'align' => 'center'], ['bio', 'bioPencil'], 'header'),
-        'bio'        => $node('Text', false, ['text' => '', 'fontSize' => 14, 'fontWeight' => 400, 'color' => $C['bioText'], 'align' => 'center', 'binding' => 'core.currentUser.bio', 'maxLines' => 0], [], 'bioRow'),
-        'bioPencil'  => $node('Icon', false, ['name' => 'edit', 'size' => 14, 'color' => $C['accentLt'], 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/profile', 'mode' => 'push']], [], 'bioRow'),
+        'ROOT'        => $node('Container', true, array_merge($style, ['background' => $C['screen'], 'padding' => 16, 'gap' => 14, 'align' => 'stretch', 'flex' => 0]), ['scope', 'mSettings', 'mContact', 'mAbout'], null),
+        'scope'       => $node('Scope', true, ['source' => 'core.currentUser'], ['header'], 'ROOT'),
+        'header'      => $node('Container', true, ['background' => '#00000000', 'padding' => 8, 'gap' => 10, 'align' => 'center', 'flex' => 0], ['avatarStack', 'nameRow', 'uid', 'bioRow'], 'scope'),
+
+        // Avatar: gradient ring + circular image, with an overlapping camera badge.
+        'avatarStack' => $node('Stack', true, ['width' => 124, 'height' => 124], ['ring', 'camBtn'], 'header'),
+        'ring'        => $node('Container', true, array_merge($style, ['width' => 124, 'height' => 124, 'radius' => 62, 'gradient' => 1, 'gradFrom' => $C['accent'], 'gradTo' => $C['pink'], 'gradDir' => 'to bottom right', 'padding' => 4, 'align' => 'center', 'valign' => 'center']), ['avatarImg'], 'avatarStack'),
+        'avatarImg'   => $node('Image', false, ['src' => '', 'binding' => 'core.currentUser.avatar', 'width' => 116, 'height' => 116, 'fit' => 'cover', 'shape' => 'circle', 'radius' => 0], [], 'ring'),
+        'camBtn'      => $node('Container', true, array_merge($style, ['width' => 34, 'height' => 34, 'radius' => 17, 'background' => $C['pink'], 'borderWidth' => 2, 'borderColor' => $C['white'], 'align' => 'center', 'valign' => 'center', 'pos' => 'bottom-right', 'onTapAction' => 'core.changeAvatar', 'onTapParams' => ['source' => 'gallery']]), ['camIcon'], 'avatarStack'),
+        'camIcon'     => $node('Icon', false, ['name' => 'photo_camera', 'size' => 16, 'color' => $C['white']], [], 'camBtn'),
+
+        // Name + flag + edit pencil.
+        'nameRow'     => $node('Row', true, ['gap' => 6, 'justify' => 'center', 'align' => 'center'], ['name', 'flag', 'namePencil'], 'header'),
+        'name'        => $node('Text', false, ['text' => 'الملف الشخصي', 'binding' => 'core.currentUser.name', 'fontSize' => 22, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'maxLines' => 1], [], 'nameRow'),
+        'flag'        => $node('Image', false, ['src' => '', 'binding' => 'core.currentUser.flag', 'visibleBinding' => 'core.currentUser.flag', 'width' => 24, 'height' => 16, 'fit' => 'cover', 'radius' => 3], [], 'nameRow'),
+        'namePencil'  => $node('Icon', false, ['name' => 'edit', 'size' => 16, 'color' => $C['accentLt'], 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/profile', 'mode' => 'push']], [], 'nameRow'),
+
+        // UID.
+        'uid'         => $node('Text', false, ['text' => '', 'binding' => 'core.currentUser.uid', 'visibleBinding' => 'core.currentUser.uid', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'maxLines' => 1], [], 'header'),
+
+        // Bio + edit pencil.
+        'bioRow'      => $node('Row', true, ['gap' => 6, 'justify' => 'center', 'align' => 'center'], ['bio', 'bioPencil'], 'header'),
+        'bio'         => $node('Text', false, ['text' => '', 'binding' => 'core.currentUser.bio', 'fontSize' => 14, 'fontWeight' => 400, 'color' => $C['bioText'], 'align' => 'center', 'maxLines' => 0], [], 'bioRow'),
+        'bioPencil'   => $node('Icon', false, ['name' => 'edit', 'size' => 14, 'color' => $C['accentLt'], 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/profile', 'mode' => 'push']], [], 'bioRow'),
     ],
     $mkTile('mSettings', 'settings', '#42A5F5', 'الإعدادات', 'core.navigate', ['route' => '/settings', 'mode' => 'push']),
     $mkTile('mContact', 'support_agent', '#26C6DA', 'تواصل معنا', 'core.navigate', ['route' => '/contact-us', 'mode' => 'push']),
@@ -377,7 +386,7 @@ return [
             'name'         => 'profile',
             'label'        => 'الملف الشخصي',
             'icon'         => '👤',
-            'version'      => '1.6.0',
+            'version'      => '1.8.0',
             'nav'          => true,
             'navIcon'      => 'person',
             'order'        => 30,
