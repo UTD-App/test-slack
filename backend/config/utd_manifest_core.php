@@ -131,7 +131,9 @@ $profileWidgets = array_merge(
         // bounds the Align so the badge sits ON the ring edge.
         'avatarBox'   => $node('Container', true, ['width' => 124, 'height' => 124, 'align' => 'center', 'valign' => 'center'], ['avatarStack'], 'header'),
         'avatarStack' => $node('Stack', true, [], ['ring', 'camBtn'], 'avatarBox'),
-        'ring'        => $node('Container', true, array_merge($style, ['width' => 124, 'height' => 124, 'radius' => 62, 'gradient' => 1, 'gradFrom' => $C['accent'], 'gradTo' => $C['pink'], 'gradDir' => 'to bottom right', 'padding' => 4, 'align' => 'center', 'valign' => 'center']), ['avatarImg'], 'avatarStack'),
+        // Tapping the avatar (anywhere but the camera badge) opens MY full
+        // profile page (cover + counters) — the camera badge keeps changeAvatar.
+        'ring'        => $node('Container', true, array_merge($style, ['width' => 124, 'height' => 124, 'radius' => 62, 'gradient' => 1, 'gradFrom' => $C['accent'], 'gradTo' => $C['pink'], 'gradDir' => 'to bottom right', 'padding' => 4, 'align' => 'center', 'valign' => 'center', 'onTapAction' => 'core.openProfile']), ['avatarImg'], 'avatarStack'),
         'avatarImg'   => $node('Image', false, ['src' => '', 'binding' => 'core.currentUser.avatar', 'width' => 116, 'height' => 116, 'fit' => 'cover', 'shape' => 'circle', 'radius' => 0], [], 'ring'),
         // pos:'top-left' → Studio maps left→Start, so in the RTL app Start=RIGHT
         // → the badge renders physically TOP-RIGHT, snug on the ring (matches the
@@ -144,7 +146,7 @@ $profileWidgets = array_merge(
         'nameRow'     => $node('Row', true, ['gap' => 6, 'justify' => 'center', 'align' => 'center'], ['name', 'flag', 'namePencil'], 'header'),
         'name'        => $node('Text', false, ['text' => 'الملف الشخصي', 'binding' => 'core.currentUser.name', 'fontSize' => 22, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'maxLines' => 1], [], 'nameRow'),
         'flag'        => $node('Image', false, ['src' => '', 'binding' => 'core.currentUser.flag', 'visibleBinding' => 'core.currentUser.flag', 'width' => 24, 'height' => 16, 'fit' => 'cover', 'radius' => 3], [], 'nameRow'),
-        'namePencil'  => $node('Icon', false, ['name' => 'edit', 'size' => 16, 'color' => $C['accentLt'], 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/profile', 'mode' => 'push']], [], 'nameRow'),
+        'namePencil'  => $node('Icon', false, ['name' => 'edit', 'size' => 16, 'color' => $C['accentLt'], 'onTapAction' => 'core.editProfile'], [], 'nameRow'),
 
         // UID.
         'uid'         => $node('Text', false, ['text' => '', 'binding' => 'core.currentUser.uid', 'visibleBinding' => 'core.currentUser.uid', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'maxLines' => 1], [], 'header'),
@@ -152,7 +154,7 @@ $profileWidgets = array_merge(
         // Bio + edit pencil.
         'bioRow'      => $node('Row', true, ['gap' => 6, 'justify' => 'center', 'align' => 'center'], ['bio', 'bioPencil'], 'header'),
         'bio'         => $node('Text', false, ['text' => '', 'binding' => 'core.currentUser.bio', 'fontSize' => 14, 'fontWeight' => 400, 'color' => $C['bioText'], 'align' => 'center', 'maxLines' => 0], [], 'bioRow'),
-        'bioPencil'   => $node('Icon', false, ['name' => 'edit', 'size' => 14, 'color' => $C['accentLt'], 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/profile', 'mode' => 'push']], [], 'bioRow'),
+        'bioPencil'   => $node('Icon', false, ['name' => 'edit', 'size' => 14, 'color' => $C['accentLt'], 'onTapAction' => 'core.editProfile'], [], 'bioRow'),
     ],
     $mkTile('mSettings', 'settings', '#42A5F5', 'الإعدادات', 'core.navigate', ['route' => '/settings', 'mode' => 'push'])
 );
@@ -287,6 +289,19 @@ return [
                 ['key' => 'source', 'label' => 'المصدر (gallery/camera)', 'type' => 'string'],
             ],
         ],
+        // فتح صفحة البروفايل الكامل (غلاف + عدّادات) — العميل بيحطّه كـ onTap على الصورة.
+        [
+            'key' => 'open_profile', 'label' => 'فتح البروفايل الكامل',
+            'produces' => 'core.openProfile', 'default_shape' => 'image', 'screen' => 'profile',
+            'params' => [
+                ['key' => 'userId', 'label' => 'معرّف المستخدم (فاضي = أنا)', 'type' => 'int'],
+            ],
+        ],
+        // فتح مودال تعديل الاسم/النبذة في مكانه (بدل الانتقال لصفحة) — onTap على القلم.
+        [
+            'key' => 'edit_profile', 'label' => 'تعديل الملف (مودال)',
+            'produces' => 'core.editProfile', 'default_shape' => 'button', 'screen' => 'profile',
+        ],
 
         // ── settings ──
         [
@@ -395,7 +410,7 @@ return [
             'name'         => 'profile',
             'label'        => 'الملف الشخصي',
             'icon'         => '👤',
-            'version'      => '1.8.2',
+            'version'      => '1.8.3',
             'nav'          => true,
             'navIcon'      => 'person',
             'order'        => 30,

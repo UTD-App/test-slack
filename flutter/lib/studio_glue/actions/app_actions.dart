@@ -271,6 +271,177 @@ class CoreLogoutActionParser extends StacMapActionParser {
   }
 }
 
+/// `core.openProfile` — opens a user's FULL profile page (cover + counters +
+/// package cards). `{ actionType, userId? }`; defaults to the signed-in user.
+/// Used by the Me-landing avatar tap (the camera badge keeps `core.changeAvatar`).
+/// The full profile is too rich for Stac primitives, so this routes to the
+/// native profile route (`/user-profile/:id`, registered by the Profile package).
+class CoreOpenProfileActionParser extends StacMapActionParser {
+  const CoreOpenProfileActionParser();
+
+  @override
+  String get actionType => 'core.openProfile';
+
+  @override
+  void onCall(BuildContext context, Map<String, dynamic> model) {
+    final raw = model['userId'];
+    final id = raw is int
+        ? raw
+        : int.tryParse('${raw ?? ''}') ??
+            (context.read<UserDataNotifier>().user.id ?? 0);
+    if (id <= 0) return;
+    context.push('/user-profile/$id');
+  }
+}
+
+/// `core.editProfile` — opens an in-place MODAL sheet to edit name + bio (the
+/// old per-field "edit model"), instead of navigating to a separate page. Saves
+/// via `/profile/update`, updates the session, and invalidates `core.currentUser`
+/// so the landing reflects the change immediately.
+class CoreEditProfileActionParser extends StacMapActionParser {
+  const CoreEditProfileActionParser();
+
+  @override
+  String get actionType => 'core.editProfile';
+
+  @override
+  Future<void> onCall(BuildContext context, Map<String, dynamic> model) async {
+    final notifier = context.read<UserDataNotifier>();
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+        child: _EditProfileSheet(notifier: notifier),
+      ),
+    );
+  }
+}
+
+class _EditProfileSheet extends StatefulWidget {
+  const _EditProfileSheet({required this.notifier});
+
+  final UserDataNotifier notifier;
+
+  @override
+  State<_EditProfileSheet> createState() => _EditProfileSheetState();
+}
+
+class _EditProfileSheetState extends State<_EditProfileSheet> {
+  late final TextEditingController _name =
+      TextEditingController(text: widget.notifier.user.name ?? '');
+  late final TextEditingController _bio =
+      TextEditingController(text: widget.notifier.user.bio ?? '');
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _bio.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final name = _name.text.trim();
+    final bio = _bio.text.trim();
+    if (name.isEmpty || _saving) return;
+    setState(() => _saving = true);
+    try {
+      await ApiClient.instance.dio.post(
+        '/profile/update',
+        data: FormData.fromMap({'name': name, 'bio': bio}),
+      );
+      if (!mounted) return;
+      widget.notifier.update(name: name, bio: bio);
+      StacDataRegistry.instance.invalidate();
+      ToastManager.showToast(context, message: 'تم الحفظ');
+      Navigator.of(context).pop();
+    } catch (_) {
+      if (mounted) {
+        setState(() => _saving = false);
+        ToastManager.showToast(context, message: 'فشل الحفظ', isError: true);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        color: Color(0xFF2A1B4D),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+      ),
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: Container(
+              width: 42,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: Colors.white24,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const Text(
+            'تعديل الملف',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+                color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
+          ),
+          const SizedBox(height: 18),
+          _field(_name, 'الاسم'),
+          const SizedBox(height: 12),
+          _field(_bio, 'نبذة', maxLines: 3),
+          const SizedBox(height: 20),
+          ElevatedButton(
+            onPressed: _saving ? null : _save,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFEC4899),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape:
+                  RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            child: _saving
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white),
+                  )
+                : const Text('حفظ',
+                    style: TextStyle(fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _field(TextEditingController c, String label, {int maxLines = 1}) {
+    return TextField(
+      controller: c,
+      maxLines: maxLines,
+      style: const TextStyle(color: Colors.white),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(color: Color(0xFFCDBFEE)),
+        filled: true,
+        fillColor: const Color(0xFF3A2A5E),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide.none,
+        ),
+      ),
+    );
+  }
+}
+
 /// The app-specific core actions, passed to `StudioConfig.extraActions`.
 const List<StacActionParser> appCoreActionParsers = [
   CoreLoginActionParser(),
@@ -278,5 +449,7 @@ const List<StacActionParser> appCoreActionParsers = [
   CoreForgotPasswordActionParser(),
   CoreSaveProfileActionParser(),
   CoreChangeAvatarActionParser(),
+  CoreOpenProfileActionParser(),
+  CoreEditProfileActionParser(),
   CoreLogoutActionParser(),
 ];
