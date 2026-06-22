@@ -132,8 +132,9 @@ $profileWidgets = array_merge(
         'avatarBox'   => $node('Container', true, ['width' => 124, 'height' => 124, 'align' => 'center', 'valign' => 'center'], ['avatarStack'], 'header'),
         'avatarStack' => $node('Stack', true, [], ['ring', 'camBtn'], 'avatarBox'),
         // Tapping the avatar (anywhere but the camera badge) opens MY full
-        // profile page (cover + counters) — the camera badge keeps changeAvatar.
-        'ring'        => $node('Container', true, array_merge($style, ['width' => 124, 'height' => 124, 'radius' => 62, 'gradient' => 1, 'gradFrom' => $C['accent'], 'gradTo' => $C['pink'], 'gradDir' => 'to bottom right', 'padding' => 4, 'align' => 'center', 'valign' => 'center', 'onTapAction' => 'core.openProfile']), ['avatarImg'], 'avatarStack'),
+        // profile as a Studio-designed screen (user_profile, editable in UTD
+        // Studio) presented as a full dialog — the camera badge keeps changeAvatar.
+        'ring'        => $node('Container', true, array_merge($style, ['width' => 124, 'height' => 124, 'radius' => 62, 'gradient' => 1, 'gradFrom' => $C['accent'], 'gradTo' => $C['pink'], 'gradDir' => 'to bottom right', 'padding' => 4, 'align' => 'center', 'valign' => 'center', 'onTapAction' => 'core.openDialog', 'onTapParams' => ['screen' => 'user_profile', 'style' => 'full']]), ['avatarImg'], 'avatarStack'),
         'avatarImg'   => $node('Image', false, ['src' => '', 'binding' => 'core.currentUser.avatar', 'width' => 116, 'height' => 116, 'fit' => 'cover', 'shape' => 'circle', 'radius' => 0], [], 'ring'),
         // pos:'top-left' → Studio maps left→Start, so in the RTL app Start=RIGHT
         // → the badge renders physically TOP-RIGHT, snug on the ring (matches the
@@ -410,7 +411,7 @@ return [
             'name'         => 'profile',
             'label'        => 'الملف الشخصي',
             'icon'         => '👤',
-            'version'      => '1.8.3',
+            'version'      => '1.8.4',
             'nav'          => true,
             'navIcon'      => 'person',
             'order'        => 30,
