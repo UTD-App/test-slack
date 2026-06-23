@@ -67,173 +67,165 @@ class _FormAuthBody extends StatelessWidget {
         final valid = state.isFormValid ?? false;
         return Form(
           key: state.formKey,
-          child: LayoutBuilder(
-            builder: (context, constraints) => SingleChildScrollView(
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                child: IntrinsicHeight(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      40.hBox,
-                      // Logo as a clean circular badge
-                      Center(
-                        child: AppLogoBadge(
-                          size: 88,
-                          fallback: Image.asset(
-                            AssetManager.logo,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                      ),
-                      24.hBox,
-                      TextWidget(
-                        context.tr(AuthStrings.hiTemp),
-                        textAlign: TextAlign.center,
-                        style: context.bodyLarge
-                            .size(30)
-                            .w700
-                            .colorExt(ColorManager.white),
-                      ),
-                      8.hBox,
-                      TextWidget(
-                        context.tr(AuthStrings.loginTel),
-                        textAlign: TextAlign.center,
-                        style: context.bodyLarge.size(15).colorExt(
-                              ColorManager.white.withValues(alpha: 0.7),
-                            ),
-                      ),
-                      36.hBox,
-                      _field(
-                        context,
-                        hint: context.tr(AuthStrings.pleaseEnterYourEmail),
-                        icon: Icons.alternate_email_rounded,
-                        controller: state.emailController,
-                        keyboardType: TextInputType.emailAddress,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return context.tr(AuthStrings.requiredField);
-                          }
-                          if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
-                              .hasMatch(value)) {
-                            return context.tr(AuthStrings.emailValidator);
-                          }
-                          return null;
-                        },
-                      ),
-                      16.hBox,
-                      _field(
-                        context,
-                        hint: context.tr(AuthStrings.password),
-                        icon: Icons.lock_outline_rounded,
-                        controller: state.passwordController,
-                        isPassword: state.isPassword,
-                        suffixIcon: state.suffixIcon,
-                        onSuffix: () => context
-                            .read<LoginBloc>()
-                            .add(const TogglePasswordEvent()),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return context.tr(AuthStrings.requiredField);
-                          }
-                          return null;
-                        },
-                      ),
-                      10.hBox,
-                      Align(
-                        alignment: AlignmentDirectional.centerEnd,
-                        child: TextButtonWidget(
-                          onTap: () => context.push(AuthRoutes.recoverPassword),
-                          content: TextWidget(
-                            context.tr(AuthStrings.recoverPassword),
-                            style: context.bodyLarge
-                                .size(14)
-                                .w500
-                                .colorExt(ColorManager.lumiaAccentLight),
-                          ),
-                        ),
-                      ),
-                      28.hBox,
-                      // Login button (full-width pink gradient)
-                      ButtonWidget(
-                        title: context.tr(AuthStrings.login),
-                        height: 54.h,
-                        width: ScreenUtil().screenWidth,
-                        radius: 30.r,
-                        backgroundColors: valid
-                            ? ColorManager.pinkCtaGradient
-                            : ColorManager.pinkCtaGradientMuted,
-                        isLoading: state.requestState.isLoading,
-                        onPressed: () {
-                          if (valid) {
-                            context.read<LoginBloc>().add(
-                                  LoginWithEmailEvent(context: context),
-                                );
-                          }
-                        },
-                      ),
-                      20.hBox,
-                      // Register link
-                      Center(
-                        child: InkWell(
-                          onTap: () => context.push(AuthRoutes.register),
-                          child: Text.rich(
-                            TextSpan(
-                              text:
-                                  '${context.tr(AuthStrings.notRegisteredYet)} ',
-                              style: context.bodyLarge.size(14).colorExt(
-                                    ColorManager.white.withValues(alpha: 0.7),
-                                  ),
-                              children: [
-                                TextSpan(
-                                  text: context.tr(AuthStrings.registerNow),
-                                  style: context.bodyLarge
-                                      .size(14)
-                                      .w700
-                                      .colorExt(ColorManager.lumiaAccentLight),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      const Spacer(),
-                      // Terms footer
-                      Center(
-                        child: InkWell(
-                          onTap: () => context.push(AuthRoutes.privacy),
-                          child: Text.rich(
-                            textAlign: TextAlign.center,
-                            TextSpan(
-                              text: context.tr(AuthStrings.agreeLogin),
-                              style: context.bodyLarge.size(12).colorExt(
-                                    ColorManager.white.withValues(alpha: 0.55),
-                                  ),
-                              children: [
-                                TextSpan(
-                                  text:
-                                      context.tr(AuthStrings.userAgreementLogin),
-                                  style: context.bodyLarge
-                                      .size(12)
-                                      .w600
-                                      .colorExt(ColorManager.lumiaAccentLight),
-                                ),
-                                TextSpan(
-                                  text: context.tr(AuthStrings.andLogin),
-                                  style: context.bodyLarge.size(12).colorExt(
-                                        ColorManager.white.withValues(alpha: 0.55),
-                                      ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      16.hBox,
-                    ],
+          // Plain scroll (no IntrinsicHeight/Spacer) so the screen NEVER overflows
+          // on short devices and the hero always stays at the top.
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                32.hBox,
+                // Logo as a clean circular badge
+                Center(
+                  child: AppLogoBadge(
+                    size: 88,
+                    fallback: Image.asset(
+                      AssetManager.logo,
+                      fit: BoxFit.contain,
+                    ),
                   ),
                 ),
-              ),
+                20.hBox,
+                TextWidget(
+                  context.tr(AuthStrings.hiTemp),
+                  textAlign: TextAlign.center,
+                  style: context.bodyLarge
+                      .size(28)
+                      .w700
+                      .colorExt(ColorManager.white),
+                ),
+                8.hBox,
+                TextWidget(
+                  context.tr(AuthStrings.loginTel),
+                  textAlign: TextAlign.center,
+                  style: context.bodyLarge.size(15).colorExt(
+                        ColorManager.white.withValues(alpha: 0.7),
+                      ),
+                ),
+                28.hBox,
+                _field(
+                  context,
+                  hint: context.tr(AuthStrings.pleaseEnterYourEmail),
+                  icon: Icons.alternate_email_rounded,
+                  controller: state.emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return context.tr(AuthStrings.requiredField);
+                    }
+                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$')
+                        .hasMatch(value)) {
+                      return context.tr(AuthStrings.emailValidator);
+                    }
+                    return null;
+                  },
+                ),
+                16.hBox,
+                _field(
+                  context,
+                  hint: context.tr(AuthStrings.password),
+                  icon: Icons.lock_outline_rounded,
+                  controller: state.passwordController,
+                  isPassword: state.isPassword,
+                  suffixIcon: state.suffixIcon,
+                  onSuffix: () =>
+                      context.read<LoginBloc>().add(const TogglePasswordEvent()),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return context.tr(AuthStrings.requiredField);
+                    }
+                    return null;
+                  },
+                ),
+                10.hBox,
+                Align(
+                  alignment: AlignmentDirectional.centerEnd,
+                  child: TextButtonWidget(
+                    onTap: () => context.push(AuthRoutes.recoverPassword),
+                    content: TextWidget(
+                      context.tr(AuthStrings.recoverPassword),
+                      style: context.bodyLarge
+                          .size(14)
+                          .w500
+                          .colorExt(ColorManager.lumiaAccentLight),
+                    ),
+                  ),
+                ),
+                24.hBox,
+                // Login button (full-width pink gradient)
+                ButtonWidget(
+                  title: context.tr(AuthStrings.login),
+                  height: 54.h,
+                  width: ScreenUtil().screenWidth,
+                  radius: 30.r,
+                  backgroundColors: valid
+                      ? ColorManager.pinkCtaGradient
+                      : ColorManager.pinkCtaGradientMuted,
+                  isLoading: state.requestState.isLoading,
+                  onPressed: () {
+                    if (valid) {
+                      context.read<LoginBloc>().add(
+                            LoginWithEmailEvent(context: context),
+                          );
+                    }
+                  },
+                ),
+                18.hBox,
+                // Register link
+                Center(
+                  child: InkWell(
+                    onTap: () => context.push(AuthRoutes.register),
+                    child: Text.rich(
+                      TextSpan(
+                        text: '${context.tr(AuthStrings.notRegisteredYet)} ',
+                        style: context.bodyLarge.size(14).colorExt(
+                              ColorManager.white.withValues(alpha: 0.7),
+                            ),
+                        children: [
+                          TextSpan(
+                            text: context.tr(AuthStrings.registerNow),
+                            style: context.bodyLarge
+                                .size(14)
+                                .w700
+                                .colorExt(ColorManager.lumiaAccentLight),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                22.hBox,
+                // Terms footer
+                Center(
+                  child: InkWell(
+                    onTap: () => context.push(AuthRoutes.privacy),
+                    child: Text.rich(
+                      textAlign: TextAlign.center,
+                      TextSpan(
+                        text: context.tr(AuthStrings.agreeLogin),
+                        style: context.bodyLarge.size(12).colorExt(
+                              ColorManager.white.withValues(alpha: 0.55),
+                            ),
+                        children: [
+                          TextSpan(
+                            text: context.tr(AuthStrings.userAgreementLogin),
+                            style: context.bodyLarge
+                                .size(12)
+                                .w600
+                                .colorExt(ColorManager.lumiaAccentLight),
+                          ),
+                          TextSpan(
+                            text: context.tr(AuthStrings.andLogin),
+                            style: context.bodyLarge.size(12).colorExt(
+                                  ColorManager.white.withValues(alpha: 0.55),
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                16.hBox,
+              ],
             ),
           ),
         );
