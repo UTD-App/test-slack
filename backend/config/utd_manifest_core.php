@@ -104,7 +104,11 @@ $mkTile = function (string $id, string $icon, string $tint, string $label, strin
 
 // intro — welcome / first-run (logo + tagline + Create-Account / Sign-in card).
 $introWidgets = [
-    'ROOT'        => $node('Container', true, array_merge($style, ['gradient' => 1, 'gradFrom' => $C['authFrom'], 'gradTo' => $C['authTo'], 'gradDir' => 'to bottom right', 'background' => $C['authBg'], 'padding' => 22, 'gap' => 20, 'align' => 'stretch', 'flex' => 0]), ['langRow', 'hero', 'card', 'footer'], null),
+    // ROOT transparent — the full-bleed gradient now lives on `chrome.background`
+    // so it fills the WHOLE screen (a flex:0 gradient Container only covers its
+    // own content height → flat colour below). Top spacing keeps the hero off the
+    // status bar / camera cutout (appBar is disabled).
+    'ROOT'        => $node('Container', true, array_merge($style, ['background' => '#00000000', 'padMode' => 'sides', 'padL' => 22, 'padT' => 16, 'padR' => 22, 'padB' => 22, 'gap' => 20, 'align' => 'stretch', 'flex' => 0]), ['langRow', 'hero', 'card', 'footer'], null),
 
     // Language pill (EN active / ع) — top-end. Tapping switches the app locale.
     // (Active highlight is static — there's no locale binding to drive it.)
@@ -115,10 +119,12 @@ $introWidgets = [
     'segAr'       => $node('Container', true, array_merge($style, ['background' => '#00000000', 'radius' => 22, 'padding' => 8, 'align' => 'center', 'onTapAction' => 'core.setLocale', 'onTapParams' => ['code' => 'ar']]), ['segArT'], 'pill'),
     'segArT'      => $node('Text', false, ['text' => 'ع', 'fontSize' => 13, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'binding' => '', 'maxLines' => 1], [], 'segAr'),
 
-    // Hero — eagle logo (admin app logo) + tagline.
-    'hero'        => $node('Container', true, ['background' => '#00000000', 'padding' => 8, 'gap' => 16, 'align' => 'center', 'flex' => 0], ['logoScope', 'tagline'], 'ROOT'),
-    'logoScope'   => $node('Scope', true, ['source' => 'core.app'], ['logoImg'], 'hero'),
-    'logoImg'     => $node('Image', false, ['src' => '', 'binding' => 'core.app.logo', 'width' => 132, 'height' => 132, 'fit' => 'contain'], [], 'logoScope'),
+    // Hero — logo in a clean white circular badge + tagline. The white disc makes
+    // a logo-on-white asset read as a deliberate round badge (not a white square).
+    'hero'        => $node('Container', true, ['background' => '#00000000', 'padMode' => 'sides', 'padL' => 8, 'padT' => 24, 'padR' => 8, 'padB' => 8, 'gap' => 16, 'align' => 'center', 'flex' => 0], ['logoBadge', 'tagline'], 'ROOT'),
+    'logoBadge'   => $node('Container', true, array_merge($style, ['width' => 116, 'height' => 116, 'radius' => 58, 'background' => $C['white'], 'padding' => 16, 'align' => 'center', 'valign' => 'center', 'flex' => 0]), ['logoScope'], 'hero'),
+    'logoScope'   => $node('Scope', true, ['source' => 'core.app'], ['logoImg'], 'logoBadge'),
+    'logoImg'     => $node('Image', false, ['src' => '', 'binding' => 'core.app.logo', 'width' => 80, 'height' => 80, 'fit' => 'contain'], [], 'logoScope'),
     'tagline'     => $node('Text', false, ['text' => 'العب · بث · تواصل', 'fontSize' => 15, 'fontWeight' => 500, 'color' => $C['white'], 'align' => 'center', 'binding' => 't.screens.intro.tagline', 'maxLines' => 1], [], 'hero'),
 
     // Frosted CTA card.
@@ -143,14 +149,16 @@ $introWidgets = [
 
 // login — back + circular frosted logo + greeting + form + register CTA + footer.
 $loginWidgets = [
-    'ROOT'       => $node('Container', true, array_merge($style, ['gradient' => 1, 'gradFrom' => $C['authFrom'], 'gradTo' => $C['authTo'], 'gradDir' => 'to bottom right', 'background' => $C['authBg'], 'padding' => 22, 'gap' => 18, 'align' => 'stretch', 'flex' => 0]), ['lTop', 'lHero', 'lForm', 'regRow', 'lFooter'], null),
+    // ROOT transparent — full-bleed gradient via `chrome.background` (fills the
+    // whole screen; a flex:0 gradient Container only covers its content).
+    'ROOT'       => $node('Container', true, array_merge($style, ['background' => '#00000000', 'padMode' => 'sides', 'padL' => 22, 'padT' => 12, 'padR' => 22, 'padB' => 22, 'gap' => 18, 'align' => 'stretch', 'flex' => 0]), ['lTop', 'lHero', 'lForm', 'regRow', 'lFooter'], null),
 
     'lTop'       => $node('Row', true, ['justify' => 'flex-start', 'align' => 'center'], ['lBack'], 'ROOT'),
     'lBack'      => $node('Icon', false, ['name' => 'arrow_back_ios_new', 'size' => 20, 'color' => $C['white'], 'onTapAction' => 'core.back'], [], 'lTop'),
 
     // Hero — circular frosted logo disc + greeting + subtitle.
     'lHero'      => $node('Container', true, ['background' => '#00000000', 'padding' => 4, 'gap' => 10, 'align' => 'center', 'flex' => 0], ['lLogoDisc', 'lGreet', 'lSub'], 'ROOT'),
-    'lLogoDisc'  => $node('Container', true, array_merge($style, ['width' => 100, 'height' => 100, 'radius' => 50, 'background' => $C['frost'], 'borderWidth' => 1, 'borderColor' => $C['frostBorder'], 'padding' => 18, 'align' => 'center', 'valign' => 'center']), ['lLogoScope'], 'lHero'),
+    'lLogoDisc'  => $node('Container', true, array_merge($style, ['width' => 96, 'height' => 96, 'radius' => 48, 'background' => $C['white'], 'padding' => 16, 'align' => 'center', 'valign' => 'center']), ['lLogoScope'], 'lHero'),
     'lLogoScope' => $node('Scope', true, ['source' => 'core.app'], ['lLogoImg'], 'lLogoDisc'),
     'lLogoImg'   => $node('Image', false, ['src' => '', 'binding' => 'core.app.logo', 'width' => 64, 'height' => 64, 'fit' => 'contain'], [], 'lLogoScope'),
     'lGreet'     => $node('Text', false, ['text' => 'مرحباً 👋', 'fontSize' => 30, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'binding' => 't.screens.login.greeting', 'maxLines' => 1], [], 'lHero'),
@@ -180,18 +188,37 @@ $loginWidgets = [
     'lFtrPrivacy' => $node('Text', false, ['text' => 'سياسة الخصوصية', 'fontSize' => 12, 'fontWeight' => 600, 'color' => $C['accentLt'], 'align' => 'center', 'binding' => 't.app.privacy_policy', 'maxLines' => 1, 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/page/privacy', 'mode' => 'push']], [], 'lFtrLinks'),
 ];
 
-// register — back + title + email/password form + Next.
+// register — back + title + HERO (logo badge + heading + subtitle) + email/password
+// form + Next + "already have an account?" link. Mirrors the login screen so the
+// two auth forms read as a pair (the old register was just title + 2 fields + a
+// button with a big empty void). Gradient via `chrome.background` (ROOT transparent).
 $registerWidgets = [
-    'ROOT'   => $node('Container', true, array_merge($style, ['gradient' => 1, 'gradFrom' => $C['authFrom'], 'gradTo' => $C['authTo'], 'gradDir' => 'to bottom right', 'background' => $C['authBg'], 'padding' => 22, 'gap' => 22, 'align' => 'stretch', 'flex' => 0]), ['rTop', 'rForm'], null),
-    'rTop'   => $node('Row', true, ['gap' => 8, 'align' => 'center'], ['rBack', 'rTitle'], 'ROOT'),
-    'rBack'  => $node('Icon', false, ['name' => 'arrow_back_ios_new', 'size' => 20, 'color' => $C['white'], 'onTapAction' => 'core.back'], [], 'rTop'),
-    'rTitle' => $node('Text', false, ['text' => 'التسجيل', 'fontSize' => 16, 'fontWeight' => 600, 'color' => $C['white'], 'align' => 'center', 'binding' => 't.app.register', 'maxLines' => 1, 'flex' => 1], [], 'rTop'),
+    'ROOT'    => $node('Container', true, array_merge($style, ['background' => '#00000000', 'padMode' => 'sides', 'padL' => 22, 'padT' => 12, 'padR' => 22, 'padB' => 22, 'gap' => 18, 'align' => 'stretch', 'flex' => 0]), ['rTop', 'rHero', 'rForm', 'rAlready'], null),
+
+    'rTop'    => $node('Row', true, ['gap' => 8, 'align' => 'center'], ['rBack', 'rTitle'], 'ROOT'),
+    'rBack'   => $node('Icon', false, ['name' => 'arrow_back_ios_new', 'size' => 20, 'color' => $C['white'], 'onTapAction' => 'core.back'], [], 'rTop'),
+    'rTitle'  => $node('Text', false, ['text' => 'التسجيل', 'fontSize' => 16, 'fontWeight' => 600, 'color' => $C['white'], 'align' => 'center', 'binding' => 't.app.register', 'maxLines' => 1, 'flex' => 1], [], 'rTop'),
+
+    // Hero — white logo badge + heading + subtitle.
+    'rHero'      => $node('Container', true, ['background' => '#00000000', 'padMode' => 'sides', 'padL' => 8, 'padT' => 8, 'padR' => 8, 'padB' => 4, 'gap' => 10, 'align' => 'center', 'flex' => 0], ['rLogoBadge', 'rHeading', 'rSub'], 'ROOT'),
+    'rLogoBadge' => $node('Container', true, array_merge($style, ['width' => 92, 'height' => 92, 'radius' => 46, 'background' => $C['white'], 'padding' => 14, 'align' => 'center', 'valign' => 'center', 'flex' => 0]), ['rLogoScope'], 'rHero'),
+    'rLogoScope' => $node('Scope', true, ['source' => 'core.app'], ['rLogoImg'], 'rLogoBadge'),
+    'rLogoImg'   => $node('Image', false, ['src' => '', 'binding' => 'core.app.logo', 'width' => 64, 'height' => 64, 'fit' => 'contain'], [], 'rLogoScope'),
+    'rHeading'   => $node('Text', false, ['text' => 'إنشاء حساب', 'fontSize' => 26, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'binding' => 't.app.create_account', 'maxLines' => 1], [], 'rHero'),
+    'rSub'       => $node('Text', false, ['text' => 'أنشئ حسابك في خطوات بسيطة', 'fontSize' => 15, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => 't.screens.register.subtitle', 'maxLines' => 0], [], 'rHero'),
+
+    // Form — email + password (frosted pill with leading icons, like login) + Next.
     'rForm'  => $node('Form', true, [], ['rCol'], 'ROOT'),
-    'rCol'   => $node('Container', true, ['background' => '#00000000', 'gap' => 15, 'align' => 'stretch', 'flex' => 0], ['rEmail', 'rPass', 'rNext'], 'rForm'),
-    'rEmail' => $node('TextField', false, ['fieldId' => 'email', 'placeholder' => 'البريد الإلكتروني', 'tHint' => 'app.email', 'live' => true, 'keyboard' => 'email', 'fillColor' => $C['frost'], 'textColor' => $C['white'], 'borderColor' => $C['frostBorder'], 'radius' => 30, 'flex' => 0], [], 'rCol'),
-    'rPass'  => $node('TextField', false, ['fieldId' => 'password', 'placeholder' => 'كلمة المرور', 'tHint' => 'app.password', 'live' => true, 'obscure' => true, 'fillColor' => $C['frost'], 'textColor' => $C['white'], 'borderColor' => $C['frostBorder'], 'radius' => 30, 'flex' => 0], [], 'rCol'),
-    'rNext'  => $node('Container', true, array_merge($style, ['gradient' => 1, 'gradFrom' => $C['pinkFrom'], 'gradTo' => $C['pinkTo'], 'gradDir' => 'to right', 'background' => $C['pink'], 'radius' => 30, 'padding' => 15, 'align' => 'center', 'flex' => 0, 'onTapAction' => 'core.register', 'onTapParams' => ['emailField' => 'email', 'passwordField' => 'password']]), ['rNextT'], 'rCol'),
+    'rCol'   => $node('Container', true, ['background' => '#00000000', 'gap' => 14, 'align' => 'stretch', 'flex' => 0], ['rEmail', 'rPass', 'rNext'], 'rForm'),
+    'rEmail' => $node('TextField', false, ['fieldId' => 'email', 'placeholder' => 'البريد الإلكتروني', 'tHint' => 'app.email', 'live' => true, 'keyboard' => 'email', 'fillColor' => $C['frost'], 'textColor' => $C['white'], 'borderColor' => $C['frostBorder'], 'prefixIcon' => 'alternate_email', 'prefixIconColor' => $C['accentLt'], 'radius' => 16, 'flex' => 0], [], 'rCol'),
+    'rPass'  => $node('TextField', false, ['fieldId' => 'password', 'placeholder' => 'كلمة المرور', 'tHint' => 'app.password', 'live' => true, 'obscure' => true, 'fillColor' => $C['frost'], 'textColor' => $C['white'], 'borderColor' => $C['frostBorder'], 'prefixIcon' => 'lock_outline_rounded', 'prefixIconColor' => $C['accentLt'], 'radius' => 16, 'flex' => 0], [], 'rCol'),
+    'rNext'  => $node('Container', true, array_merge($style, ['gradient' => 1, 'gradFrom' => $C['pinkFrom'], 'gradTo' => $C['pinkTo'], 'gradDir' => 'to right', 'background' => $C['pink'], 'radius' => 30, 'padding' => 16, 'align' => 'center', 'flex' => 0, 'onTapAction' => 'core.register', 'onTapParams' => ['emailField' => 'email', 'passwordField' => 'password']]), ['rNextT'], 'rCol'),
     'rNextT' => $node('Text', false, ['text' => 'التالي', 'fontSize' => 16, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'binding' => 't.app.next', 'maxLines' => 1], [], 'rNext'),
+
+    // Already have an account → sign in.
+    'rAlready'    => $node('Row', true, ['gap' => 6, 'justify' => 'center', 'align' => 'center'], ['rAlreadyT', 'rAlreadyBtn'], 'ROOT'),
+    'rAlreadyT'   => $node('Text', false, ['text' => 'لديك حساب بالفعل؟', 'fontSize' => 14, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => 't.screens.register.have_account', 'maxLines' => 1], [], 'rAlready'),
+    'rAlreadyBtn' => $node('Text', false, ['text' => 'تسجيل الدخول', 'fontSize' => 14, 'fontWeight' => 700, 'color' => $C['accentLt'], 'align' => 'center', 'binding' => 't.app.login', 'maxLines' => 1, 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/login', 'mode' => 'push']], [], 'rAlready'),
 ];
 
 // home — title row + search + welcome card. Transparent ROOT.
@@ -515,7 +542,7 @@ return [
             'name'         => 'intro',
             'label'        => 'الترحيب',
             'icon'         => '👋',
-            'version'      => '1.1.0',
+            'version'      => '1.2.0',
             'nav'          => false,
             'navIcon'      => 'waving_hand',
             'order'        => 0,
@@ -523,14 +550,19 @@ return [
             'requiresAuth' => false,
             'showOnce'     => true,
             'opens'        => null,
-            'chrome'       => ['appBar' => ['enabled' => false, 'title' => 'الترحيب', 'bg' => $C['authBg'], 'actions' => []]],
+            // Full-bleed auth gradient fills the WHOLE screen (behind the content),
+            // so a short page no longer leaves a flat-colour gap below.
+            'chrome'       => [
+                'appBar'     => ['enabled' => false, 'title' => 'الترحيب', 'bg' => $C['authBg'], 'actions' => []],
+                'background'  => ['type' => 'gradient', 'gradFrom' => $C['authFrom'], 'gradTo' => $C['authTo'], 'gradDir' => 'to bottom right'],
+            ],
             'widgets'      => $introWidgets,
         ],
         [
             'name'         => 'login',
             'label'        => 'تسجيل الدخول',
             'icon'         => '🔑',
-            'version'      => '2.2.0',
+            'version'      => '2.3.0',
             'nav'          => false,
             'navIcon'      => 'person',
             'order'        => 1,
@@ -538,14 +570,17 @@ return [
             'requiresAuth' => false,
             'showOnce'     => false,
             'opens'        => null,
-            'chrome'       => ['appBar' => ['enabled' => false, 'title' => 'تسجيل الدخول', 'bg' => $C['authBg'], 'actions' => []]],
+            'chrome'       => [
+                'appBar'     => ['enabled' => false, 'title' => 'تسجيل الدخول', 'bg' => $C['authBg'], 'actions' => []],
+                'background'  => ['type' => 'gradient', 'gradFrom' => $C['authFrom'], 'gradTo' => $C['authTo'], 'gradDir' => 'to bottom right'],
+            ],
             'widgets'      => $loginWidgets,
         ],
         [
             'name'         => 'register',
             'label'        => 'إنشاء حساب',
             'icon'         => '📝',
-            'version'      => '1.2.0',
+            'version'      => '1.3.0',
             'nav'          => false,
             'navIcon'      => 'person_add',
             'order'        => 3,
@@ -553,7 +588,10 @@ return [
             'requiresAuth' => false,
             'showOnce'     => false,
             'opens'        => null,
-            'chrome'       => ['appBar' => ['enabled' => false, 'title' => 'إنشاء حساب', 'bg' => $C['authBg'], 'actions' => []]],
+            'chrome'       => [
+                'appBar'     => ['enabled' => false, 'title' => 'إنشاء حساب', 'bg' => $C['authBg'], 'actions' => []],
+                'background'  => ['type' => 'gradient', 'gradFrom' => $C['authFrom'], 'gradTo' => $C['authTo'], 'gradDir' => 'to bottom right'],
+            ],
             'widgets'      => $registerWidgets,
         ],
         [
