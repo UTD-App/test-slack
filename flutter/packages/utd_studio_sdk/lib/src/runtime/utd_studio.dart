@@ -36,6 +36,7 @@ class UtdStudio {
       toast: config.toast,
       session: config.session,
       fallbackBuilder: config.fallbackBuilder,
+      translate: config.translate,
     );
 
     // Stac.initialize is global/one-shot — register parsers + actions once.

@@ -124,9 +124,13 @@ $introWidgets = [
     // Frosted CTA card.
     'card'        => $node('Container', true, array_merge($style, ['background' => $C['frost'], 'borderWidth' => 1, 'borderColor' => $C['frostBorder'], 'radius' => 28, 'padding' => 20, 'gap' => 14, 'align' => 'stretch', 'flex' => 0]), ['btnCreate', 'btnSignin'], 'ROOT'),
     'btnCreate'   => $node('Container', true, array_merge($style, ['gradient' => 1, 'gradFrom' => $C['pinkFrom'], 'gradTo' => $C['pinkTo'], 'gradDir' => 'to right', 'background' => $C['pink'], 'radius' => 30, 'padding' => 16, 'align' => 'center', 'flex' => 0, 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/register', 'mode' => 'push']]), ['btnCreateT'], 'card'),
-    'btnCreateT'  => $node('Text', false, ['text' => 'إنشاء حساب', 'fontSize' => 16, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'binding' => '', 'maxLines' => 1], [], 'btnCreate'),
+    // i18n EXAMPLE: bind label to a translation key (`t.<group>.<key>`). The app
+    // localises it to the current language from the dashboard catalog; the literal
+    // `text` stays as the fallback when the key is missing. Editable from Studio
+    // (write-back) or the dashboard. Bindings survive the Craft→Stac transform.
+    'btnCreateT'  => $node('Text', false, ['text' => 'إنشاء حساب', 'binding' => 't.app.create_account', 'fontSize' => 16, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'maxLines' => 1], [], 'btnCreate'),
     'btnSignin'   => $node('Container', true, array_merge($style, ['background' => '#00000000', 'borderWidth' => 1, 'borderColor' => $C['outline'], 'radius' => 30, 'padding' => 16, 'align' => 'center', 'flex' => 0, 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/login', 'mode' => 'push']]), ['btnSigninT'], 'card'),
-    'btnSigninT'  => $node('Text', false, ['text' => 'تسجيل الدخول بالبريد الإلكتروني', 'fontSize' => 15, 'fontWeight' => 600, 'color' => $C['white'], 'align' => 'center', 'binding' => '', 'maxLines' => 1], [], 'btnSignin'),
+    'btnSigninT'  => $node('Text', false, ['text' => 'تسجيل الدخول بالبريد الإلكتروني', 'binding' => 't.app.sign_in_email', 'fontSize' => 15, 'fontWeight' => 600, 'color' => $C['white'], 'align' => 'center', 'maxLines' => 1], [], 'btnSignin'),
 
     // Footer — terms · privacy links.
     'footer'      => $node('Container', true, ['background' => '#00000000', 'padding' => 4, 'gap' => 4, 'align' => 'center', 'flex' => 0], ['ftrText', 'ftrLinks'], 'ROOT'),
@@ -511,7 +515,7 @@ return [
             'name'         => 'intro',
             'label'        => 'الترحيب',
             'icon'         => '👋',
-            'version'      => '1.0.0',
+            'version'      => '1.1.0',
             'nav'          => false,
             'navIcon'      => 'waving_hand',
             'order'        => 0,

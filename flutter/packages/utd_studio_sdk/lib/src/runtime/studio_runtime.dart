@@ -19,6 +19,9 @@ class StudioRuntime {
   UserSession? session;
   WidgetBuilder? fallbackBuilder;
 
+  /// Resolves a translation key → current-locale string (set from the app).
+  StacTranslate? translate;
+
   StacScreenSource? _screenSource;
 
   /// The single resolved screen source. Both `StacDynamicScreen` and
@@ -45,6 +48,7 @@ class StudioRuntime {
     ToastSink? toast,
     UserSession? session,
     WidgetBuilder? fallbackBuilder,
+    StacTranslate? translate,
   }) {
     _screenSource = screenSource;
     this.navigator = navigator;
@@ -53,5 +57,6 @@ class StudioRuntime {
     this.toast = toast;
     this.session = session;
     this.fallbackBuilder = fallbackBuilder;
+    this.translate = translate;
   }
 }

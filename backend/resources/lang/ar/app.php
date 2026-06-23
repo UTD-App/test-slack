@@ -15,6 +15,8 @@ return [
     'done'                   => 'تم',
     'retry'                  => 'إعادة المحاولة',
     'refresh'                => 'تحديث',
+    'create_account'         => 'إنشاء حساب',
+    'sign_in_email'          => 'تسجيل الدخول بالبريد الإلكتروني',
     'search'                 => 'بحث',
     'search_users_hint'      => 'ابحث بالاسم أو الـ UID',
     'uid'                    => 'المعرّف',

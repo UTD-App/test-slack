@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:stac/stac.dart';
 
 import '../core/stac_coerce.dart';
+import '../core/stac_i18n.dart';
 import '../interfaces/interfaces.dart';
 import '../runtime/studio_runtime.dart';
 
@@ -44,6 +45,10 @@ class _StacDynamicScreenState extends State<StacDynamicScreen> {
   /// stays alive. Data-bound regions still refresh via `StacDataRegistry`.
   Widget? _tree;
 
+  /// Language the cached [_tree] was localised for. When the app locale changes
+  /// we drop [_tree] and re-render so translated labels follow the new language.
+  String? _treeLocale;
+
   StacScreenSource get _source => StudioRuntime.instance.screenSource;
 
   @override
@@ -69,8 +74,13 @@ class _StacDynamicScreenState extends State<StacDynamicScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Re-localise when the app language changes (drop the cached tree).
+    final locale = Localizations.maybeLocaleOf(context)?.languageCode;
+    if (_tree != null && _treeLocale != locale) _tree = null;
+
     // Parse-once: after the tree is built we always return the same instance.
     if (_tree != null) return _tree!;
+    _treeLocale = locale;
 
     if (_loading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
@@ -86,8 +96,10 @@ class _StacDynamicScreenState extends State<StacDynamicScreen> {
   }
 
   Widget _render(BuildContext context, Map<String, dynamic> json) {
-    // force-parse: fix wrong primitive types (text.data/src…) before Stac throws.
-    final rendered = Stac.fromJson(StacCoerce.sanitize(json), context);
+    // Localise translatable Text (tKey / t.* binding) → current-locale strings,
+    // then force-parse to fix wrong primitive types before Stac throws.
+    final localized = localizeStac(json, context);
+    final rendered = Stac.fromJson(StacCoerce.sanitize(localized), context);
     return rendered ??
         (widget.fallback ??
             StudioRuntime.instance.fallbackBuilder?.call(context) ??

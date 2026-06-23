@@ -4,6 +4,12 @@ import 'package:flutter/widgets.dart';
 /// in the app, and passed into [UtdStudio.init] via `StudioConfig`. The SDK
 /// never imports app code — it only talks to these contracts.
 
+/// Resolves a translation key to the current-locale string (the app wires this
+/// to its own i18n, e.g. `context.tr(key)`). A server-driven `Text` carrying a
+/// `tKey` (or a `binding` starting with `t.`) is localised through this before
+/// render, so screen labels follow the app language + the dashboard catalog.
+typedef StacTranslate = String Function(BuildContext context, String key);
+
 /// Screen + data JSON transport. Implemented in the app over its HTTP client
 /// (e.g. `ApiClient.instance.dio`). Only the endpoints the SDUI actually hits
 /// are exposed.

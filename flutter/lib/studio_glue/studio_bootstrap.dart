@@ -1,5 +1,6 @@
 import 'package:utd_app/config/theme_notifier.dart';
 import 'package:utd_app/localization/locale_notifier.dart';
+import 'package:utd_app/localization/localization_extensions.dart';
 import 'package:utd_studio_sdk/utd_studio_sdk.dart';
 
 import 'actions/app_actions.dart';
@@ -31,6 +32,9 @@ Future<void> bootstrapStudio({
     navigator: const GoRouterNavigator(),
     theme: ThemeSourceAdapter(themeNotifier),
     locale: LocaleSourceAdapter(localeNotifier),
+    // Resolve server-driven Text tKey / t.* bindings via the app's i18n, so
+    // Studio screen labels follow the app language + the dashboard catalog.
+    translate: (context, key) => context.tr(key),
     extraParsers: featureParsers,
     extraActions: [...appCoreActionParsers, ...featureActionParsers],
   ));

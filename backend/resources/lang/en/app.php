@@ -18,6 +18,8 @@ return [
     'done'                   => 'Done',
     'retry'                  => 'Retry',
     'refresh'                => 'Refresh',
+    'create_account'         => 'Create Account',
+    'sign_in_email'          => 'Sign in with Email',
     'search'                 => 'Search',
     'search_users_hint'      => 'Search by name or UID',
     'uid'                    => 'UID',

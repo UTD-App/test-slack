@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:stac/stac.dart';
 
 import '../core/stac_coerce.dart';
+import '../core/stac_i18n.dart';
 import '../runtime/studio_runtime.dart';
 import 'stac_map_action.dart';
 
@@ -152,7 +153,9 @@ class CoreOpenDialogActionParser extends StacMapActionParser {
   /// Builds the dialog body from the screen JSON (minus `presentation`).
   Widget _content(BuildContext context, Map<String, dynamic> screen) {
     final json = Map<String, dynamic>.from(screen)..remove('presentation');
-    return Stac.fromJson(StacCoerce.sanitize(json), context) ??
+    // Localise translatable Text (tKey / t.* binding) before parse.
+    final localized = localizeStac(json, context);
+    return Stac.fromJson(StacCoerce.sanitize(localized), context) ??
         const SizedBox.shrink();
   }
 

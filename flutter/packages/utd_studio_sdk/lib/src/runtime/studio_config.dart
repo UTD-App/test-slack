@@ -17,6 +17,7 @@ class StudioConfig {
     this.session,
     this.screenSource,
     this.fallbackBuilder,
+    this.translate,
     this.extraParsers = const [],
     this.extraActions = const [],
   });
@@ -47,6 +48,10 @@ class StudioConfig {
 
   /// Default fallback for `StacDynamicScreen` when a screen isn't published yet.
   final WidgetBuilder? fallbackBuilder;
+
+  /// Resolves translation keys for server-driven `Text` nodes (`tKey` / `t.*`
+  /// binding). Wire to the app's i18n, e.g. `(ctx, key) => ctx.tr(key)`.
+  final StacTranslate? translate;
 
   /// Custom widget parsers (e.g. aggregated from feature packages).
   final List<StacParser> extraParsers;
