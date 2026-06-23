@@ -82,12 +82,12 @@ $C = [
 ];
 
 // Reusable tappable menu card (tinted icon + label + chevron), parented to ROOT.
-$mkTile = function (string $id, string $icon, string $tint, string $label, string $tapAction, array $tapParams) use ($node, $style, $C): array {
+$mkTile = function (string $id, string $icon, string $tint, string $label, string $tapAction, array $tapParams, string $labelKey = '') use ($node, $style, $C): array {
     return [
         $id         => $node('Container', true, array_merge($style, ['background' => $C['card'], 'radius' => 14, 'padding' => 14, 'borderWidth' => 1, 'borderColor' => $C['cardBorder'], 'gap' => 0, 'align' => 'stretch', 'onTapAction' => $tapAction, 'onTapParams' => $tapParams]), [$id . 'Row'], 'ROOT'),
         $id . 'Row' => $node('Row', true, ['gap' => 12, 'align' => 'center'], [$id . 'Ic', $id . 'Lb', $id . 'Ch'], $id),
         $id . 'Ic'  => $node('Icon', false, ['name' => $icon, 'size' => 20, 'color' => $tint], [], $id . 'Row'),
-        $id . 'Lb'  => $node('Text', false, ['text' => $label, 'fontSize' => 14, 'fontWeight' => 500, 'color' => $C['white'], 'align' => 'right', 'binding' => '', 'maxLines' => 1, 'flex' => 1], [], $id . 'Row'),
+        $id . 'Lb'  => $node('Text', false, ['text' => $label, 'fontSize' => 14, 'fontWeight' => 500, 'color' => $C['white'], 'align' => 'right', 'binding' => $labelKey !== '' ? "t.{$labelKey}" : '', 'maxLines' => 1, 'flex' => 1], [], $id . 'Row'),
         $id . 'Ch'  => $node('Icon', false, ['name' => 'chevron_left_rounded', 'size' => 18, 'color' => $C['muted']], [], $id . 'Row'),
     ];
 };
@@ -119,7 +119,7 @@ $introWidgets = [
     'hero'        => $node('Container', true, ['background' => '#00000000', 'padding' => 8, 'gap' => 16, 'align' => 'center', 'flex' => 0], ['logoScope', 'tagline'], 'ROOT'),
     'logoScope'   => $node('Scope', true, ['source' => 'core.app'], ['logoImg'], 'hero'),
     'logoImg'     => $node('Image', false, ['src' => '', 'binding' => 'core.app.logo', 'width' => 132, 'height' => 132, 'fit' => 'contain'], [], 'logoScope'),
-    'tagline'     => $node('Text', false, ['text' => 'العب · بث · تواصل', 'fontSize' => 15, 'fontWeight' => 500, 'color' => $C['white'], 'align' => 'center', 'binding' => '', 'maxLines' => 1], [], 'hero'),
+    'tagline'     => $node('Text', false, ['text' => 'العب · بث · تواصل', 'fontSize' => 15, 'fontWeight' => 500, 'color' => $C['white'], 'align' => 'center', 'binding' => 't.screens.intro.tagline', 'maxLines' => 1], [], 'hero'),
 
     // Frosted CTA card.
     'card'        => $node('Container', true, array_merge($style, ['background' => $C['frost'], 'borderWidth' => 1, 'borderColor' => $C['frostBorder'], 'radius' => 28, 'padding' => 20, 'gap' => 14, 'align' => 'stretch', 'flex' => 0]), ['btnCreate', 'btnSignin'], 'ROOT'),
@@ -134,11 +134,11 @@ $introWidgets = [
 
     // Footer — terms · privacy links.
     'footer'      => $node('Container', true, ['background' => '#00000000', 'padding' => 4, 'gap' => 4, 'align' => 'center', 'flex' => 0], ['ftrText', 'ftrLinks'], 'ROOT'),
-    'ftrText'     => $node('Text', false, ['text' => 'بالتسجيل، أنت توافق على', 'fontSize' => 12, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => '', 'maxLines' => 0], [], 'footer'),
+    'ftrText'     => $node('Text', false, ['text' => 'بالتسجيل، أنت توافق على', 'fontSize' => 12, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => 't.screens.intro.terms_prefix', 'maxLines' => 0], [], 'footer'),
     'ftrLinks'    => $node('Row', true, ['gap' => 6, 'justify' => 'center', 'align' => 'center'], ['ftrTerms', 'ftrDot', 'ftrPrivacy'], 'footer'),
-    'ftrTerms'    => $node('Text', false, ['text' => 'شروط الخدمة', 'fontSize' => 12, 'fontWeight' => 600, 'color' => $C['accentLt'], 'align' => 'center', 'binding' => '', 'maxLines' => 1, 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/page/terms', 'mode' => 'push']], [], 'ftrLinks'),
+    'ftrTerms'    => $node('Text', false, ['text' => 'شروط الخدمة', 'fontSize' => 12, 'fontWeight' => 600, 'color' => $C['accentLt'], 'align' => 'center', 'binding' => 't.app.terms_of_service', 'maxLines' => 1, 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/page/terms', 'mode' => 'push']], [], 'ftrLinks'),
     'ftrDot'      => $node('Text', false, ['text' => '·', 'fontSize' => 12, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => '', 'maxLines' => 1], [], 'ftrLinks'),
-    'ftrPrivacy'  => $node('Text', false, ['text' => 'سياسة الخصوصية', 'fontSize' => 12, 'fontWeight' => 600, 'color' => $C['accentLt'], 'align' => 'center', 'binding' => '', 'maxLines' => 1, 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/page/privacy', 'mode' => 'push']], [], 'ftrLinks'),
+    'ftrPrivacy'  => $node('Text', false, ['text' => 'سياسة الخصوصية', 'fontSize' => 12, 'fontWeight' => 600, 'color' => $C['accentLt'], 'align' => 'center', 'binding' => 't.app.privacy_policy', 'maxLines' => 1, 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/page/privacy', 'mode' => 'push']], [], 'ftrLinks'),
 ];
 
 // login — back + circular frosted logo + greeting + form + register CTA + footer.
@@ -153,31 +153,31 @@ $loginWidgets = [
     'lLogoDisc'  => $node('Container', true, array_merge($style, ['width' => 100, 'height' => 100, 'radius' => 50, 'background' => $C['frost'], 'borderWidth' => 1, 'borderColor' => $C['frostBorder'], 'padding' => 18, 'align' => 'center', 'valign' => 'center']), ['lLogoScope'], 'lHero'),
     'lLogoScope' => $node('Scope', true, ['source' => 'core.app'], ['lLogoImg'], 'lLogoDisc'),
     'lLogoImg'   => $node('Image', false, ['src' => '', 'binding' => 'core.app.logo', 'width' => 64, 'height' => 64, 'fit' => 'contain'], [], 'lLogoScope'),
-    'lGreet'     => $node('Text', false, ['text' => 'مرحباً 👋', 'fontSize' => 30, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'binding' => '', 'maxLines' => 1], [], 'lHero'),
-    'lSub'       => $node('Text', false, ['text' => 'أدخل بريدك الإلكتروني للمتابعة', 'fontSize' => 15, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => '', 'maxLines' => 0], [], 'lHero'),
+    'lGreet'     => $node('Text', false, ['text' => 'مرحباً 👋', 'fontSize' => 30, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'binding' => 't.screens.login.greeting', 'maxLines' => 1], [], 'lHero'),
+    'lSub'       => $node('Text', false, ['text' => 'أدخل بريدك الإلكتروني للمتابعة', 'fontSize' => 15, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => 't.screens.login.subtitle', 'maxLines' => 0], [], 'lHero'),
 
     // Form — email + password + recover link + login button.
     'lForm'      => $node('Form', true, [], ['lCol'], 'ROOT'),
     'lCol'       => $node('Container', true, ['background' => '#00000000', 'gap' => 14, 'align' => 'stretch', 'flex' => 0], ['lEmail', 'lPass', 'recoverRow', 'btnLogin'], 'lForm'),
-    'lEmail'     => $node('TextField', false, ['fieldId' => 'email', 'placeholder' => 'أدخل عنوان بريدك الإلكتروني', 'live' => true, 'keyboard' => 'email', 'fillColor' => $C['frost'], 'textColor' => $C['white'], 'borderColor' => $C['frostBorder'], 'prefixIcon' => 'alternate_email', 'prefixIconColor' => $C['accentLt'], 'radius' => 16, 'flex' => 0], [], 'lCol'),
-    'lPass'      => $node('TextField', false, ['fieldId' => 'password', 'placeholder' => 'كلمة المرور', 'live' => true, 'obscure' => true, 'fillColor' => $C['frost'], 'textColor' => $C['white'], 'borderColor' => $C['frostBorder'], 'prefixIcon' => 'lock_outline_rounded', 'prefixIconColor' => $C['accentLt'], 'radius' => 16, 'flex' => 0], [], 'lCol'),
+    'lEmail'     => $node('TextField', false, ['fieldId' => 'email', 'placeholder' => 'أدخل عنوان بريدك الإلكتروني', 'tHint' => 'app.enter_email', 'live' => true, 'keyboard' => 'email', 'fillColor' => $C['frost'], 'textColor' => $C['white'], 'borderColor' => $C['frostBorder'], 'prefixIcon' => 'alternate_email', 'prefixIconColor' => $C['accentLt'], 'radius' => 16, 'flex' => 0], [], 'lCol'),
+    'lPass'      => $node('TextField', false, ['fieldId' => 'password', 'placeholder' => 'كلمة المرور', 'tHint' => 'app.password', 'live' => true, 'obscure' => true, 'fillColor' => $C['frost'], 'textColor' => $C['white'], 'borderColor' => $C['frostBorder'], 'prefixIcon' => 'lock_outline_rounded', 'prefixIconColor' => $C['accentLt'], 'radius' => 16, 'flex' => 0], [], 'lCol'),
     'recoverRow' => $node('Row', true, ['justify' => 'flex-end', 'align' => 'center'], ['recover'], 'lCol'),
-    'recover'    => $node('Text', false, ['text' => 'استعادة كلمة المرور', 'fontSize' => 14, 'fontWeight' => 500, 'color' => $C['accentLt'], 'align' => 'center', 'binding' => '', 'maxLines' => 1, 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/recover-password', 'mode' => 'push']], [], 'recoverRow'),
+    'recover'    => $node('Text', false, ['text' => 'استعادة كلمة المرور', 'fontSize' => 14, 'fontWeight' => 500, 'color' => $C['accentLt'], 'align' => 'center', 'binding' => 't.screens.login.forgot', 'maxLines' => 1, 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/recover-password', 'mode' => 'push']], [], 'recoverRow'),
     'btnLogin'   => $node('Container', true, array_merge($style, ['gradient' => 1, 'gradFrom' => $C['pinkFrom'], 'gradTo' => $C['pinkTo'], 'gradDir' => 'to right', 'background' => $C['pink'], 'radius' => 30, 'padding' => 16, 'align' => 'center', 'flex' => 0, 'onTapAction' => 'core.login', 'onTapParams' => ['emailField' => 'email', 'passwordField' => 'password', 'successRoute' => '/']]), ['btnLoginT'], 'lCol'),
-    'btnLoginT'  => $node('Text', false, ['text' => 'تسجيل الدخول', 'fontSize' => 16, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'binding' => '', 'maxLines' => 1], [], 'btnLogin'),
+    'btnLoginT'  => $node('Text', false, ['text' => 'تسجيل الدخول', 'fontSize' => 16, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'binding' => 't.app.login', 'maxLines' => 1], [], 'btnLogin'),
 
     // Register CTA row.
     'regRow'     => $node('Row', true, ['gap' => 6, 'justify' => 'center', 'align' => 'center'], ['regText', 'regBtn'], 'ROOT'),
-    'regText'    => $node('Text', false, ['text' => 'لم تسجل بعد؟', 'fontSize' => 14, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => '', 'maxLines' => 1], [], 'regRow'),
-    'regBtn'     => $node('Text', false, ['text' => 'سجل الآن', 'fontSize' => 14, 'fontWeight' => 700, 'color' => $C['accentLt'], 'align' => 'center', 'binding' => '', 'maxLines' => 1, 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/register', 'mode' => 'push']], [], 'regRow'),
+    'regText'    => $node('Text', false, ['text' => 'لم تسجل بعد؟', 'fontSize' => 14, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => 't.screens.login.no_account', 'maxLines' => 1], [], 'regRow'),
+    'regBtn'     => $node('Text', false, ['text' => 'سجل الآن', 'fontSize' => 14, 'fontWeight' => 700, 'color' => $C['accentLt'], 'align' => 'center', 'binding' => 't.screens.login.register_now', 'maxLines' => 1, 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/register', 'mode' => 'push']], [], 'regRow'),
 
     // Footer — user agreement + privacy.
     'lFooter'     => $node('Container', true, ['background' => '#00000000', 'padding' => 4, 'gap' => 4, 'align' => 'center', 'flex' => 0], ['lFtrText', 'lFtrLinks'], 'ROOT'),
-    'lFtrText'    => $node('Text', false, ['text' => 'بتسجيل الدخول أنت توافق على', 'fontSize' => 12, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => '', 'maxLines' => 0], [], 'lFooter'),
+    'lFtrText'    => $node('Text', false, ['text' => 'بتسجيل الدخول أنت توافق على', 'fontSize' => 12, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => 't.screens.login.terms_prefix', 'maxLines' => 0], [], 'lFooter'),
     'lFtrLinks'   => $node('Row', true, ['gap' => 6, 'justify' => 'center', 'align' => 'center'], ['lFtrUa', 'lFtrAnd', 'lFtrPrivacy'], 'lFooter'),
-    'lFtrUa'      => $node('Text', false, ['text' => 'اتفاقية المستخدم', 'fontSize' => 12, 'fontWeight' => 600, 'color' => $C['accentLt'], 'align' => 'center', 'binding' => '', 'maxLines' => 1, 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/page/terms', 'mode' => 'push']], [], 'lFtrLinks'),
-    'lFtrAnd'     => $node('Text', false, ['text' => 'و', 'fontSize' => 12, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => '', 'maxLines' => 1], [], 'lFtrLinks'),
-    'lFtrPrivacy' => $node('Text', false, ['text' => 'سياسة الخصوصية', 'fontSize' => 12, 'fontWeight' => 600, 'color' => $C['accentLt'], 'align' => 'center', 'binding' => '', 'maxLines' => 1, 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/page/privacy', 'mode' => 'push']], [], 'lFtrLinks'),
+    'lFtrUa'      => $node('Text', false, ['text' => 'اتفاقية المستخدم', 'fontSize' => 12, 'fontWeight' => 600, 'color' => $C['accentLt'], 'align' => 'center', 'binding' => 't.app.user_agreement', 'maxLines' => 1, 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/page/terms', 'mode' => 'push']], [], 'lFtrLinks'),
+    'lFtrAnd'     => $node('Text', false, ['text' => 'و', 'fontSize' => 12, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => 't.app.and', 'maxLines' => 1], [], 'lFtrLinks'),
+    'lFtrPrivacy' => $node('Text', false, ['text' => 'سياسة الخصوصية', 'fontSize' => 12, 'fontWeight' => 600, 'color' => $C['accentLt'], 'align' => 'center', 'binding' => 't.app.privacy_policy', 'maxLines' => 1, 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/page/privacy', 'mode' => 'push']], [], 'lFtrLinks'),
 ];
 
 // register — back + title + email/password form + Next.
@@ -185,26 +185,26 @@ $registerWidgets = [
     'ROOT'   => $node('Container', true, array_merge($style, ['gradient' => 1, 'gradFrom' => $C['authFrom'], 'gradTo' => $C['authTo'], 'gradDir' => 'to bottom right', 'background' => $C['authBg'], 'padding' => 22, 'gap' => 22, 'align' => 'stretch', 'flex' => 0]), ['rTop', 'rForm'], null),
     'rTop'   => $node('Row', true, ['gap' => 8, 'align' => 'center'], ['rBack', 'rTitle'], 'ROOT'),
     'rBack'  => $node('Icon', false, ['name' => 'arrow_back_ios_new', 'size' => 20, 'color' => $C['white'], 'onTapAction' => 'core.back'], [], 'rTop'),
-    'rTitle' => $node('Text', false, ['text' => 'التسجيل', 'fontSize' => 16, 'fontWeight' => 600, 'color' => $C['white'], 'align' => 'center', 'binding' => '', 'maxLines' => 1, 'flex' => 1], [], 'rTop'),
+    'rTitle' => $node('Text', false, ['text' => 'التسجيل', 'fontSize' => 16, 'fontWeight' => 600, 'color' => $C['white'], 'align' => 'center', 'binding' => 't.app.register', 'maxLines' => 1, 'flex' => 1], [], 'rTop'),
     'rForm'  => $node('Form', true, [], ['rCol'], 'ROOT'),
     'rCol'   => $node('Container', true, ['background' => '#00000000', 'gap' => 15, 'align' => 'stretch', 'flex' => 0], ['rEmail', 'rPass', 'rNext'], 'rForm'),
-    'rEmail' => $node('TextField', false, ['fieldId' => 'email', 'placeholder' => 'البريد الإلكتروني', 'live' => true, 'keyboard' => 'email', 'fillColor' => $C['frost'], 'textColor' => $C['white'], 'borderColor' => $C['frostBorder'], 'radius' => 30, 'flex' => 0], [], 'rCol'),
-    'rPass'  => $node('TextField', false, ['fieldId' => 'password', 'placeholder' => 'كلمة المرور', 'live' => true, 'obscure' => true, 'fillColor' => $C['frost'], 'textColor' => $C['white'], 'borderColor' => $C['frostBorder'], 'radius' => 30, 'flex' => 0], [], 'rCol'),
+    'rEmail' => $node('TextField', false, ['fieldId' => 'email', 'placeholder' => 'البريد الإلكتروني', 'tHint' => 'app.email', 'live' => true, 'keyboard' => 'email', 'fillColor' => $C['frost'], 'textColor' => $C['white'], 'borderColor' => $C['frostBorder'], 'radius' => 30, 'flex' => 0], [], 'rCol'),
+    'rPass'  => $node('TextField', false, ['fieldId' => 'password', 'placeholder' => 'كلمة المرور', 'tHint' => 'app.password', 'live' => true, 'obscure' => true, 'fillColor' => $C['frost'], 'textColor' => $C['white'], 'borderColor' => $C['frostBorder'], 'radius' => 30, 'flex' => 0], [], 'rCol'),
     'rNext'  => $node('Container', true, array_merge($style, ['gradient' => 1, 'gradFrom' => $C['pinkFrom'], 'gradTo' => $C['pinkTo'], 'gradDir' => 'to right', 'background' => $C['pink'], 'radius' => 30, 'padding' => 15, 'align' => 'center', 'flex' => 0, 'onTapAction' => 'core.register', 'onTapParams' => ['emailField' => 'email', 'passwordField' => 'password']]), ['rNextT'], 'rCol'),
-    'rNextT' => $node('Text', false, ['text' => 'التالي', 'fontSize' => 16, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'binding' => '', 'maxLines' => 1], [], 'rNext'),
+    'rNextT' => $node('Text', false, ['text' => 'التالي', 'fontSize' => 16, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'binding' => 't.app.next', 'maxLines' => 1], [], 'rNext'),
 ];
 
 // home — title row + search + welcome card. Transparent ROOT.
 $homeWidgets = [
     'ROOT'      => $node('Container', true, array_merge($style, ['background' => $C['screen'], 'padding' => 16, 'gap' => 16, 'align' => 'stretch', 'flex' => 0]), ['topRow', 'search', 'card'], null),
     'topRow'    => $node('Row', true, ['gap' => 8, 'align' => 'center'], ['appName', 'bell'], 'ROOT'),
-    'appName'   => $node('Text', false, ['text' => 'الرئيسية', 'fontSize' => 22, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'right', 'binding' => '', 'maxLines' => 1, 'flex' => 1], [], 'topRow'),
+    'appName'   => $node('Text', false, ['text' => 'الرئيسية', 'fontSize' => 22, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'right', 'binding' => 't.app.home', 'maxLines' => 1, 'flex' => 1], [], 'topRow'),
     'bell'      => $node('Icon', false, ['name' => 'notifications_none', 'size' => 24, 'color' => $C['white'], 'onTapAction' => 'core.navigate', 'onTapParams' => ['route' => '/notifications', 'mode' => 'push']], [], 'topRow'),
-    'search'    => $node('TextField', false, ['fieldId' => 'home_search', 'placeholder' => 'بحث', 'live' => false, 'fillColor' => $C['field'], 'radius' => 16, 'flex' => 0], [], 'ROOT'),
+    'search'    => $node('TextField', false, ['fieldId' => 'home_search', 'placeholder' => 'بحث', 'tHint' => 'app.search', 'live' => false, 'fillColor' => $C['field'], 'radius' => 16, 'flex' => 0], [], 'ROOT'),
     'card'      => $node('Container', true, array_merge($style, ['background' => $C['card'], 'radius' => 16, 'padding' => 22, 'borderWidth' => 1, 'borderColor' => $C['cardBorder'], 'gap' => 10, 'align' => 'center']), ['cardIcon', 'cardTitle', 'cardSub'], 'ROOT'),
     'cardIcon'  => $node('Icon', false, ['name' => 'auto_awesome', 'size' => 30, 'color' => $C['accentLt']], [], 'card'),
-    'cardTitle' => $node('Text', false, ['text' => 'أهلاً بك في تطبيقك', 'fontSize' => 16, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'binding' => '', 'maxLines' => 0], [], 'card'),
-    'cardSub'   => $node('Text', false, ['text' => 'ابدأ استكشاف كل المميزات', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => '', 'maxLines' => 0], [], 'card'),
+    'cardTitle' => $node('Text', false, ['text' => 'أهلاً بك في تطبيقك', 'fontSize' => 16, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'binding' => 't.screens.home.welcome_title', 'maxLines' => 0], [], 'card'),
+    'cardSub'   => $node('Text', false, ['text' => 'ابدأ استكشاف كل المميزات', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => 't.screens.home.welcome_subtitle', 'maxLines' => 0], [], 'card'),
 ];
 
 // profile — RICH "Me" landing, COMPOSED from Studio primitives only (§5 of
@@ -264,7 +264,7 @@ $profileWidgets = array_merge(
         'bio'         => $node('Text', false, ['text' => '', 'binding' => 'core.currentUser.bio', 'fontSize' => 14, 'fontWeight' => 400, 'color' => $C['bioText'], 'align' => 'center', 'maxLines' => 0], [], 'bioRow'),
         'bioPencil'   => $node('Icon', false, ['name' => 'edit_rounded', 'size' => 14, 'color' => $C['accentLt'], 'onTapAction' => 'core.editProfile'], [], 'bioRow'),
     ],
-    $mkTile('mSettings', 'settings_rounded', '#42A5F5', 'الإعدادات', 'core.navigate', ['route' => '/settings', 'mode' => 'push'])
+    $mkTile('mSettings', 'settings_rounded', '#42A5F5', 'الإعدادات', 'core.navigate', ['route' => '/settings', 'mode' => 'push'], 'app.settings')
 );
 
 // settings — polished list matching the native design: an in-body app bar
@@ -294,7 +294,7 @@ $settingsWidgets = array_merge(
         // In-body app bar: back + title.
         'hdr'        => $node('Row', true, ['gap' => 12, 'align' => 'center'], ['hdrBack', 'hdrTitle'], 'ROOT'),
         'hdrBack'    => $node('Icon', false, ['name' => 'arrow_back_rounded', 'size' => 24, 'color' => $C['white'], 'onTapAction' => 'core.back'], [], 'hdr'),
-        'hdrTitle'   => $node('Text', false, ['text' => 'الإعدادات', 'binding' => '', 'fontSize' => 22, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'right', 'maxLines' => 1, 'flex' => 1], [], 'hdr'),
+        'hdrTitle'   => $node('Text', false, ['text' => 'الإعدادات', 'binding' => 't.app.settings', 'fontSize' => 22, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'right', 'maxLines' => 1, 'flex' => 1], [], 'hdr'),
 
         // Language — standalone frosted card.
         'langCard'   => $node('Container', true, array_merge($style, ['background' => $cardBg, 'borderWidth' => 1, 'borderColor' => $cardBd, 'radius' => 16, 'padding' => 4, 'align' => 'stretch', 'flex' => 0]), ['rLang'], 'ROOT'),
@@ -304,7 +304,7 @@ $settingsWidgets = array_merge(
 
         // Logout — standalone frosted card (destructive).
         'logoutCard' => $node('Container', true, array_merge($style, ['background' => $cardBg, 'borderWidth' => 1, 'borderColor' => $cardBd, 'radius' => 16, 'padMode' => 'sides', 'padL' => 14, 'padT' => 15, 'padR' => 14, 'padB' => 15, 'align' => 'center', 'flex' => 0, 'onTapAction' => 'core.logout', 'onTapParams' => ['confirm' => true]]), ['logoutT'], 'ROOT'),
-        'logoutT'    => $node('Text', false, ['text' => 'تسجيل الخروج', 'binding' => '', 'fontSize' => 15, 'fontWeight' => 700, 'color' => $C['red'], 'align' => 'center', 'maxLines' => 1], [], 'logoutCard'),
+        'logoutT'    => $node('Text', false, ['text' => 'تسجيل الخروج', 'binding' => 't.app.logout', 'fontSize' => 15, 'fontWeight' => 700, 'color' => $C['red'], 'align' => 'center', 'maxLines' => 1], [], 'logoutCard'),
     ],
     $mkSetRow('rLang', 'language_rounded', '#26C6DA', '#3326C6DA', 'اللغة', 'core.navigate', ['route' => '/language-screen', 'mode' => 'push'], 'langCard'),
     $mkSetRow('rPriv', 'shield_rounded', '#66BB6A', '#3366BB6A', 'سياسة الخصوصية', 'core.navigate', ['route' => '/page/privacy', 'mode' => 'push'], 'grpCard'),
@@ -325,8 +325,8 @@ $settingsWidgets = array_merge(
 $audioWidgets = [
     'ROOT'   => $node('Container', true, array_merge($style, ['background' => $C['screen'], 'padding' => 24, 'gap' => 12, 'align' => 'center', 'flex' => 0]), ['aIcon', 'aTitle', 'aSub'], null),
     'aIcon'  => $node('Icon', false, ['name' => 'graphic_eq', 'size' => 64, 'color' => $C['accentLt']], [], 'ROOT'),
-    'aTitle' => $node('Text', false, ['text' => 'الغرف الصوتية', 'fontSize' => 20, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'binding' => '', 'maxLines' => 1], [], 'ROOT'),
-    'aSub'   => $node('Text', false, ['text' => 'قريباً 🎧', 'fontSize' => 14, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => '', 'maxLines' => 0], [], 'ROOT'),
+    'aTitle' => $node('Text', false, ['text' => 'الغرف الصوتية', 'fontSize' => 20, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'binding' => 't.app.audio_rooms', 'maxLines' => 1], [], 'ROOT'),
+    'aSub'   => $node('Text', false, ['text' => 'قريباً 🎧', 'fontSize' => 14, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => 't.app.coming_soon', 'maxLines' => 0], [], 'ROOT'),
 ];
 
 return [
@@ -530,7 +530,7 @@ return [
             'name'         => 'login',
             'label'        => 'تسجيل الدخول',
             'icon'         => '🔑',
-            'version'      => '2.1.0',
+            'version'      => '2.2.0',
             'nav'          => false,
             'navIcon'      => 'person',
             'order'        => 1,
@@ -545,7 +545,7 @@ return [
             'name'         => 'register',
             'label'        => 'إنشاء حساب',
             'icon'         => '📝',
-            'version'      => '1.1.0',
+            'version'      => '1.2.0',
             'nav'          => false,
             'navIcon'      => 'person_add',
             'order'        => 3,
@@ -560,7 +560,7 @@ return [
             'name'         => 'home',
             'label'        => 'الرئيسية',
             'icon'         => '🏠',
-            'version'      => '1.6.0',
+            'version'      => '1.7.0',
             'nav'          => true,
             'navIcon'      => 'home',
             'order'        => 2,
@@ -575,7 +575,7 @@ return [
             'name'         => 'audio',
             'label'        => 'الغرف الصوتية',
             'icon'         => '🎧',
-            'version'      => '1.6.0',
+            'version'      => '1.7.0',
             'nav'          => true,
             'navIcon'      => 'mic',
             'order'        => 20,
@@ -590,7 +590,7 @@ return [
             'name'         => 'profile',
             'label'        => 'الملف الشخصي (تبويب)',
             'icon'         => '👤',
-            'version'      => '1.8.8',
+            'version'      => '1.8.9',
             'nav'          => true,
             'navIcon'      => 'person',
             'order'        => 30,
@@ -605,7 +605,7 @@ return [
             'name'         => 'settings',
             'label'        => 'الإعدادات',
             'icon'         => '⚙️',
-            'version'      => '1.7.1',
+            'version'      => '1.7.2',
             // Removed from the bottom nav (owner's request) — it's opened from the
             // profile's "الإعدادات" card (core.navigate → /settings) instead.
             'nav'          => false,

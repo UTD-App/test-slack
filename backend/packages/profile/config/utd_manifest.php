@@ -113,7 +113,7 @@ $profileWidgets = [
 
     // UID + copy glyph.
     'uidRow'      => $node('Row', true, ['gap' => 4, 'justify' => 'center', 'align' => 'center', 'visibleBinding' => 'profile.user.uid'], ['uidLabel', 'uid', 'copyIcon'], 'content'),
-    'uidLabel'    => $node('Text', false, ['text' => 'الأبدي:', 'binding' => '', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'maxLines' => 1], [], 'uidRow'),
+    'uidLabel'    => $node('Text', false, ['text' => 'الأبدي:', 'binding' => 't.app.eternal_id', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'maxLines' => 1], [], 'uidRow'),
     'uid'         => $node('Text', false, ['text' => '', 'binding' => 'profile.user.uid', 'fontSize' => 13, 'fontWeight' => 600, 'color' => $C['muted'], 'align' => 'center', 'maxLines' => 1], [], 'uidRow'),
     'copyIcon'    => $node('Icon', false, ['name' => 'content_copy_rounded', 'size' => 14, 'color' => $C['muted']], [], 'uidRow'),
 
@@ -183,7 +183,7 @@ return [
             'name'         => 'user_profile',
             'label'        => 'البروفايل الكامل (عند الصورة)',
             'icon'         => '👤',
-            'version'      => '1.15.0',
+            'version'      => '1.15.1',
             'nav'          => false,
             'navIcon'      => 'person',
             'order'        => 31,

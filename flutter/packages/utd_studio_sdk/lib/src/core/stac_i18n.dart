@@ -40,6 +40,16 @@ dynamic _walk(dynamic node, BuildContext ctx, StacTranslate translate) {
         out.remove('binding');
       }
     }
+
+    // Input fields: `tHint` → translate the placeholder/hint (same fallback rule).
+    final hintKey = out['tHint'];
+    if (hintKey is String && hintKey.isNotEmpty) {
+      final h = translate(ctx, hintKey);
+      if (h.isNotEmpty && h != hintKey) {
+        out['placeholder'] = h;
+        out['hintText'] = h;
+      }
+    }
     return out;
   }
   if (node is List) {
