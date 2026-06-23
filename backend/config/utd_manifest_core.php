@@ -108,7 +108,10 @@ $introWidgets = [
     // so it fills the WHOLE screen (a flex:0 gradient Container only covers its
     // own content height → flat colour below). Top spacing keeps the hero off the
     // status bar / camera cutout (appBar is disabled).
-    'ROOT'        => $node('Container', true, array_merge($style, ['background' => '#00000000', 'padMode' => 'sides', 'padL' => 22, 'padT' => 16, 'padR' => 22, 'padB' => 22, 'gap' => 20, 'align' => 'stretch', 'flex' => 0]), ['langRow', 'hero', 'card', 'footer'], null),
+    // padT 48 clears the status bar / camera cutout (chrome.background gradient
+    // makes the body extend behind the status bar; Craft has no SafeArea node, so
+    // we pad the content down — the gradient stays full-bleed behind it).
+    'ROOT'        => $node('Container', true, array_merge($style, ['background' => '#00000000', 'padMode' => 'sides', 'padL' => 22, 'padT' => 48, 'padR' => 22, 'padB' => 22, 'gap' => 20, 'align' => 'stretch', 'flex' => 0]), ['langRow', 'hero', 'card', 'footer'], null),
 
     // Language pill (EN active / ع) — top-end. Tapping switches the app locale.
     // (Active highlight is static — there's no locale binding to drive it.)
@@ -151,7 +154,7 @@ $introWidgets = [
 $loginWidgets = [
     // ROOT transparent — full-bleed gradient via `chrome.background` (fills the
     // whole screen; a flex:0 gradient Container only covers its content).
-    'ROOT'       => $node('Container', true, array_merge($style, ['background' => '#00000000', 'padMode' => 'sides', 'padL' => 22, 'padT' => 12, 'padR' => 22, 'padB' => 22, 'gap' => 18, 'align' => 'stretch', 'flex' => 0]), ['lTop', 'lHero', 'lForm', 'regRow', 'lFooter'], null),
+    'ROOT'       => $node('Container', true, array_merge($style, ['background' => '#00000000', 'padMode' => 'sides', 'padL' => 22, 'padT' => 48, 'padR' => 22, 'padB' => 22, 'gap' => 18, 'align' => 'stretch', 'flex' => 0]), ['lTop', 'lHero', 'lForm', 'regRow', 'lFooter'], null),
 
     'lTop'       => $node('Row', true, ['justify' => 'flex-start', 'align' => 'center'], ['lBack'], 'ROOT'),
     'lBack'      => $node('Icon', false, ['name' => 'arrow_back_ios_new', 'size' => 20, 'color' => $C['white'], 'onTapAction' => 'core.back'], [], 'lTop'),
@@ -193,7 +196,7 @@ $loginWidgets = [
 // two auth forms read as a pair (the old register was just title + 2 fields + a
 // button with a big empty void). Gradient via `chrome.background` (ROOT transparent).
 $registerWidgets = [
-    'ROOT'    => $node('Container', true, array_merge($style, ['background' => '#00000000', 'padMode' => 'sides', 'padL' => 22, 'padT' => 12, 'padR' => 22, 'padB' => 22, 'gap' => 18, 'align' => 'stretch', 'flex' => 0]), ['rTop', 'rHero', 'rForm', 'rAlready'], null),
+    'ROOT'    => $node('Container', true, array_merge($style, ['background' => '#00000000', 'padMode' => 'sides', 'padL' => 22, 'padT' => 48, 'padR' => 22, 'padB' => 22, 'gap' => 18, 'align' => 'stretch', 'flex' => 0]), ['rTop', 'rHero', 'rForm', 'rAlready'], null),
 
     'rTop'    => $node('Row', true, ['gap' => 8, 'align' => 'center'], ['rBack', 'rTitle'], 'ROOT'),
     'rBack'   => $node('Icon', false, ['name' => 'arrow_back_ios_new', 'size' => 20, 'color' => $C['white'], 'onTapAction' => 'core.back'], [], 'rTop'),
@@ -542,7 +545,7 @@ return [
             'name'         => 'intro',
             'label'        => 'الترحيب',
             'icon'         => '👋',
-            'version'      => '1.2.0',
+            'version'      => '1.2.1',
             'nav'          => false,
             'navIcon'      => 'waving_hand',
             'order'        => 0,
@@ -562,7 +565,7 @@ return [
             'name'         => 'login',
             'label'        => 'تسجيل الدخول',
             'icon'         => '🔑',
-            'version'      => '2.3.0',
+            'version'      => '2.3.1',
             'nav'          => false,
             'navIcon'      => 'person',
             'order'        => 1,
@@ -580,7 +583,7 @@ return [
             'name'         => 'register',
             'label'        => 'إنشاء حساب',
             'icon'         => '📝',
-            'version'      => '1.3.0',
+            'version'      => '1.3.1',
             'nav'          => false,
             'navIcon'      => 'person_add',
             'order'        => 3,
