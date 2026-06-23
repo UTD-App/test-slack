@@ -65,6 +65,19 @@ class MomentUserCommentController extends Controller
             return Common::apiResponse(0, __('moment::messages.not_found'), [], 402);
         }
 
+        $comment = $moment->comments()->where('moment_user_comments.id', $id)->first();
+        if (! $comment) {
+            return Common::apiResponse(0, __('moment::messages.not_found'), [], 402);
+        }
+
+        // Ownership gate: only the comment's author OR the moment's owner may
+        // delete it. Without this any authenticated user could delete anyone's
+        // comment just by guessing its id.
+        $userId = (int) Auth::id();
+        if ((int) $comment->user_id !== $userId && (int) $moment->user_id !== $userId) {
+            return Common::apiResponse(0, __('moment::messages.not_owner'), [], 403);
+        }
+
         try {
             $this->momentCommentsService->delete($id, $moment);
 

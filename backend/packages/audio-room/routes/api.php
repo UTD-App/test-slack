@@ -8,7 +8,10 @@ use Utd\AudioRoom\Http\Controllers\RoomAdminController;
 // UTD Stream webhook — no auth (called by external service, not a user)
 Route::post('webhook/stream', [RoomController::class, 'streamWebhook']);
 
-Route::middleware(['auth:sanctum', 'package.enabled:audio-room'])->group(function () {
+// Mirror the base authenticated stack so a banned / superseded session can't
+// create or enter rooms via the package routes (generalBan = account suspended,
+// userBan = per-user ban, checkLatestToken = another device logged in).
+Route::middleware(['auth:sanctum', 'checkLatestToken', 'generalBan', 'userBan', 'package.enabled:audio-room'])->group(function () {
     // Room CRUD
     Route::get('rooms', [RoomController::class, 'index']);
     Route::post('rooms', [RoomController::class, 'store']);

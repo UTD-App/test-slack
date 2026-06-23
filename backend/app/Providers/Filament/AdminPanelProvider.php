@@ -48,7 +48,9 @@ class AdminPanelProvider extends PanelProvider
 
                 return trim(($name ?: config('app.name')) . ' — ' . __('admin.admin_brand_suffix'));
             })
-            ->favicon(asset('favicon.ico'))
+            // public/favicon.ico ships empty (0 bytes) → blank tab icon. Use the
+            // real splash logo PNG instead (browsers accept PNG favicons).
+            ->favicon(asset('images/utd-splash-logo.png'))
             ->darkMode(false)
             ->userMenuItems([
                 MenuItem::make()

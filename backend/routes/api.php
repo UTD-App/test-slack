@@ -26,7 +26,10 @@ Route::post('/check-email', [AuthController::class, 'checkEmail']);
 
 // Package registration & discovery
 Route::get('/packages/installed', [PackageController::class, 'installed']);
-Route::post('/packages/register', [PackageController::class, 'register']);
+// Machine-to-machine package translation-key registration (package install
+// tooling, not an end-user call) — guarded by the X-UTD-Secret header so a
+// random client can't write translation rows into the DB.
+Route::post('/packages/register', [PackageController::class, 'register'])->middleware('utd.secret');
 
 // Stac server-driven UI
 Route::post('/stac/push', [StacController::class, 'push']);

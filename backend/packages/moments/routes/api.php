@@ -12,10 +12,13 @@ use Utd\Moment\Http\Controllers\ReportController;
 | `package.enabled:moment` returns 403 while the package is disabled in
 | admin/packages (replaces Eagle's appFeatureEnable:moment).
 | NOTE(gap): other Eagle middleware not in the Base yet:
-|   checkLatestToken, generalBan, userBan, ban.user.actions:moment,
-|   moment.allowed, update.last.seen — see NOTES_GAPS.md → "middleware".
+|   ban.user.actions:moment, moment.allowed, update.last.seen
+|   — see NOTES_GAPS.md → "middleware".
 */
-Route::middleware(['auth:sanctum', 'package.enabled:moment'])->group(function () {
+// Mirror the base authenticated stack so a banned / superseded session can't post
+// or interact via the package routes (generalBan = account suspended, userBan =
+// per-user ban, checkLatestToken = another device logged in).
+Route::middleware(['auth:sanctum', 'checkLatestToken', 'generalBan', 'userBan', 'package.enabled:moment'])->group(function () {
     // A user's moments (profile package). Declared before the {moment} resource so "user" isn't captured as an id.
     Route::get('moment/user/{user_id}', [MomentController::class, 'userMoments'])->whereNumber('user_id');
 

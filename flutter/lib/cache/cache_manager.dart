@@ -124,5 +124,12 @@ class CacheManager {
 
   static bool get hasSession => getToken() != null;
 
-  static Future<void> clear() => _box.clear();
+  /// Clears cached data on logout. Device-level preferences that must survive a
+  /// logout (so a returning user isn't treated as brand-new) are preserved —
+  /// otherwise logout would re-show the onboarding carousel on the next launch.
+  static Future<void> clear() async {
+    final seenOnboarding = onboardingSeen;
+    await _box.clear();
+    if (seenOnboarding) await markOnboardingSeen();
+  }
 }

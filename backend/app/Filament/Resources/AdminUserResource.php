@@ -77,7 +77,8 @@ class AdminUserResource extends BaseResource
                     ->color('warning')
                     ->icon('heroicon-o-lock-closed')
                     ->requiresConfirmation()
-                    ->visible(fn(AdminUser $r) => $r->is_active)
+                    // Can't deactivate yourself or the last super admin (lockout).
+                    ->visible(fn(AdminUser $r) => $r->is_active && ! static::isProtected($r))
                     ->action(fn(AdminUser $r) => $r->update(['is_active' => false])),
                 Action::make('activate')
                     ->label(__('admin.activate'))
@@ -86,9 +87,32 @@ class AdminUserResource extends BaseResource
                     ->requiresConfirmation()
                     ->visible(fn(AdminUser $r) => !$r->is_active)
                     ->action(fn(AdminUser $r) => $r->update(['is_active' => true])),
-                DeleteAction::make(),
+                // Can't delete yourself or the last super admin.
+                DeleteAction::make()
+                    ->visible(fn(AdminUser $r) => ! static::isProtected($r)),
             ])
             ->defaultSort('created_at', 'desc');
+    }
+
+    /**
+     * A protected admin row can't be deleted/deactivated: it's either the
+     * currently signed-in admin (no self-lockout) or the last super admin (so
+     * the panel can never be left without a super admin).
+     */
+    protected static function isProtected(AdminUser $record): bool
+    {
+        if ((int) $record->id === (int) filament()->auth()->id()) {
+            return true;
+        }
+
+        if ($record->isSuperAdmin()) {
+            $superAdmins = AdminUser::whereHas('roles', fn($q) => $q->where('name', 'super_admin'))->count();
+            if ($superAdmins <= 1) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public static function getPages(): array

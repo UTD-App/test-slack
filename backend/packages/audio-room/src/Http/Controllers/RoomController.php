@@ -247,9 +247,11 @@ class RoomController extends Controller
 
         $room->loadCount('visitors');
 
+        // Only the PUBLIC app_id goes to the client; the server_secret must never
+        // leave the server (it mints Stream tokens). Clients that need to join
+        // call POST /rooms/{id}/token, which signs server-side with the secret.
         $streamConfig = [
             'app_id' => config('audio-room.utd_stream.app_id', ''),
-            'server_secret' => config('audio-room.utd_stream.server_secret', ''),
         ];
 
         $favorites = json_decode(Auth::user()->room_favorites ?? '[]', true);
@@ -399,6 +401,11 @@ class RoomController extends Controller
             $favorites = array_values(array_diff($favorites, [$id]));
             $isFavorite = false;
         } else {
+            // Don't favorite a room that doesn't exist (otherwise the favorites
+            // list fills with dangling ids that 404 when listed).
+            if (! Room::where('id', $id)->exists()) {
+                return Common::apiResponse(false, 'Room not found', null, 404);
+            }
             $favorites[] = $id;
             $isFavorite = true;
         }
@@ -517,9 +524,10 @@ class RoomController extends Controller
 
     public function config(): JsonResponse
     {
+        // Public client config only — never expose the server_secret (it signs
+        // Stream tokens server-side via POST /rooms/{id}/token).
         return Common::apiResponse(true, '', [
             'app_id' => config('audio-room.utd_stream.app_id', ''),
-            'server_secret' => config('audio-room.utd_stream.server_secret', ''),
             'max_admin' => 4,
         ]);
     }

@@ -30,6 +30,20 @@ class Handler extends ExceptionHandler
                 return Common::apiResponse(false, $e->getMessage(), null, $statusCode);
             }
 
+            // A plain Laravel ValidationException (from $request->validate() /
+            // Validator::validate()) would otherwise fall through to the 500
+            // fallback below on api/* routes. Render it as a proper 422 with the
+            // field errors — one systemic fix for every `$request->validate()`
+            // call instead of rewriting each into CValidationException.
+            if ($e instanceof ValidationException) {
+                return Common::apiResponse(
+                    false,
+                    $e->validator->errors()->first(),
+                    $e->errors(),
+                    422,
+                );
+            }
+
             if ($e instanceof MediaUploadException) {
                 return Common::apiResponse(false, $e->getMessage(), null, $e->getStatusCode());
             }

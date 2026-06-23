@@ -214,4 +214,60 @@ class MomentApiTest extends TestCase
             ->assertStatus(200)
             ->assertJsonPath('data.0.user.image', 'https://cdn.example.com/a.jpg');
     }
+
+    /**
+     * Send the next request as a specific bearer token. Clears the resolved auth
+     * guard first so a multi-user test doesn't reuse the previous request's
+     * cached user (which would trip CheckLatestToken with a 505).
+     */
+    private function asToken(string $token): self
+    {
+        $this->app['auth']->forgetGuards();
+
+        return $this->withHeader('Authorization', "Bearer {$token}");
+    }
+
+    /** S2 — a stranger cannot delete someone else's comment; the author can. */
+    public function test_only_comment_author_or_moment_owner_can_delete_comment(): void
+    {
+        [$owner] = $this->actingUser();
+        $moment = Moment::create(['user_id' => $owner->id, 'description' => 'has-comments']);
+
+        [$authorA, $tokenA] = $this->actingUser();
+        $this->asToken($tokenA)
+            ->postJson("/api/moment/{$moment->id}/comment", ['comment' => 'mine'])
+            ->assertStatus(200);
+        $commentId = \Utd\Moment\Entities\MomentCommint::where('user_id', $authorA->id)->value('id');
+
+        // A stranger (not author, not moment owner) is rejected with 403.
+        [, $tokenB] = $this->actingUser();
+        $this->asToken($tokenB)
+            ->deleteJson("/api/moment/{$moment->id}/comment/{$commentId}")
+            ->assertStatus(403);
+        $this->assertDatabaseHas('moment_user_comments', ['id' => $commentId]);
+
+        // The author can delete their own comment.
+        $this->asToken($tokenA)
+            ->deleteJson("/api/moment/{$moment->id}/comment/{$commentId}")
+            ->assertStatus(200);
+        $this->assertDatabaseMissing('moment_user_comments', ['id' => $commentId]);
+    }
+
+    /** S2 — the moment owner may moderate (delete) any comment on their moment. */
+    public function test_moment_owner_can_delete_any_comment_on_their_moment(): void
+    {
+        [$owner, $ownerToken] = $this->actingUser();
+        $moment = Moment::create(['user_id' => $owner->id, 'description' => 'mod']);
+
+        [$commenter, $commenterToken] = $this->actingUser();
+        $this->asToken($commenterToken)
+            ->postJson("/api/moment/{$moment->id}/comment", ['comment' => 'hi'])
+            ->assertStatus(200);
+        $commentId = \Utd\Moment\Entities\MomentCommint::where('user_id', $commenter->id)->value('id');
+
+        $this->asToken($ownerToken)
+            ->deleteJson("/api/moment/{$moment->id}/comment/{$commentId}")
+            ->assertStatus(200);
+        $this->assertDatabaseMissing('moment_user_comments', ['id' => $commentId]);
+    }
 }

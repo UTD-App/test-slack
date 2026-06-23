@@ -313,8 +313,6 @@ class _AudioRoomPageState extends State<AudioRoomPage>
       );
     }
 
-    final serverSecret = streamConfig?['server_secret']?.toString() ?? '';
-
     final userData = CacheManager.getUserData();
     final userId = userData?['id']?.toString() ?? '';
     final userName = userData?['name']?.toString() ?? '';
