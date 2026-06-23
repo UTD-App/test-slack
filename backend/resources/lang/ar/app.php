@@ -83,4 +83,5 @@ return [
     'profile_unavailable'    => 'البروفايل غير متاح حاليًا',
     'permission_denied'      => 'تم رفض الإذن. فعّله من الإعدادات.',
     'could_not_open_link'    => 'تعذّر فتح الرابط',
+    'app.hello'              => 'مرحباً'
 ];
