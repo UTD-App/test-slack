@@ -37,7 +37,8 @@ Route::post('/stac/push', [StacController::class, 'push']);
 // UTD Studio design-time discovery (manifest + sample), guarded by X-UTD-Secret
 Route::get('/utd/manifest', [UtdManifestController::class, 'manifest'])->middleware('utd.secret');
 Route::get('/utd/packages/{key}/sample', [UtdManifestController::class, 'sample'])->middleware('utd.secret');
-// Studio write-back: save edited UI strings into the dashboard translation store.
+// Studio sync channel (languages): GET pulls the catalog, POST writes edits back.
+Route::get('/utd/translations', [UtdManifestController::class, 'pullTranslations'])->middleware('utd.secret');
 Route::post('/utd/translations', [UtdManifestController::class, 'saveTranslations'])->middleware('utd.secret');
 
 // UTD Studio: GET /stac/packages — returns installed packages with their screens
