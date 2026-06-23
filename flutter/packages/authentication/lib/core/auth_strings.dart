@@ -87,6 +87,8 @@ class AuthStrings {
   static const passwordTooShort = 'auth.password_too_short';
   static const notRegisteredYet = 'auth.not_registered_yet';
   static const registerNow = 'auth.register_now';
+  static const registerSubtitle = 'auth.register_subtitle';
+  static const alreadyHaveAccount = 'auth.already_have_account';
 
   // ── Common ──────────────────────────────────────────────
   static const success = 'auth.success';
@@ -174,6 +176,8 @@ class AuthStrings {
           passwordTooShort: 'Password must be at least 6 characters',
           notRegisteredYet: 'Not registered yet?',
           registerNow: 'Register Now',
+          registerSubtitle: 'Create your account in a few simple steps',
+          alreadyHaveAccount: 'Already have an account?',
           success: 'Success',
           next: 'Next',
           updateDesc: 'A new version is available. Please update the app.',
@@ -258,6 +262,8 @@ class AuthStrings {
           passwordTooShort: 'كلمة المرور يجب أن تكون 6 أحرف على الأقل',
           notRegisteredYet: 'لم تسجل بعد؟',
           registerNow: 'سجل الآن',
+          registerSubtitle: 'أنشئ حسابك في خطوات بسيطة',
+          alreadyHaveAccount: 'لديك حساب بالفعل؟',
           success: 'نجاح',
           next: 'التالي',
           updateDesc: 'يتوفر إصدار جديد. يرجى تحديث التطبيق.',

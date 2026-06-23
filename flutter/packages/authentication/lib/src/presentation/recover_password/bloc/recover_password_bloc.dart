@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:equatable/equatable.dart';
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:utd_app/network/models/api_response.dart';
@@ -161,7 +161,7 @@ class RecoverPasswordBloc extends Bloc<RecoverPasswordEvent, RecoverPasswordStat
       emit(state.copyWith(
         isPassword: !state.isPassword,
         passwordSuffix:
-            state.isPassword ? CupertinoIcons.eye : CupertinoIcons.eye_slash,
+            state.isPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
       ));
 
   void _onToggleConfirm(
@@ -171,8 +171,8 @@ class RecoverPasswordBloc extends Bloc<RecoverPasswordEvent, RecoverPasswordStat
       emit(state.copyWith(
         isConfirmPassword: !state.isConfirmPassword,
         confirmSuffix: state.isConfirmPassword
-            ? CupertinoIcons.eye
-            : CupertinoIcons.eye_slash,
+            ? Icons.visibility_outlined
+            : Icons.visibility_off_outlined,
       ));
 
   void _onUpdateValidation(

@@ -22,6 +22,7 @@ export '../widgets/image_widget.dart';
 export '../widgets/loading_widget.dart';
 export '../widgets/text_button_widget.dart';
 export '../widgets/app_logo.dart';
+export '../widgets/app_logo_badge.dart';
 export '../widgets/gradient_background.dart';
 export '../widgets/gradient_card.dart';
 export '../widgets/language_toggle_pill.dart';

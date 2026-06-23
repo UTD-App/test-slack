@@ -106,6 +106,13 @@ class ColorManager {
     Color(0xFFFF5BA6),
   ];
 
+  // Muted pink CTA — disabled/invalid form state. Keeps the primary button
+  // on-brand (a dimmed pink) instead of a dead grey. ~35% alpha of pinkCtaGradient.
+  static const List<Color> pinkCtaGradientMuted = [
+    Color(0x59F22A8C),
+    Color(0x59FF5BA6),
+  ];
+
   // Frosted overlay tints used on top of the gradient backgrounds.
   static const Color frostedFill = Color(0x1AFFFFFF); // 10% white
   static const Color frostedBorder = Color(0x33FFFFFF); // 20% white

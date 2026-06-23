@@ -118,23 +118,9 @@ class _IntroPageState extends State<IntroPage> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Container(
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: ColorManager.lumiaAccent.withValues(alpha: 0.45),
-                blurRadius: 50,
-                spreadRadius: 6,
-              ),
-            ],
-          ),
-          child: AppLogo(
-            height: 132.h,
-            width: 132.w,
-            fallback:
-                Image.asset(AssetManager.logo, height: 132.h, width: 132.w),
-          ),
+        AppLogoBadge(
+          size: 118,
+          fallback: Image.asset(AssetManager.logo, fit: BoxFit.contain),
         ),
         16.hBox,
         TextWidget(

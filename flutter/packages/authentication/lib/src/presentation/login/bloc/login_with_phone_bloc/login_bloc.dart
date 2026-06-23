@@ -1,4 +1,4 @@
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:go_router/go_router.dart';
@@ -71,8 +71,8 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
         state.copyWith(
           isPassword: !state.isPassword,
           suffixIcon: state.isPassword
-              ? CupertinoIcons.eye
-              : CupertinoIcons.eye_slash,
+              ? Icons.visibility_outlined
+              : Icons.visibility_off_outlined,
         ),
       );
 

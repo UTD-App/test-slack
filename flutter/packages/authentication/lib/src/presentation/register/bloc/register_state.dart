@@ -15,7 +15,7 @@ class RegisterState extends Equatable {
     required this.emailController,
     required this.passwordController,
     this.isPassword = true,
-    this.suffixIcon = CupertinoIcons.eye,
+    this.suffixIcon = Icons.visibility_outlined,
     this.reqState = RequestState.idle,
     this.message = '',
     this.isFormValid = false,

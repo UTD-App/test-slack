@@ -76,34 +76,13 @@ class _FormAuthBody extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       40.hBox,
-                      // Logo in a glowing frosted disc
+                      // Logo as a clean circular badge
                       Center(
-                        child: Container(
-                          padding: EdgeInsets.all(18.r),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: ColorManager.frostedFill,
-                            border:
-                                Border.all(color: ColorManager.frostedBorder),
-                            boxShadow: [
-                              BoxShadow(
-                                color: ColorManager.lumiaAccent
-                                    .withValues(alpha: 0.45),
-                                blurRadius: 30,
-                                spreadRadius: 2,
-                              ),
-                            ],
-                          ),
-                          child: AppLogo(
-                            width: 64.w,
-                            height: 64.w,
+                        child: AppLogoBadge(
+                          size: 88,
+                          fallback: Image.asset(
+                            AssetManager.logo,
                             fit: BoxFit.contain,
-                            fallback: Image.asset(
-                              AssetManager.logo,
-                              width: 64.w,
-                              height: 64.w,
-                              fit: BoxFit.contain,
-                            ),
                           ),
                         ),
                       ),
@@ -183,7 +162,7 @@ class _FormAuthBody extends StatelessWidget {
                         radius: 30.r,
                         backgroundColors: valid
                             ? ColorManager.pinkCtaGradient
-                            : [Colors.grey.shade600, Colors.grey.shade700],
+                            : ColorManager.pinkCtaGradientMuted,
                         isLoading: state.requestState.isLoading,
                         onPressed: () {
                           if (valid) {

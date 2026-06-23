@@ -20,7 +20,7 @@ class LoginState extends Equatable {
     required this.passwordController,
     required this.emailController,
     this.isPassword = true,
-    this.suffixIcon = CupertinoIcons.eye,
+    this.suffixIcon = Icons.visibility_outlined,
     this.message = '',
     this.isFormValid,
     this.isFoundAccount,
