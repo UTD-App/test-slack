@@ -151,7 +151,7 @@ class _FormAddInfoBody extends StatelessWidget {
                   TextWidget(
                     age != null
                         ? '$age'
-                        : context.tr(AuthStrings.selectBirthday),
+                        : context.tr(AuthStrings.selectAge),
                     style: context.bodyMedium.size(15).colorExt(
                       age != null
                           ? ColorManager.white
@@ -174,10 +174,9 @@ class _FormAddInfoBody extends StatelessWidget {
               isLoading: state.requestState.isLoading,
               onPressed: () {
                 // Tell the user EXACTLY what's still missing, all at once.
+                // The profile photo is OPTIONAL (the backend doesn't require it),
+                // so it's not part of the completion gate — only name/gender/age.
                 final missing = <String>[];
-                if (state.image == null) {
-                  missing.add(context.tr(AuthStrings.photo));
-                }
                 if (state.name.text.trim().isEmpty) {
                   missing.add(context.tr(AuthStrings.fullName));
                 }

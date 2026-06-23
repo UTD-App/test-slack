@@ -11,6 +11,7 @@ class MomentStrings {
   static const posts = 'moment.posts';
   static const newMoment = 'moment.new';
   static const post = 'moment.post';
+  static const posted = 'moment.posted';
   static const empty = 'moment.empty';
   static const comments = 'moment.comments';
   static const likes = 'moment.likes';
@@ -65,6 +66,7 @@ class MomentStrings {
           posts: 'Posts',
           newMoment: 'New moment',
           post: 'Post',
+          posted: 'Posted',
           empty: 'No moments yet',
           comments: 'Comments',
           likes: 'Likes',
@@ -99,6 +101,7 @@ class MomentStrings {
           posts: 'المنشورات',
           newMoment: 'لحظة جديدة',
           post: 'نشر',
+          posted: 'تم النشر',
           empty: 'لا توجد لحظات بعد',
           comments: 'التعليقات',
           likes: 'الإعجابات',

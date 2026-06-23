@@ -21,9 +21,23 @@ class UserResource extends JsonResource
             'id'     => $this->id,
             'uuid'   => $this->uuid ?? '',
             'name'   => $this->name ?: '',
-            'image'  => $this->avatar ?: ($this->profile?->avatar ?: ''),
+            // Resolved to an absolute URL (e.g. GCS) so the avatar loads on every
+            // device — a raw path would 404 against the local /storage on cloud setups.
+            'image'  => $this->mediaUrl($this->avatar ?: ($this->profile?->avatar ?: '')),
             'gender' => $this->gender ?? 1,
             'age'    => $this->profile?->birthday ? Carbon::parse($this->profile->birthday)->age : null,
         ];
+    }
+
+    /** Resolve a stored media path to an absolute URL (passthrough for absolute URLs, '' for empty). */
+    private function mediaUrl(?string $path): string
+    {
+        if ($path === null || $path === '') {
+            return '';
+        }
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+        return \App\Facades\Media::url($path);
     }
 }

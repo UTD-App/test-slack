@@ -1,5 +1,6 @@
 import 'package:authentication/core/auth_routes.dart';
 import 'package:go_router/go_router.dart';
+import 'package:utd_studio_sdk/utd_studio_sdk.dart';
 import '../addons/feature_registry.dart';
 import '../config/app_layout_service.dart';
 import '../features/search/search_page.dart';
@@ -28,6 +29,16 @@ GoRouter createRouter(FeatureRegistry registry) {
         },
       ),
       GoRoute(path: '/search', builder: (context, state) => const SearchPage()),
+      // UTD Studio screens are addressed by `/s/<name>` (e.g. moment.open pushes
+      // `/s/moment`, core dialogs/details navigate the same way). Render the
+      // published Stac screen by name; StacDynamicScreen shows its own loader /
+      // fallback when the screen isn't published yet — so a server-driven push
+      // never dead-ends on a GoRouter "no routes for location" error.
+      GoRoute(
+        path: '/s/:name',
+        builder: (context, state) =>
+            StacDynamicScreen(screenName: state.pathParameters['name'] ?? ''),
+      ),
       // Basic read-only profile for another user, shown when the Profile package
       // isn't installed (ProfileNavigator routes here as the fallback).
       GoRoute(

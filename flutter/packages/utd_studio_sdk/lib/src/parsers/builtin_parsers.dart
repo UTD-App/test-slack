@@ -4,6 +4,7 @@ import 'stac_list_parser.dart';
 import 'stac_loading_parser.dart';
 import 'stac_object_parser.dart';
 import 'stac_scroll_parser.dart';
+import 'utd_positioned_directional_parser.dart';
 import 'utd_sized_parser.dart';
 import 'utd_tabs_parser.dart';
 import 'utd_text_field_parser.dart';
@@ -13,7 +14,7 @@ import 'utd_text_field_parser.dart';
 ///
 /// These handle the custom `utd*` widget types emitted by the UTD Studio editor:
 /// `utdList`, `utdObject`, `utdScroll`, `utdSized`, `utdLoading`, `utdTabs`,
-/// `utdTextField`.
+/// `utdTextField`, `utdPositionedDirectional`.
 const List<StacParser> builtinStacParsers = [
   StacUtdListParser(),
   StacUtdObjectParser(),
@@ -22,4 +23,5 @@ const List<StacParser> builtinStacParsers = [
   StacUtdLoadingParser(),
   StacUtdTabsParser(),
   StacUtdTextFieldParser(),
+  StacUtdPositionedDirectionalParser(),
 ];

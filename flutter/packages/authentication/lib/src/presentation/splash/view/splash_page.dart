@@ -31,7 +31,11 @@ class _SplashPageState extends State<SplashPage> {
         if (state is SplashAuthenticated) {
           context.go(AuthRoutes.layout);
         } else if (state is SplashUnauthenticated) {
-          context.go(AuthRoutes.onBoarding);
+          // Onboarding is a once-ever screen: a returning (logged-out) user goes
+          // straight to intro/login instead of seeing the carousel every launch.
+          context.go(
+            CacheManager.onboardingSeen ? AuthRoutes.intro : AuthRoutes.onBoarding,
+          );
         }
       },
       child: Scaffold(

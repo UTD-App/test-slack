@@ -1,7 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:utd_app/shared/core/color_manager.dart';
-import 'package:utd_app/shared/widgets/gradient_background.dart';
+import 'package:utd_app/screens/content_page.dart';
 import 'package:utd_studio_sdk/utd_studio_sdk.dart';
 
 import '../src/presentation/splash/view/splash_page.dart';
@@ -75,26 +73,13 @@ class AuthRoutes {
           path: recoverPassword,
           builder: (context, state) => const RecoverPasswordPage(),
         ),
+        // Render the real CMS page (admin-editable privacy policy) instead of a
+        // placeholder. The intro footer + the register Terms link both push this
+        // route, so a single point fixes the dead "Privacy Policy" link. The key
+        // matches the dashboard CMS page slug (also used by the Settings screen).
         GoRoute(
           path: privacy,
-          builder: (context, state) => Scaffold(
-            backgroundColor: ColorManager.authBgGradient.last,
-            appBar: AppBar(
-              backgroundColor: ColorManager.transparent,
-              elevation: 0,
-              iconTheme: const IconThemeData(color: ColorManager.white),
-            ),
-            extendBodyBehindAppBar: true,
-            body: const GradientBackground(
-              colors: ColorManager.authBgGradient,
-              child: Center(
-                child: Text(
-                  'Privacy Policy',
-                  style: TextStyle(color: ColorManager.white, fontSize: 16),
-                ),
-              ),
-            ),
-          ),
+          builder: (context, state) => const ContentPage(pageKey: 'privacy-policy'),
         ),
       ];
 }

@@ -521,11 +521,13 @@ class RoomController extends Controller
     {
         $storage = app(StorageConfigService::class);
         $owner = $room->owner;
+        // Resolve each visitor avatar to an absolute URL (e.g. GCS) — a raw stored
+        // path (avatars/xxx.jpg) would 404 against /storage on cloud setups.
         $visitorImages = $room->visitors()
             ->with('user.profile')
             ->limit(5)
             ->get()
-            ->map(fn ($v) => $v->user->profile->avatar ?? null)
+            ->map(fn ($v) => $this->mediaUrl($v->user?->profile?->avatar, $storage))
             ->filter()
             ->values()
             ->toArray();
@@ -558,6 +560,21 @@ class RoomController extends Controller
             'empty_seat_icon' => $this->formatSeatIconUrl($room->empty_seat_icon, $storage),
             'locked_seat_icon' => $this->formatSeatIconUrl($room->locked_seat_icon, $storage),
         ];
+    }
+
+    /**
+     * Resolve a stored media path to an absolute URL (passthrough for absolute
+     * URLs, null for empty) so avatars/covers load on every device.
+     */
+    private function mediaUrl(?string $path, StorageConfigService $storage): ?string
+    {
+        if ($path === null || $path === '') {
+            return null;
+        }
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+        return $storage->url($path);
     }
 
     private function formatSeatIconUrl(?string $value, StorageConfigService $storage): ?string

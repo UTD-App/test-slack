@@ -5,6 +5,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:utd_app/localization/localization.dart';
+import 'package:utd_app/shared/stac/stac_data_registry.dart';
 
 import '../../../core/moment_strings.dart';
 import '../bloc/moment_feed/moment_feed_bloc.dart';
@@ -42,6 +43,16 @@ class _AddMomentPageState extends State<AddMomentPage> {
       listenWhen: (p, c) => p.isSubmitting && !c.isSubmitting,
       listener: (context, state) {
         if (state.error == null) {
+          // The home feed tab is server-driven (Stac) — its moment list source
+          // is context-free, so the native bloc's FeedRefreshRequested doesn't
+          // touch it. Invalidate the data registry so the Stac feed refetches
+          // and the just-posted moment shows on return.
+          StacDataRegistry.instance.invalidate();
+          // ScaffoldMessenger lives at the app root, so the success toast stays
+          // visible after we pop back to the feed.
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.tr(MomentStrings.posted))),
+          );
           if (context.canPop()) context.pop();
         } else {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.error!)));

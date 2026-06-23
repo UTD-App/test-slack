@@ -176,4 +176,42 @@ class MomentApiTest extends TestCase
     {
         $this->getJson('/api/moment?type=4')->assertStatus(401);
     }
+
+    /**
+     * A8 — the feed must return the author's avatar as an ABSOLUTE URL. A raw
+     * stored path (avatars/x.jpg) would 404 against /storage on cloud setups.
+     */
+    public function test_feed_resolves_author_avatar_to_absolute_url(): void
+    {
+        [, $token] = $this->actingUser();
+        [$author] = $this->actingUser();
+        $author->profile()->updateOrCreate(['user_id' => $author->id], ['avatar' => 'avatars/qa.jpg']);
+        Moment::create(['user_id' => $author->id, 'description' => 'with-avatar']);
+
+        $image = $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson('/api/moment?type=4')
+            ->assertStatus(200)
+            ->json('data.0.user.image');
+
+        $this->assertNotSame('avatars/qa.jpg', $image, 'avatar must not be a raw path');
+        $this->assertStringStartsWith('http', $image);
+        $this->assertStringContainsString('avatars/qa.jpg', $image);
+    }
+
+    /** A8 — an avatar that is already an absolute URL is passed through unchanged. */
+    public function test_feed_passes_through_absolute_avatar_url(): void
+    {
+        [, $token] = $this->actingUser();
+        [$author] = $this->actingUser();
+        $author->profile()->updateOrCreate(
+            ['user_id' => $author->id],
+            ['avatar' => 'https://cdn.example.com/a.jpg'],
+        );
+        Moment::create(['user_id' => $author->id, 'description' => 'http-avatar']);
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson('/api/moment?type=4')
+            ->assertStatus(200)
+            ->assertJsonPath('data.0.user.image', 'https://cdn.example.com/a.jpg');
+    }
 }

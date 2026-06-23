@@ -111,7 +111,10 @@ class OnBoardingScreenState extends State<OnBoardingScreen> {
                     curve: Curves.easeInOut,
                   );
                 } else {
-                  context.go(AuthRoutes.intro);
+                  // Mark the carousel done so returning (logged-out) users skip
+                  // straight to intro/login on the next launch (see SplashPage).
+                  await CacheManager.markOnboardingSeen();
+                  if (context.mounted) context.go(AuthRoutes.intro);
                 }
               },
               title: buttonText[currentPage],
@@ -144,7 +147,9 @@ class _OnBoardingBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      mainAxisAlignment: MainAxisAlignment.start,
+      // Center the artwork + copy in the page area so the content isn't clustered
+      // at the top with a large empty band above the action button.
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         // Illustration on a soft frosted card so the artwork reads cleanly over
         // the violet gradient regardless of its own backdrop.

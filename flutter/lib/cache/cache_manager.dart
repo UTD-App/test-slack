@@ -109,6 +109,17 @@ class CacheManager {
 
   static bool? getFlag(String key) => _box.get(key) as bool?;
 
+  // ── Onboarding ────────────────────────────────────────────────────────────
+  // Whether the intro/onboarding carousel has been completed at least once.
+  // Shown only on the very first run; returning (logged-out) users skip it.
+
+  static const String _onboardingSeenKey = 'onboarding_seen';
+
+  static Future<void> markOnboardingSeen() =>
+      _box.put(_onboardingSeenKey, true);
+
+  static bool get onboardingSeen => _box.get(_onboardingSeenKey) == true;
+
   // ── Session helpers ───────────────────────────────────────────────────────
 
   static bool get hasSession => getToken() != null;

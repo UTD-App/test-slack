@@ -41,6 +41,14 @@ class AdminNotificationsWidget extends BaseWidget
         return $table
             ->query(fn (): Builder => Notification::query()->forAdmins()->latest())
             ->defaultPaginationPageOption(10)
+            // Friendly empty state instead of a blank white card when there are
+            // no admin notifications yet.
+            ->emptyStateIcon('heroicon-o-bell')
+            ->emptyStateHeading(
+                __('admin.no_notifications') !== 'admin.no_notifications'
+                    ? __('admin.no_notifications')
+                    : 'No notifications',
+            )
             ->columns([
                 IconColumn::make('read_at')
                     ->label('')

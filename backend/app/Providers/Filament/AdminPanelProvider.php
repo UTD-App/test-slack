@@ -48,7 +48,7 @@ class AdminPanelProvider extends PanelProvider
 
                 return trim(($name ?: config('app.name')) . ' — ' . __('admin.admin_brand_suffix'));
             })
-            ->favicon(asset('images/favicon.ico'))
+            ->favicon(asset('favicon.ico'))
             ->darkMode(false)
             ->userMenuItems([
                 MenuItem::make()

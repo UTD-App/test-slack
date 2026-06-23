@@ -148,6 +148,15 @@ class AuthController extends Controller
             $user->profile()->updateOrCreate(['user_id' => $user->id], ['covers' => $covers]);
         }
 
+        // First-run completion: once the user fills in their profile, clear the
+        // first-time flag so `is_first` (read from is_points_first by login /
+        // register / my-data) stops sending returning users back through the
+        // complete-profile flow forever. Nothing else ever resets it.
+        if ($user->is_points_first) {
+            $user->is_points_first = false;
+            $user->save();
+        }
+
         return Common::apiResponse(true, 'Profile updated', $user->fresh()->load(['profile', 'country']));
     }
 

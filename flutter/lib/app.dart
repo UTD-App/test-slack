@@ -233,16 +233,25 @@ class _AddonPlatformAppState extends State<AddonPlatformApp>
       future: _initializationFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
+          // Branded boot screen (matches the splash identity) instead of a bare
+          // white scaffold with a black spinner — the latter looked like a dev
+          // placeholder on every relaunch.
           return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            theme: _lumiaTheme(),
             home: Scaffold(
-              body: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    CircularProgressIndicator(),
-                    SizedBox(height: 16),
-                    Text('Initializing...'),
-                  ],
+              body: Container(
+                width: double.infinity,
+                height: double.infinity,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: ColorManager.authBgGradient,
+                  ),
+                ),
+                child: const Center(
+                  child: CircularProgressIndicator(color: ColorManager.white),
                 ),
               ),
             ),

@@ -32,12 +32,15 @@ class ToastManager {
     );
 
     final overlayEntry = OverlayEntry(
+      // Anchored to the BOTTOM so the toast never covers the screen title/header
+      // (a top-anchored toast hid the "Hi there" greeting). Sits above the
+      // bottom nav / safe-area inset.
       builder: (context) => Positioned(
-        top: 100.0.h,
+        bottom: 90.0.h + MediaQuery.of(context).padding.bottom,
         left: 50.w,
         right: 50.w,
         child: Align(
-          alignment: AlignmentDirectional.topCenter,
+          alignment: AlignmentDirectional.bottomCenter,
           child: Material(
             color: ColorManager.transparent,
             borderRadius: MediaQuery.sizeOf(context).width.radius,

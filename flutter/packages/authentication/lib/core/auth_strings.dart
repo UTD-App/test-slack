@@ -67,6 +67,7 @@ class AuthStrings {
   static const username = 'auth.username';
   static const selectGender = 'auth.select_gender';
   static const selectBirthday = 'auth.select_birthday';
+  static const selectAge = 'auth.select_age';
   static const userUnder18 = 'auth.user_under_18';
   static const yourAge = 'auth.your_age';
   static const yourGender = 'auth.your_gender';
@@ -159,6 +160,7 @@ class AuthStrings {
           username: 'Please enter your name',
           selectGender: 'Please select your gender',
           selectBirthday: 'Please select your birthday',
+          selectAge: 'Select your age',
           userUnder18: 'You must be at least 18 years old',
           yourAge: 'Your age',
           yourGender: 'Your gender',
@@ -245,6 +247,7 @@ class AuthStrings {
           username: 'يرجى إدخال اسمك',
           selectGender: 'يرجى اختيار الجنس',
           selectBirthday: 'يرجى اختيار تاريخ الميلاد',
+          selectAge: 'اختر عمرك',
           userUnder18: 'يجب أن يكون عمرك 18 عامًا على الأقل',
           yourAge: 'عمرك',
           yourGender: 'جنسك',
