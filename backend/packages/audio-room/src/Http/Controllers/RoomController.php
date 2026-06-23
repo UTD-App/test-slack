@@ -138,7 +138,7 @@ class RoomController extends Controller
     {
         $room = Room::findOrFail($id);
 
-        if (!$room->isOwner(Auth::id())) {
+        if (!$room->isOwnerOrAdmin(Auth::id())) {
             return Common::apiResponse(false, 'Unauthorized', null, 403);
         }
 
@@ -147,7 +147,7 @@ class RoomController extends Controller
             'room_intro' => 'nullable|string|max:500',
             'room_rule' => 'nullable|string|max:500',
             'room_cover' => 'nullable|image|max:5120',
-            'room_background' => 'nullable|string',
+            'room_background' => 'nullable|image|max:10240',
             'room_pass' => 'nullable|string|max:20',
             'mode' => 'nullable|integer',
             'room_type' => 'nullable|integer|exists:room_categories,id',
@@ -159,7 +159,7 @@ class RoomController extends Controller
         ]);
 
         $data = $request->only([
-            'room_name', 'room_intro', 'room_rule', 'room_background',
+            'room_name', 'room_intro', 'room_rule',
             'room_pass', 'mode', 'room_type', 'room_class',
             'is_comment_closed', 'free_mic',
         ]);
@@ -169,6 +169,13 @@ class RoomController extends Controller
                 Storage::delete($room->room_cover);
             }
             $data['room_cover'] = $request->file('room_cover')->store('rooms/covers');
+        }
+
+        if ($request->hasFile('room_background')) {
+            if ($room->room_background) {
+                Storage::delete($room->room_background);
+            }
+            $data['room_background'] = $request->file('room_background')->store('rooms/backgrounds');
         }
 
         $room->update(array_filter($data, fn ($v) => $v !== null));
