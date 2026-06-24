@@ -176,6 +176,11 @@ class RoomController extends Controller
                 Storage::delete($room->room_background);
             }
             $data['room_background'] = $request->file('room_background')->store('rooms/backgrounds');
+        } elseif ($request->input('remove_background')) {
+            if ($room->room_background) {
+                Storage::delete($room->room_background);
+            }
+            $room->room_background = null;
         }
 
         $room->update(array_filter($data, fn ($v) => $v !== null));
