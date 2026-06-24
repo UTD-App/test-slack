@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 
 import '../addons/feature_registry.dart';
@@ -7,6 +9,8 @@ import '../addons/widget_registry.dart';
 import '../config/app_layout.dart';
 import '../config/nav_icons.dart';
 import '../localization/localization.dart';
+import '../shared/core/color_manager.dart';
+import '../shared/widgets/gradient_background.dart';
 import 'package:utd_studio_sdk/utd_studio_sdk.dart';
 import 'self_profile_fallback.dart';
 
@@ -48,29 +52,52 @@ class _AppShellState extends State<AppShell> {
     final style = widget.config.style;
 
     return Scaffold(
-      backgroundColor: style.bg,
-      // SafeArea (top only) so server-driven tab bodies don't render under the
-      // status bar — their Stac scaffolds have no AppBar, so without this the
-      // first widget (e.g. the profile avatar) jams into the status bar.
-      body: SafeArea(
-        bottom: false,
-        child: IndexedStack(
-          index: _selected,
-          children: [for (final t in tabs) _tabBody(t)],
+      // Transparent + extendBody so the dark-purple gradient flows edge-to-edge
+      // behind BOTH system bars (status bar on top, the transparent system nav
+      // under the frosted menu). Replaces the old opaque `style.bg` chrome that
+      // rendered black bars top & bottom.
+      backgroundColor: Colors.transparent,
+      extendBody: true,
+      body: GradientBackground(
+        // SafeArea (top only) so server-driven tab bodies don't render under the
+        // status bar — their Stac scaffolds have no AppBar, so without this the
+        // first widget (e.g. the profile avatar) jams into the status bar.
+        child: SafeArea(
+          bottom: false,
+          child: IndexedStack(
+            index: _selected,
+            children: [for (final t in tabs) _tabBody(t)],
+          ),
         ),
       ),
-      bottomNavigationBar: BottomAppBar(
-        color: style.bg,
-        padding: EdgeInsets.zero,
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                for (var i = 0; i < tabs.length; i++) _navItem(tabs[i], i, style),
-              ],
+      bottomNavigationBar: _frostedBottomBar(tabs, style),
+    );
+  }
+
+  /// Frosted, translucent bottom bar that floats over the gradient (matches the
+  /// reference design) instead of an opaque dark band.
+  Widget _frostedBottomBar(List<NavTab> tabs, NavStyle style) {
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            color: ColorManager.frostedFill,
+            border: Border(
+              top: BorderSide(color: ColorManager.frostedBorder),
+            ),
+          ),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  for (var i = 0; i < tabs.length; i++)
+                    _navItem(tabs[i], i, style),
+                ],
+              ),
             ),
           ),
         ),

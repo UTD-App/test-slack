@@ -4,8 +4,10 @@ import 'package:authentication/authentication.dart';
 import 'package:profile/profile.dart';
 import 'package:moment/moment.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:utd_app/cache/cache_manager.dart';
+import 'package:utd_app/shared/core/system_ui_style.dart';
 import 'package:utd_app/config/theme_notifier.dart';
 import 'package:utd_app/services/firebase_service.dart';
 import 'package:utd_app/services/notification_service.dart';
@@ -50,6 +52,13 @@ void _preloadStudioFonts() {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Edge-to-edge: draw behind both system bars and keep them transparent with
+  // light icons over the dark purple gradient (re-asserted on every AppBar via
+  // appBarTheme.systemOverlayStyle). Without this Android paints opaque black
+  // bars top & bottom. See [kTransparentLightSystemUi].
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  SystemChrome.setSystemUIOverlayStyle(kTransparentLightSystemUi);
 
   await FirebaseService.initialize();
   await CacheManager.init();

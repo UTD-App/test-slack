@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:utd_app/services/launch_gate_service.dart';
+import 'package:utd_app/shared/core/color_manager.dart';
+import 'package:utd_app/shared/widgets/gradient_background.dart';
 
 /// Full-screen blocker shown at launch when the backend reports either
 /// maintenance mode or a forced update. It replaces the whole app shell, so it
@@ -41,54 +43,64 @@ class LaunchGateScreen extends StatelessWidget {
     return Directionality(
       textDirection: _isAr ? TextDirection.rtl : TextDirection.ltr,
       child: Scaffold(
-        backgroundColor: const Color(0xFF15101F),
-        body: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(32),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(icon, size: 88, color: const Color(0xFFB388FF)),
-                  const SizedBox(height: 28),
-                  Text(
-                    title,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
+        backgroundColor: Colors.transparent,
+        body: GradientBackground(
+          child: SafeArea(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(icon, size: 88, color: ColorManager.lumiaTextPrimary),
+                    const SizedBox(height: 28),
+                    Text(
+                      title,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: ColorManager.lumiaTextPrimary,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    message,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 15,
-                      height: 1.5,
+                    const SizedBox(height: 14),
+                    Text(
+                      message,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: ColorManager.lumiaTextSecondary,
+                        fontSize: 15,
+                        height: 1.5,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 36),
-                  if (!maintenance && (result.storeUrl?.isNotEmpty ?? false))
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        onPressed: () => openStoreUrl(result.storeUrl!),
-                        icon: const Icon(Icons.open_in_new),
-                        label: Text(_isAr ? 'تحديث الآن' : 'Update now'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF7C4DFF),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+                    const SizedBox(height: 36),
+                    if (!maintenance && (result.storeUrl?.isNotEmpty ?? false))
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: ColorManager.pinkCtaGradient,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: SizedBox(
+                          width: double.infinity,
+                          child: TextButton.icon(
+                            onPressed: () => openStoreUrl(result.storeUrl!),
+                            icon: const Icon(Icons.open_in_new),
+                            label: Text(_isAr ? 'تحديث الآن' : 'Update now'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: Colors.white,
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

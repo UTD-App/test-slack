@@ -8,6 +8,7 @@ import 'package:utd_app/cache/cache_manager.dart';
 import 'package:utd_app/config/app_theme.dart';
 import 'package:utd_app/config/theme_notifier.dart';
 import 'package:utd_app/shared/core/color_manager.dart';
+import 'package:utd_app/shared/core/system_ui_style.dart';
 import 'package:utd_app/shared/notifiers/user_data_notifier.dart';
 import 'package:utd_app/shared/services/user_session_service.dart';
 import 'package:utd_app/shared/services/translation_service.dart';
@@ -261,6 +262,10 @@ class _AddonPlatformAppState extends State<AddonPlatformApp>
         centerTitle: false,
         backgroundColor: p.bgDark,
         foregroundColor: p.textPrimary,
+        // Keep the status bar transparent with light icons on EVERY screen that
+        // has an AppBar — otherwise each AppBar recomputes its own overlay and
+        // the bar goes dark on some pages but not others.
+        systemOverlayStyle: kTransparentLightSystemUi,
       ),
       cardTheme: CardThemeData(
         color: p.cardBg,

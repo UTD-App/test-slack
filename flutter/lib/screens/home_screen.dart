@@ -11,6 +11,7 @@ import '../features/notifications/notification_bell.dart';
 import '../localization/localization.dart';
 import '../services/launch_gate_service.dart';
 import '../shared/core/color_manager.dart';
+import '../shared/widgets/gradient_background.dart';
 import '../shared/widgets/ui_slot_renderer.dart';
 import 'self_profile_fallback.dart';
 
@@ -62,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final isSettings = _selectedIndex == settingsIndex;
 
     return Scaffold(
-      backgroundColor: colors.surface,
+      backgroundColor: Colors.transparent,
       extendBody: true,
       drawer: isHomeTab && drawerContributions.isNotEmpty
           ? _buildDrawer(drawerContributions, colors)
@@ -93,13 +94,18 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: _buildBody(
-        isHomeTab: isHomeTab,
-        isSettings: isSettings,
-        bottomNavContributions: bottomNavContributions,
-        homeContributions: homeContributions,
-        registry: registry,
-        bottomNavOffset: bottomNavOffset,
+      // The dark-purple gradient backdrop sits behind the body AND (via
+      // extendBody) behind the frosted bottom bar + transparent system nav,
+      // matching the reference design.
+      body: GradientBackground(
+        child: _buildBody(
+          isHomeTab: isHomeTab,
+          isSettings: isSettings,
+          bottomNavContributions: bottomNavContributions,
+          homeContributions: homeContributions,
+          registry: registry,
+          bottomNavOffset: bottomNavOffset,
+        ),
       ),
     );
   }

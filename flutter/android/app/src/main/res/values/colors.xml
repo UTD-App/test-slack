@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App gradient base color — used for the launch splash background so the
+         pre-Flutter window matches the dark-purple UI instead of flashing
+         white. Mirrors ColorManager.lumiaBgDark (#463394). -->
+    <color name="launch_bg">#FF463394</color>
+</resources>
