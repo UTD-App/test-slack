@@ -76,13 +76,48 @@ class _AddonPlatformAppState extends State<AddonPlatformApp>
   DateTime? _lastGateCheck;
   GoRouter? _router;
 
+  /// Locale codes whose backend translations we've already kicked off a sync for
+  /// this session, so a rapid back-and-forth language switch doesn't fan out
+  /// duplicate fetches.
+  final Set<String> _syncingLocales = {};
+
+  /// True once _initializeApp has built the first translation table — guards the
+  /// locale-switch rebuild against running before init (registry/_translations).
+  bool _ready = false;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _featureRegistry = FeatureRegistry();
     _userDataNotifier = UserDataNotifier();
+    // Backend is the source of truth for UI strings: when the user switches to a
+    // language we haven't fetched yet, lazily pull it and rebuild the overlay so
+    // the menu/labels flip without a relaunch (the startup sync only covers the
+    // launch locale). Version-gated in TranslationService → cheap/no-op if cached.
+    widget.localeNotifier.addListener(_onLocaleChanged);
     _initializationFuture = _initializeApp();
+  }
+
+  void _onLocaleChanged() {
+    if (!_ready) return; // init builds the first table; nothing to rebuild yet
+    _syncLocale(widget.localeNotifier.locale.languageCode);
+  }
+
+  /// Pull a locale's latest backend translations (version-gated → a tiny /version
+  /// check, downloads only when it changed) and rebuild the overlay when they
+  /// land. Called on startup, language switch and app resume so a translation
+  /// edited in the dashboard shows the SAME relaunch/resume — the overlay is built
+  /// once from the Hive cache, which can be a version stale, so without this the
+  /// fresh data only surfaced on the *next* launch (the "kill twice" symptom).
+  void _syncLocale(String code) {
+    if (_syncingLocales.contains(code)) return;
+    _syncingLocales.add(code);
+    TranslationService.instance.sync(code).whenComplete(() {
+      _syncingLocales.remove(code);
+      if (!mounted) return;
+      setState(() => _translations = _aggregateTranslations());
+    });
   }
 
   /// Re-check the launch gate when the app returns to the foreground, so an
@@ -98,6 +133,8 @@ class _AddonPlatformAppState extends State<AddonPlatformApp>
       return;
     }
     _lastGateCheck = DateTime.now();
+    // Pick up dashboard translation edits on foreground (version-gated → cheap).
+    if (_ready) _syncLocale(widget.localeNotifier.locale.languageCode);
     LaunchGateService.check().then((gate) {
       if (!mounted) return;
       if (gate.blocks != _gate.blocks ||
@@ -145,11 +182,28 @@ class _AddonPlatformAppState extends State<AddonPlatformApp>
 
     await _featureRegistry.initializeAll();
 
-    // Aggregate translations from base + all features (const en/ar maps), then
-    // OVERLAY the backend (admin/DB) translations cached by TranslationService
-    // for every supported language — so a language added + translated in the
-    // dashboard (fr, hi, …) actually shows in the UI, not just en/ar. Backend
-    // values win over the shipped defaults.
+    _translations = _aggregateTranslations();
+
+    // Load the signed-in user (the login response carries no user object, only
+    // id/token) so screens that need the current user id work after a restart.
+    if (CacheManager.hasSession) {
+      await UserSessionService.hydrate(_userDataNotifier);
+    }
+
+    _ready = true; // locale-switch rebuilds are safe from here on
+
+    // The overlay above was built from the (possibly stale) Hive cache. Refresh
+    // the launch locale from the backend and rebuild when it lands, so a
+    // dashboard edit appears after ONE relaunch (or the next resume) — not two.
+    _syncLocale(widget.localeNotifier.locale.languageCode);
+  }
+
+  /// Build the active translation table: base + all feature const en/ar maps,
+  /// then OVERLAY the backend (admin/DB) translations cached by TranslationService
+  /// for every supported language — so a language added + translated in the
+  /// dashboard (fr, hi, …) shows in the UI, not just en/ar. Backend values win
+  /// over the shipped defaults. Re-run on locale switch ({@see _onLocaleChanged}).
+  Map<String, Map<String, String>> _aggregateTranslations() {
     final merged = <String, Map<String, String>>{};
     _featureRegistry
         .aggregateTranslations(baseTranslations)
@@ -161,17 +215,12 @@ class _AddonPlatformAppState extends State<AddonPlatformApp>
         merged[code] = {...?merged[code], ...backend};
       }
     }
-    _translations = merged;
-
-    // Load the signed-in user (the login response carries no user object, only
-    // id/token) so screens that need the current user id work after a restart.
-    if (CacheManager.hasSession) {
-      await UserSessionService.hydrate(_userDataNotifier);
-    }
+    return merged;
   }
 
   @override
   void dispose() {
+    widget.localeNotifier.removeListener(_onLocaleChanged);
     WidgetsBinding.instance.removeObserver(this);
     _featureRegistry.disposeAll();
     _featureRegistry.dispose();

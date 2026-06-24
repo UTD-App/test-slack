@@ -84,11 +84,33 @@ void main() async {
   final config = AppConfig.production();
   AppConfigProvider.initialize(config);
 
+  // Languages come from the backend (the admin "Languages" resource). Use the
+  // cached list for an instant first paint; it's refreshed in the background
+  // below so a newly added language appears without a relaunch. The en/ar seed
+  // covers the very first run before any fetch.
+  final supportedLanguages =
+      TranslationService.instance.cachedSupportedLanguages();
+  final supportedLocales = supportedLanguages
+      .map((e) => Locale(e['code'] as String))
+      .toList();
+  final rtlCodes = supportedLanguages
+      .where((e) => e['is_rtl'] == true)
+      .map((e) => e['code'] as String)
+      .toSet();
+  Map<String, String> namesOf(List<Map<String, dynamic>> langs) => {
+        for (final e in langs)
+          (e['code'] as String): (e['native_name'] as String? ?? e['code'] as String),
+      };
+
   final localeNotifier = LocaleNotifier();
   await localeNotifier.initialize(
-    supportedLocales: const [Locale('en'), Locale('ar')],
+    supportedLocales: supportedLocales.isNotEmpty
+        ? supportedLocales
+        : const [Locale('en'), Locale('ar')],
     fallbackLocale: const Locale('en'),
     useDeviceLocale: config.useDeviceLocale,
+    rtlCodes: rtlCodes.isNotEmpty ? rtlCodes : const {'ar'},
+    names: namesOf(supportedLanguages),
   );
 
   final themeNotifier = ThemeNotifier();
@@ -131,9 +153,28 @@ void main() async {
   // Cache-backed + short-timeout → no startup hang; falls back to AppFlow.fallback.
   await AppLayoutService.instance.applyIfPresent();
 
+  // Tell the backend which language to localize responses in (notifications are
+  // rendered on read in this locale; device-token registration stores it for
+  // push). LocaleNotifier keeps it in sync on every later language switch.
+  ApiClient.instance.setHeader(
+    'X-localization',
+    localeNotifier.locale.languageCode,
+  );
+
   // Sync translations in background (Stac screens already sync inside
   // bootstrapStudio → UtdStudio.init).
   TranslationService.instance.sync(localeNotifier.locale.languageCode);
+  // Refresh the supported-language list from the backend and apply it live, so a
+  // language added in the admin appears without waiting for a relaunch.
+  TranslationService.instance.fetchSupportedLanguages().then((langs) {
+    if (langs.isEmpty) return;
+    localeNotifier.applySupported(
+      langs.map((e) => Locale(e['code'] as String)).toList(),
+      rtlCodes:
+          langs.where((e) => e['is_rtl'] == true).map((e) => e['code'] as String).toSet(),
+      names: namesOf(langs),
+    );
+  });
 
   // Preload curated Google Fonts so server-driven screens that set a custom
   // textStyle.fontFamily render the real font (non-blocking; cached on disk).
