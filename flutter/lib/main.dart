@@ -11,6 +11,7 @@ import 'package:utd_app/services/firebase_service.dart';
 import 'package:utd_app/services/notification_service.dart';
 import 'package:utd_app/shared/services/translation_service.dart';
 import 'package:utd_app/shared/stac/parsers/self_profile_card_parser.dart';
+import 'package:utd_app/shared/stac/parsers/edit_profile_form_parser.dart';
 
 import 'addons/app_feature.dart';
 import 'app.dart';
@@ -144,7 +145,11 @@ void main() async {
   await bootstrapStudio(
     themeNotifier: themeNotifier,
     localeNotifier: localeNotifier,
-    featureParsers: [const SelfProfileCardParser(), ...featureParsers],
+    featureParsers: [
+      const SelfProfileCardParser(),
+      const EditProfileFormParser(),
+      ...featureParsers,
+    ],
     featureActionParsers: featureActionParsers,
   );
 

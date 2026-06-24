@@ -252,7 +252,7 @@ $profileWidgets = array_merge(
 
         // Edit + refresh buttons at the top (justify flex-start → Start, which in
         // the RTL app is physically TOP-RIGHT), mirroring the native Me-landing
-        // top bar. `core.editProfile` opens the name/bio edit sheet; `core.refresh`
+        // top bar. `core.editProfile` opens the full edit-profile page; `core.refresh`
         // re-fetches the live user source (+ a "تم التحديث" toast). Both actions
         // already ship in the Flutter app (appCoreActionParsers) and are declared
         // in `action_elements` below.
@@ -605,9 +605,11 @@ return [
                 ['key' => 'userId', 'label' => 'معرّف المستخدم (فاضي = أنا)', 'type' => 'int'],
             ],
         ],
-        // فتح مودال تعديل الاسم/النبذة في مكانه (بدل الانتقال لصفحة) — onTap على القلم.
+        // فتح صفحة تعديل الملف الكاملة (الصورة + الاسم + النبذة + الأغلفة + حفظ) — onTap على القلم.
+        // الصفحة سيرفر-درِفن: شاشة `edit_profile` (تُنشَر عبر ميجريشن في stac_screens، وتعرض
+        // الـ node المخصّص `core.editProfileForm`) مع نموذج Flutter أصلي كـ fallback.
         [
-            'key' => 'edit_profile', 'label' => 'تعديل الملف (مودال)',
+            'key' => 'edit_profile', 'label' => 'تعديل الملف (صفحة)',
             'produces' => 'core.editProfile', 'default_shape' => 'button', 'screen' => 'profile',
         ],
         // تحديث: إعادة جلب بيانات المستخدم الحيّة (مع توست "تم التحديث") — زر أعلى البروفايل.

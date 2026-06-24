@@ -53,13 +53,10 @@ class ProfileTopBar extends StatelessWidget {
                 SizedBox(width: 8.w),
                 _circleButton(
                   icon: Icons.edit_outlined,
-                  // Hand the current covers to the edit screen so cover management
-                  // lives there (the full profile is read-only). The shared user
-                  // model doesn't carry covers, so pass them via the route's extra.
-                  onTap: () => context.push('/profile', extra: {
-                    'coverPaths': profile.coverPaths,
-                    'covers': profile.covers,
-                  }),
+                  // Opens the server-driven edit-profile screen (`/profile` →
+                  // StacDynamicScreen 'edit_profile'). The form self-sources its
+                  // covers from the profile API, so no route args are needed.
+                  onTap: () => context.push('/profile'),
                 ),
               ],
             ],

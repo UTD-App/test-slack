@@ -10,21 +10,28 @@ import 'package:utd_app/shared/core/shared.dart';
 import 'package:utd_app/shared/media/media_service.dart';
 import 'package:utd_app/shared/models/profile_room_model.dart';
 import 'package:utd_app/shared/notifiers/user_data_notifier.dart';
+import 'package:utd_studio_sdk/utd_studio_sdk.dart';
 
-class ProfileScreen extends StatefulWidget {
-  /// Optional cover data passed from the profile page's edit pencil:
-  /// `{ 'coverPaths': List<String>, 'covers': List<String> }`. When present the
-  /// screen shows a Covers section and sends them on save; when null (reached
-  /// without cover data) the stored covers are left untouched.
-  const ProfileScreen({super.key, this.coverArgs});
-
-  final Object? coverArgs;
+/// The full "edit profile" page (avatar + name + bio + covers + Save).
+///
+/// It is SELF-CONTAINED: it seeds name/bio from the signed-in user and fetches
+/// the current covers itself (`GET /users/{id}/profile`) — so it works the same
+/// whether it's pushed as a route OR rendered as a node inside the server-driven
+/// `edit_profile` Studio screen (via [EditProfileFormParser]). It depends on no
+/// route arguments, which an embedded Stac node can't receive.
+///
+/// This screen is "too rich for Stac primitives" (image pick + upload, multi
+/// cover management, save-with-state), so — exactly like the self-profile
+/// landing — it stays a native widget that UTD Studio simply places on the
+/// `edit_profile` screen; the screen wrapper is server-driven, the form native.
+class EditProfileForm extends StatefulWidget {
+  const EditProfileForm({super.key});
 
   @override
-  State<ProfileScreen> createState() => _ProfileScreenState();
+  State<EditProfileForm> createState() => _EditProfileFormState();
 }
 
-class _ProfileScreenState extends State<ProfileScreen> {
+class _EditProfileFormState extends State<EditProfileForm> {
   late TextEditingController _nameController;
   late TextEditingController _bioController;
   bool _isSaving = false;
@@ -34,9 +41,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   XFile? _pickedImage;
 
   /// Covers being edited — raw stored paths (the save payload) parallel to their
-  /// display URLs — seeded from [ProfileScreen.coverArgs]. `_coversKnown` gates
-  /// the whole feature so a screen opened without cover data never touches the
-  /// stored covers on save.
+  /// display URLs. Fetched in [initState] from the user's profile. `_coversKnown`
+  /// gates the whole feature so a save that never managed to load the current
+  /// covers (offline) leaves the stored covers untouched.
   final List<String> _coverPaths = [];
   final List<String> _coverUrls = [];
   bool _coversKnown = false;
@@ -47,18 +54,47 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = context.read<UserDataNotifier>().user;
     _nameController = TextEditingController(text: user.name ?? '');
     _bioController = TextEditingController(text: user.bio ?? '');
+    // Self-source the current covers (the shared user model doesn't carry them).
+    _loadCovers();
+  }
 
-    final args = widget.coverArgs;
-    if (args is Map) {
-      _coversKnown = true;
-      _coverPaths.addAll(((args['coverPaths'] as List?) ?? const []).cast<String>());
-      _coverUrls.addAll(((args['covers'] as List?) ?? const []).cast<String>());
-      // Keep the display list at least as long as the payload list.
-      while (_coverUrls.length < _coverPaths.length) {
-        _coverUrls.add('');
-      }
+  /// Fetches the signed-in user's profile to seed the covers section, so the
+  /// screen shows the live covers regardless of how it was opened. On failure it
+  /// leaves `_coversKnown` false → a save won't touch the stored covers.
+  Future<void> _loadCovers() async {
+    final id = context.read<UserDataNotifier>().user.id ?? 0;
+    if (id <= 0) return;
+    try {
+      final res = await ApiClient.instance.dio.get('/users/$id/profile');
+      final data = res.data;
+      final inner = data is Map ? data['data'] : null;
+      final profile = inner is Map ? inner['profile'] : null;
+      // Prefer the backend-resolved `cover_images` (absolute, correctly-bucketed
+      // URLs) for display; `covers` are the raw paths sent back on save.
+      final urls = profile is Map
+          ? _strList(profile['cover_images'] ?? profile['covers'])
+          : <String>[];
+      final paths = profile is Map ? _strList(profile['covers']) : <String>[];
+      if (!mounted) return;
+      setState(() {
+        _coversKnown = true;
+        _coverPaths
+          ..clear()
+          ..addAll(paths);
+        _coverUrls
+          ..clear()
+          ..addAll(urls);
+        while (_coverUrls.length < _coverPaths.length) {
+          _coverUrls.add('');
+        }
+      });
+    } catch (_) {
+      // Leave covers hidden on failure (graceful) — save won't touch them.
     }
   }
+
+  List<String> _strList(dynamic v) =>
+      v is List ? v.map((e) => e?.toString() ?? '').toList() : <String>[];
 
   @override
   void dispose() {
@@ -132,8 +168,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           'name': name,
           'bio': _bioController.text.trim(),
           if (avatarPath != null) 'avatar': avatarPath,
-          // Sending `covers` replaces the stored set; only send it when we were
-          // handed the current covers (otherwise leave them untouched).
+          // Sending `covers` replaces the stored set; only send it when we
+          // managed to load the current covers (otherwise leave them untouched).
           if (_coversKnown) 'covers': _coverPaths,
         },
       );
@@ -156,6 +192,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               bio: _bioController.text.trim(),
               profile: updatedProfile,
             );
+        // Refresh the server-driven sources (core.currentUser) so the Me-landing
+        // reflects the new name/bio/avatar immediately on return (no manual refresh).
+        StacDataRegistry.instance.invalidate();
         final messenger = ScaffoldMessenger.of(context);
         final successText = context.tr('app.success');
         // Persist the updated user so the new avatar survives an app restart.
@@ -164,6 +203,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         // reach /my-data falls back to a stale cached user with no avatar.
         await CacheManager.saveUserData(notifier.user.toJson());
         messenger.showSnackBar(SnackBar(content: Text(successText)));
+        // Close the edit page after a successful save (mirrors the native flow).
+        if (Navigator.of(context).canPop()) Navigator.of(context).pop();
       }
     } catch (_) {
       if (mounted) {
@@ -399,8 +440,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               _label(context, 'app.bio'),
               8.hBox,
               _darkField(context, controller: _bioController, maxLines: 3),
-              // Covers (up to 3) — only when the screen was handed the current
-              // set from the profile page's edit pencil.
+              // Covers (up to 3) — shown once the current set has loaded.
               if (_coversKnown) ...[
                 24.hBox,
                 _label(context, 'app.covers'),

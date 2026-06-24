@@ -7,8 +7,8 @@ import '../features/search/search_page.dart';
 import '../screens/app_shell.dart';
 import '../screens/contact_us_screen.dart';
 import '../screens/content_page.dart';
+import '../screens/edit_profile_form.dart';
 import '../screens/home_screen.dart';
-import '../screens/profile_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/visited_profile_fallback.dart';
 
@@ -47,9 +47,18 @@ GoRouter createRouter(FeatureRegistry registry) {
           userId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
         ),
       ),
+      // Edit profile — server-driven (UTD Studio `edit_profile` screen), with the
+      // native [EditProfileForm] as the fallback until that screen is published.
+      // The form is too rich for Stac primitives (image pick+upload, multi-cover,
+      // save-with-state), so the Studio screen just hosts the `core.editProfileForm`
+      // node — same pattern as the self-profile landing. Both the Me-landing edit
+      // pencils (core.editProfile action) and the full-profile pencil push here.
       GoRoute(
           path: '/profile',
-          builder: (context, state) => ProfileScreen(coverArgs: state.extra)),
+          builder: (context, state) => const StacDynamicScreen(
+                screenName: 'edit_profile',
+                fallback: EditProfileForm(),
+              )),
       GoRoute(path: '/settings', builder: (context, state) => const SettingsScreen()),
       GoRoute(path: '/contact-us', builder: (context, state) => const ContactUsScreen()),
       GoRoute(
