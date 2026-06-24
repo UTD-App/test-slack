@@ -86,7 +86,7 @@ class AppServiceProvider extends ServiceProvider
         // live server too. Access is locked down to logged-in admins by the
         // viewTelescope gate (TelescopeServiceProvider), and in non-local only
         // problem entries are stored. Set TELESCOPE_ENABLED=false to turn it off.
-        if (config('telescope.enabled', true)) {
+        if (config('telescope.enabled', true) && class_exists(\Laravel\Telescope\Telescope::class)) {
             $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
             $this->app->register(TelescopeServiceProvider::class);
         }
