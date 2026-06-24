@@ -77,9 +77,9 @@ class ManageTranslations extends Page implements HasTable
     {
         $activeTab = $this->activeTab ?: 'admin';
 
-        // UI translations live in lang/<code>/*.php — read the locale's flat map
-        // once and resolve each row's value from it (replaces the old DB lookup).
-        $fileValues = app(TranslationLoader::class)->scanLangFiles($this->record->code);
+        // Effective values = lang-file defaults overlaid with DB overrides (DB
+        // wins). Read once and resolve each row's value from it.
+        $values = app(TranslationLoader::class)->resolvedValues($this->record->code);
 
         return $table
             ->query(
@@ -110,7 +110,7 @@ class ManageTranslations extends Page implements HasTable
                     ->limit(50),
                 TextColumn::make('value')
                     ->label(__('admin.translation_col', ['code' => strtoupper($this->record->code)]))
-                    ->state(fn(TranslationKey $record) => $fileValues[$record->key] ?? null)
+                    ->state(fn(TranslationKey $record) => $values[$record->key] ?? null)
                     ->placeholder(__('admin.not_translated'))
                     ->wrap()
                     ->color(fn($state) => $state ? 'success' : 'warning'),
@@ -121,7 +121,7 @@ class ManageTranslations extends Page implements HasTable
                     ->icon('heroicon-o-pencil')
                     ->fillForm(fn(TranslationKey $record) => [
                         'value' => app(TranslationLoader::class)
-                            ->getFileValue($this->record->code, $record->key),
+                            ->getValue($this->record->code, $record->key),
                     ])
                     ->form(fn(TranslationKey $record) => $this->editForm($record))
                     ->action(function (TranslationKey $record, array $data) {
@@ -246,7 +246,7 @@ class ManageTranslations extends Page implements HasTable
      */
     private function editForm(TranslationKey $record): array
     {
-        $english = app(TranslationLoader::class)->scanLangFiles('en')[$record->key] ?? '';
+        $english = app(TranslationLoader::class)->resolvedValues('en')[$record->key] ?? '';
         $target  = $this->record->code;
 
         return [

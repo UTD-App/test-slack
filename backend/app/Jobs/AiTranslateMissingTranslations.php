@@ -17,20 +17,21 @@ use Illuminate\Queue\SerializesModels;
  * request cycle (the synchronous Filament action timed out — Gemini does one API
  * call per item, so hundreds of keys take a while even fanned out concurrently).
  *
- * Writes to lang FILES (lang/<code>/<group>.php), NOT the DB — Laravel __() (the
- * admin dashboard) resolves from files, so this is what actually makes the UI
- * show the language. (Dynamic CONTENT translations stay in the DB elsewhere.)
+ * Writes translations into the DB override store (via {@see TranslationLoader::
+ * writeGroupValues()}), which overlays the git-tracked lang-file defaults. The DB
+ * is used (not the files) so edits survive deploys / OPcache / git — see that
+ * method's note.
  *
  * SELF-CONTINUING via a forward OFFSET: each run handles the next {@see self::BATCH}
  * keys of the ordered list then re-dispatches itself at `offset + BATCH`, so every
  * key is visited exactly once and the chain ENDS deterministically when the offset
  * passes the end — it never stalls on a batch that translates nothing (e.g. keys
  * identical in both languages). Each run is short (≪ queue retry_after), so no
- * mid-run reclaim. Idempotent: keys already present in the target files are
- * skipped, so re-clicking only fills the gaps.
+ * mid-run reclaim. Idempotent: keys already translated (file default or DB
+ * override) are skipped, so re-clicking only fills the gaps.
  *
- * Source for a UI key = its English value in lang/en/*.php. Requires a queue
- * worker (php artisan queue:work).
+ * Source for a UI key = its effective English value. Requires a queue worker
+ * (php artisan queue:work).
  */
 class AiTranslateMissingTranslations implements ShouldQueue
 {
@@ -82,10 +83,10 @@ class AiTranslateMissingTranslations implements ShouldQueue
         }
 
         $slice    = $keys->slice($this->offset, self::BATCH);
-        $english  = $loader->scanLangFiles('en');
-        $existing = $loader->scanLangFiles($lang->code); // current target-file values
+        $english  = $loader->resolvedValues('en');
+        $existing = $loader->resolvedValues($lang->code); // current effective target values
 
-        // dotKey => English source, for slice keys still missing from the files.
+        // dotKey => English source, for slice keys still missing a translation.
         $pending = [];
         foreach ($slice as $key) {
             if (filled($existing[$key->key] ?? null)) {
@@ -121,7 +122,7 @@ class AiTranslateMissingTranslations implements ShouldQueue
                 $this->done++;
             }
 
-            // Write into lang files, one read-modify-write per group.
+            // Persist into the DB override store, batched per group.
             if ($out !== []) {
                 $byGroup = [];
                 foreach ($out as $dotKey => $value) {

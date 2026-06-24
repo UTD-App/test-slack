@@ -86,32 +86,72 @@ class TranslationLoader
         return $count;
     }
 
-    // Get all translations for a locale as flat array
-    // Lang FILES are the source of truth for UI strings (the admin "Translations"
-    // page + AI-translate write them, and Laravel __() resolves from them). The
-    // legacy `translations` DB table only fills keys a file doesn't have, so file
-    // edits always win.
+    // Get all translations for a locale as flat array.
+    // The git-tracked lang FILES are developer DEFAULTS; runtime edits (admin
+    // "Translations" page, AI-translate, UTD Studio) are stored in the DB and
+    // OVERLAY the files. {@see resolvedValues()} for why edits live in the DB.
     public function getForLocale(string $locale): array
     {
         $cacheKey = "translations.{$locale}";
 
-        return Cache::remember($cacheKey, now()->addMinutes(30), function () use ($locale) {
-            $fileValues = $this->scanLangFiles($locale);
+        return Cache::remember(
+            $cacheKey,
+            now()->addMinutes(30),
+            fn () => $this->resolvedValues($locale)
+        );
+    }
 
-            $language = Language::where('code', $locale)->first();
-            if (!$language) {
-                return $fileValues;
-            }
+    /**
+     * Runtime translation OVERRIDES for a locale, read from the DB
+     * (`translations` table) as [dotKey => value]. Empty values are dropped so a
+     * blank override transparently falls back to the lang-file default.
+     */
+    public function dbValues(string $locale): array
+    {
+        $language = Language::where('code', $locale)->first();
+        if (! $language) {
+            return [];
+        }
 
-            $dbValues = Translation::where('language_id', $language->id)
-                ->with('key')
-                ->get()
-                ->mapWithKeys(fn($t) => [$t->key->key => $t->value])
-                ->filter()
-                ->toArray();
+        $out = [];
+        Translation::query()
+            ->where('language_id', $language->id)
+            ->whereNotNull('value')
+            ->where('value', '!=', '')
+            ->with('key:id,key')
+            ->get()
+            ->each(function (Translation $t) use (&$out) {
+                if ($t->key && $t->key->key !== null) {
+                    $out[$t->key->key] = $t->value;
+                }
+            });
 
-            return array_merge($dbValues, $fileValues);
-        });
+        return $out;
+    }
+
+    /**
+     * Effective UI strings for a locale: git-tracked lang-file DEFAULTS overlaid
+     * with runtime OVERRIDES from the DB (dashboard / AI-translate / UTD Studio
+     * edits), DB winning. The single read the app API + admin dashboard resolve
+     * from.
+     *
+     * Editable values live in the DB, NOT the lang files, on purpose — writing
+     * files broke on the server: a deploy's `git pull` reverted them (wiping owner
+     * edits), OPcache kept serving the stale compiled file, a read-only dir failed
+     * silently, and every push conflicted with the runtime-written file. The DB
+     * has none of those problems.
+     */
+    public function resolvedValues(string $locale): array
+    {
+        return array_merge($this->scanLangFiles($locale), $this->dbValues($locale));
+    }
+
+    /** Current effective value for one dot-key (DB override, else file default), or null. */
+    public function getValue(string $locale, string $dotKey): ?string
+    {
+        $db = $this->dbValues($locale);
+
+        return array_key_exists($dotKey, $db) ? $db[$dotKey] : $this->getFileValue($locale, $dotKey);
     }
 
     // Get all keys with their English values and DB translations for a language
@@ -225,43 +265,39 @@ class TranslationLoader
     }
 
     /**
-     * Merge translated leaves into a locale's group file (create dir/file if
-     * needed), preserving existing values + nesting. $dotKeyToValue is keyed by
-     * FULL dot keys (e.g. ['admin.save' => 'Sauvegarder']); only keys of this
-     * group are applied. Returns the number of leaves written.
+     * Persist translated leaves for a locale into the DB override store
+     * (`translations`), NOT the git-tracked lang files. $dotKeyToValue is keyed by
+     * FULL dot keys (e.g. ['admin.save' => 'Sauvegarder']); only keys of $group are
+     * applied (callers batch per group). Returns the number of leaves upserted.
+     *
+     * Why the DB and not the files: writing lang files broke on the server — a
+     * deploy's `git pull` reverted them (wiping owner edits), OPcache kept serving
+     * the stale compiled file, a read-only dir failed silently (and the old code
+     * reported success anyway), and every push conflicted with the runtime-written
+     * file. The DB survives deploys, needs no OPcache reset, and never conflicts
+     * with git. {@see resolvedValues()} overlays these onto the file defaults.
      */
     public function writeGroupValues(string $locale, string $group, array $dotKeyToValue): int
     {
-        $data    = $this->loadGroupFile($locale, $group);
-        $flat    = $this->isFlatGroup($group);
-        $written = 0;
+        $language = Language::where('code', $locale)->first();
+        if (! $language) {
+            return 0;
+        }
 
+        $written = 0;
         foreach ($dotKeyToValue as $dotKey => $value) {
             [$g, $sub] = $this->splitDotKey($dotKey);
             if ($g !== $group || $sub === '' || ! is_string($value)) {
                 continue;
             }
-            if ($flat) {
-                $data[$sub] = $value;          // literal dotted key (package groups)
-            } else {
-                Arr::set($data, $sub, $value); // nested (base groups → Laravel __())
-            }
+
+            $key = TranslationKey::firstOrCreate(['key' => $dotKey], ['group' => $group]);
+            Translation::updateOrCreate(
+                ['language_id' => $language->id, 'translation_key_id' => $key->id],
+                ['value' => $value],
+            );
             $written++;
         }
-
-        if ($written === 0) {
-            return 0;
-        }
-
-        $dir = dirname($this->fileGroupPath($locale, $group));
-        if (! is_dir($dir)) {
-            File::makeDirectory($dir, 0755, true);
-        }
-
-        File::put(
-            $this->fileGroupPath($locale, $group),
-            "<?php\n\nreturn " . var_export($data, true) . ";\n"
-        );
 
         return $written;
     }

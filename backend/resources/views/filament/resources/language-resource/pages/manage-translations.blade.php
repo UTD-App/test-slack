@@ -5,12 +5,12 @@
         $activeTab   = $this->activeTab ?? 'admin';
         $adminGroups = ['admin', 'dashboard', 'auth', 'validation', 'passwords', 'pagination'];
 
-        // Counts come from the LANG FILES (the source of truth for UI strings),
-        // not the legacy `translations` DB table which no longer reflects them.
+        // Counts come from the EFFECTIVE values (lang-file defaults overlaid with
+        // DB overrides), so an AI/Studio/dashboard edit counts as translated.
         $loader      = app(\App\Services\TranslationLoader::class);
-        $fileVals    = $loader->scanLangFiles($record->code);
+        $values      = $loader->resolvedValues($record->code);
         $keysByGroup = \App\Models\TranslationKey::pluck('group', 'key'); // key => group
-        $isFilled    = fn ($k) => isset($fileVals[$k]) && $fileVals[$k] !== '';
+        $isFilled    = fn ($k) => isset($values[$k]) && $values[$k] !== '';
 
         $totalKeys       = $keysByGroup->count();
         $translatedCount = $keysByGroup->keys()->filter(fn ($k) => $isFilled($k))->count();
