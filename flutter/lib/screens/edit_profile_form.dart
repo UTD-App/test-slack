@@ -134,6 +134,15 @@ class _EditProfileFormState extends State<EditProfileForm> {
           _coverUrls.add(uploaded.url);
         });
       }
+    } catch (_) {
+      // The upload threw (e.g. /media/upload 500 / storage failure). Surface it
+      // instead of silently swallowing the exception (the cover just won't be
+      // added) so the user knows the edit didn't take.
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(context.tr('app.error'))),
+        );
+      }
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
