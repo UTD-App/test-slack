@@ -629,9 +629,9 @@ return [
         ],
         [
             'name'         => 'profile',
-            'label'        => 'الملف الشخصي (تبويب)',
+            'label'        => 'الملف الشخصي',
             'icon'         => '👤',
-            'version'      => '1.8.9',
+            'version'      => '1.9.0',
             'nav'          => true,
             'navIcon'      => 'person',
             'order'        => 30,
