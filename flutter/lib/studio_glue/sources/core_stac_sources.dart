@@ -25,6 +25,42 @@ void registerCoreStacSources() {
   });
 }
 
+/// Wires the `core.onboarding` source: the draft state of the server-driven
+/// add_information (complete-profile) screen. Backed by the transient
+/// CacheManager draft keys so the gender selection + chosen age render their
+/// selected state (transform-safe bound Text, like maleSign/femaleSign), and
+/// `core.completeProfile` reads them on submit. The actions invalidate the
+/// registry after each pick so the screen re-renders.
+void registerCoreOnboardingSource() {
+  StacDataRegistry.instance.registerObject('core.onboarding', () async {
+    final g = CacheManager.getOnboardingGender();
+    final b = CacheManager.getOnboardingBirthday();
+    final age = _ageFromBirthday(b);
+    return {
+      'genderMaleCheck': g == 'male' ? '✓' : '',
+      'genderFemaleCheck': g == 'female' ? '✓' : '',
+      'ageLabel': age != null ? '$age' : '',
+      'ageEmptyLabel': age == null ? 'اختر عمرك' : '',
+      'gender': g ?? '',
+      'birthday': b ?? '',
+    };
+  });
+}
+
+/// Derives age (years) from a stored birthday `yyyy-MM-dd`, or null when unset.
+int? _ageFromBirthday(String? text) {
+  if (text == null || text.isEmpty) return null;
+  final birth = DateTime.tryParse(text);
+  if (birth == null) return null;
+  final now = DateTime.now();
+  var age = now.year - birth.year;
+  if (now.month < birth.month ||
+      (now.month == birth.month && now.day < birth.day)) {
+    age--;
+  }
+  return age;
+}
+
 /// الحقول المعروضة من المستخدم (نفس مفاتيح الـ manifest object_source
 /// `core.currentUser`: name/email/bio/avatar/cover/country/flag/uid). نحلّها
 /// دفاعيًا من أي شكل بيرجع به `/my-data`؛ الناقص → '' (الـ manifest بيخفيه عبر

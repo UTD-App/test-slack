@@ -386,11 +386,72 @@ $audioWidgets = [
     'aSub'   => $node('Text', false, ['text' => 'قريباً 🎧', 'fontSize' => 14, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'binding' => 't.app.coming_soon', 'maxLines' => 0], [], 'ROOT'),
 ];
 
+// add_information — server-driven onboarding (complete profile): avatar upload +
+// full name + gender selector + age wheel + submit. Decomposed into primitives
+// (custom node types crash the Studio editor); the stateful bits use custom
+// actions (core.selectGender / core.pickAge / core.completeProfile) + the
+// `core.onboarding` draft source. Gender selection + chosen age render via bound
+// Text (the maleSign/femaleSign empty-driven trick — visibleBinding is dropped).
+$addInfoWidgets = [
+    'ROOT'   => $node('Container', true, array_merge($style, ['background' => '#00000000', 'padMode' => 'sides', 'padL' => 22, 'padT' => 48, 'padR' => 22, 'padB' => 22, 'gap' => 16, 'align' => 'stretch', 'flex' => 0]), ['aiHero', 'aiForm'], null),
+
+    // Hero — title + subtitle.
+    'aiHero'  => $node('Container', true, ['background' => '#00000000', 'gap' => 6, 'align' => 'stretch', 'flex' => 0], ['aiTitle', 'aiSub'], 'ROOT'),
+    'aiTitle' => $node('Text', false, ['text' => 'مرحباً 👋', 'fontSize' => 30, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'right', 'binding' => 't.screens.add_info.title', 'maxLines' => 1], [], 'aiHero'),
+    'aiSub'   => $node('Text', false, ['text' => 'أكمل ملفك الشخصي للبدء', 'fontSize' => 14, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'right', 'binding' => 't.screens.add_info.subtitle', 'maxLines' => 0], [], 'aiHero'),
+
+    // Form so core.completeProfile reads the name field via the form scope.
+    'aiForm'  => $node('Form', true, [], ['aiCol'], 'ROOT'),
+    'aiCol'   => $node('Container', true, ['background' => '#00000000', 'gap' => 14, 'align' => 'stretch', 'flex' => 0], ['avatarCard', 'nameLabel', 'nameField', 'genderLabel', 'genderRow', 'ageLbl', 'ageCard', 'submitBtn'], 'aiForm'),
+
+    // Avatar upload card: "رفع صورة" (right) + tappable avatar w/ camera badge (left).
+    'avatarCard'  => $node('Container', true, array_merge($style, ['background' => $C['frost'], 'radius' => 14, 'padMode' => 'sides', 'padL' => 16, 'padT' => 14, 'padR' => 16, 'padB' => 14, 'borderWidth' => 1, 'borderColor' => $C['frostBorder'], 'align' => 'stretch', 'flex' => 0]), ['avatarRow'], 'aiCol'),
+    'avatarRow'   => $node('Row', true, ['gap' => 12, 'align' => 'center'], ['avatarLbl', 'avatarBox'], 'avatarCard'),
+    'avatarLbl'   => $node('Text', false, ['text' => 'رفع صورة', 'fontSize' => 14, 'fontWeight' => 500, 'color' => $C['muted'], 'align' => 'right', 'binding' => 't.app.upload_picture', 'maxLines' => 1, 'flex' => 1], [], 'avatarRow'),
+    'avatarBox'   => $node('Container', true, ['width' => 56, 'height' => 56, 'align' => 'center', 'valign' => 'center', 'flex' => 0], ['avatarStack'], 'avatarRow'),
+    'avatarStack' => $node('Stack', true, [], ['avatarScope', 'avCamBtn'], 'avatarBox'),
+    'avatarScope' => $node('Scope', true, ['source' => 'core.currentUser'], ['avatarImg'], 'avatarStack'),
+    'avatarImg'   => $node('Image', false, ['src' => '', 'binding' => 'core.currentUser.avatar', 'width' => 56, 'height' => 56, 'fit' => 'cover', 'shape' => 'circle', 'radius' => 0, 'onTapAction' => 'core.changeAvatar', 'onTapParams' => ['source' => 'gallery']], [], 'avatarScope'),
+    'avCamBtn'    => $node('Container', true, array_merge($style, ['width' => 22, 'height' => 22, 'radius' => 11, 'background' => $C['pink'], 'borderWidth' => 2, 'borderColor' => $C['white'], 'align' => 'center', 'valign' => 'center', 'pos' => 'bottom-left', 'flex' => 0, 'onTapAction' => 'core.changeAvatar', 'onTapParams' => ['source' => 'gallery']]), ['avCamIcon'], 'avatarStack'),
+    'avCamIcon'   => $node('Icon', false, ['name' => 'photo_camera_rounded', 'size' => 12, 'color' => $C['white']], [], 'avCamBtn'),
+
+    // Full name.
+    'nameLabel' => $node('Text', false, ['text' => 'الاسم الكامل', 'fontSize' => 14, 'fontWeight' => 500, 'color' => $C['muted'], 'align' => 'right', 'binding' => 't.app.full_name', 'maxLines' => 1], [], 'aiCol'),
+    'nameField' => $node('TextField', false, ['fieldId' => 'name', 'placeholder' => 'الاسم الكامل', 'tHint' => 'app.full_name', 'live' => true, 'fillColor' => $C['frost'], 'textColor' => $C['white'], 'borderColor' => $C['frostBorder'], 'radius' => 14, 'flex' => 0], [], 'aiCol'),
+
+    // Gender — two tappable cards (ذكر right / أنثى left); bound check = selection.
+    'genderLabel' => $node('Text', false, ['text' => 'جنسك', 'fontSize' => 14, 'fontWeight' => 500, 'color' => $C['muted'], 'align' => 'right', 'binding' => 't.app.your_gender', 'maxLines' => 1], [], 'aiCol'),
+    'genderRow'   => $node('Row', true, ['gap' => 12, 'align' => 'center'], ['maleCard', 'femaleCard'], 'aiCol'),
+    'maleCard'    => $node('Container', true, array_merge($style, ['background' => $C['frost'], 'radius' => 14, 'padMode' => 'sides', 'padL' => 14, 'padT' => 16, 'padR' => 14, 'padB' => 16, 'borderWidth' => 1, 'borderColor' => $C['frostBorder'], 'align' => 'center', 'flex' => 1, 'onTapAction' => 'core.selectGender', 'onTapParams' => ['gender' => 'male']]), ['maleInner'], 'genderRow'),
+    'maleInner'   => $node('Row', true, ['gap' => 6, 'justify' => 'center', 'align' => 'center'], ['maleCheck', 'maleLbl', 'maleIcon'], 'maleCard'),
+    'maleCheck'   => $node('Text', false, ['text' => '', 'binding' => 'core.onboarding.genderMaleCheck', 'fontSize' => 16, 'fontWeight' => 700, 'color' => '#42A5F5', 'align' => 'center', 'maxLines' => 1], [], 'maleInner'),
+    'maleLbl'     => $node('Text', false, ['text' => 'ذكر', 'fontSize' => 15, 'fontWeight' => 600, 'color' => $C['white'], 'align' => 'center', 'binding' => 't.app.male', 'maxLines' => 1], [], 'maleInner'),
+    'maleIcon'    => $node('Icon', false, ['name' => 'male', 'size' => 18, 'color' => '#42A5F5'], [], 'maleInner'),
+    'femaleCard'  => $node('Container', true, array_merge($style, ['background' => $C['frost'], 'radius' => 14, 'padMode' => 'sides', 'padL' => 14, 'padT' => 16, 'padR' => 14, 'padB' => 16, 'borderWidth' => 1, 'borderColor' => $C['frostBorder'], 'align' => 'center', 'flex' => 1, 'onTapAction' => 'core.selectGender', 'onTapParams' => ['gender' => 'female']]), ['femaleInner'], 'genderRow'),
+    'femaleInner' => $node('Row', true, ['gap' => 6, 'justify' => 'center', 'align' => 'center'], ['femaleCheck', 'femaleLbl', 'femaleIcon'], 'femaleCard'),
+    'femaleCheck' => $node('Text', false, ['text' => '', 'binding' => 'core.onboarding.genderFemaleCheck', 'fontSize' => 16, 'fontWeight' => 700, 'color' => '#EC407A', 'align' => 'center', 'maxLines' => 1], [], 'femaleInner'),
+    'femaleLbl'   => $node('Text', false, ['text' => 'أنثى', 'fontSize' => 15, 'fontWeight' => 600, 'color' => $C['white'], 'align' => 'center', 'binding' => 't.app.female', 'maxLines' => 1], [], 'femaleInner'),
+    'femaleIcon'  => $node('Icon', false, ['name' => 'female', 'size' => 18, 'color' => '#EC407A'], [], 'femaleInner'),
+
+    // Age — tappable card → wheel; bound age + empty-driven placeholder + chevron.
+    'ageLbl'      => $node('Text', false, ['text' => 'عمرك', 'fontSize' => 14, 'fontWeight' => 500, 'color' => $C['muted'], 'align' => 'right', 'binding' => 't.app.your_age', 'maxLines' => 1], [], 'aiCol'),
+    'ageCard'     => $node('Container', true, array_merge($style, ['background' => $C['frost'], 'radius' => 14, 'padMode' => 'sides', 'padL' => 16, 'padT' => 16, 'padR' => 16, 'padB' => 16, 'borderWidth' => 1, 'borderColor' => $C['frostBorder'], 'align' => 'stretch', 'flex' => 0, 'onTapAction' => 'core.pickAge']), ['ageRow'], 'aiCol'),
+    'ageRow'      => $node('Row', true, ['gap' => 8, 'align' => 'center'], ['ageTextWrap', 'ageChevron'], 'ageCard'),
+    'ageTextWrap' => $node('Row', true, ['gap' => 0, 'justify' => 'flex-start', 'align' => 'center', 'flex' => 1], ['ageValue', 'agePlaceholder'], 'ageRow'),
+    'ageValue'    => $node('Text', false, ['text' => '', 'binding' => 'core.onboarding.ageLabel', 'fontSize' => 15, 'fontWeight' => 600, 'color' => $C['white'], 'align' => 'right', 'maxLines' => 1], [], 'ageTextWrap'),
+    'agePlaceholder' => $node('Text', false, ['text' => '', 'binding' => 'core.onboarding.ageEmptyLabel', 'fontSize' => 15, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'right', 'maxLines' => 1], [], 'ageTextWrap'),
+    'ageChevron'  => $node('Icon', false, ['name' => 'expand_more_rounded', 'size' => 22, 'color' => $C['muted']], [], 'ageRow'),
+
+    // Submit (pink gradient CTA) → core.completeProfile (reads name + draft).
+    'submitBtn' => $node('Container', true, array_merge($style, ['gradient' => 1, 'gradFrom' => $C['pinkFrom'], 'gradTo' => $C['pinkTo'], 'gradDir' => 'to right', 'background' => $C['pink'], 'radius' => 30, 'padding' => 16, 'align' => 'center', 'flex' => 0, 'onTapAction' => 'core.completeProfile', 'onTapParams' => ['nameField' => 'name']]), ['submitT'], 'aiCol'),
+    'submitT'   => $node('Text', false, ['text' => 'إرسال', 'fontSize' => 16, 'fontWeight' => 700, 'color' => $C['white'], 'align' => 'center', 'binding' => 't.app.submit', 'maxLines' => 1], [], 'submitBtn'),
+];
+
 return [
     'key'     => 'core',
     'name'    => 'Core',
     'icon'    => 'settings',
-    'screens' => ['intro', 'login', 'register', 'forgot_password', 'home', 'audio', 'profile', 'settings'],
+    'screens' => ['intro', 'login', 'register', 'add_information', 'forgot_password', 'home', 'audio', 'profile', 'settings'],
 
     // Display bindings (profile screen ⇄ current user)
     'elements' => [
@@ -447,6 +508,22 @@ return [
                 ['key' => 'tagline', 'label' => 'الشعار النصّي', 'type' => 'string'],
             ],
         ],
+        // Onboarding draft (add_information screen): the in-progress gender/age
+        // picks. Resolved on the client by `registerCoreOnboardingSource()`
+        // (flutter/lib/studio_glue/sources/core_stac_sources.dart) from the
+        // CacheManager draft; the *Check fields are empty-driven selection marks.
+        [
+            'key'      => 'core.onboarding',
+            'label'    => 'مسوّدة إكمال الملف',
+            'provides' => [
+                ['key' => 'genderMaleCheck',   'label' => 'علامة ذكر',     'type' => 'string'],
+                ['key' => 'genderFemaleCheck', 'label' => 'علامة أنثى',    'type' => 'string'],
+                ['key' => 'ageLabel',          'label' => 'العمر',         'type' => 'string'],
+                ['key' => 'ageEmptyLabel',     'label' => 'نص نائب للعمر', 'type' => 'string'],
+                ['key' => 'gender',            'label' => 'الجنس',         'type' => 'string'],
+                ['key' => 'birthday',          'label' => 'تاريخ الميلاد', 'type' => 'string'],
+            ],
+        ],
     ],
 
     'action_elements' => [
@@ -471,6 +548,26 @@ return [
                 ['key' => 'emailField',    'label' => 'حقل البريد',       'type' => 'field_ref'],
                 ['key' => 'passwordField', 'label' => 'حقل كلمة المرور',  'type' => 'field_ref'],
                 ['key' => 'successRoute',  'label' => 'عند النجاح روح لـ', 'type' => 'route'],
+            ],
+        ],
+
+        // ── add_information (onboarding) ──
+        [
+            'key' => 'select_gender', 'label' => 'اختيار الجنس',
+            'produces' => 'core.selectGender', 'default_shape' => 'button', 'screen' => 'add_information',
+            'params' => [
+                ['key' => 'gender', 'label' => 'الجنس (male/female)', 'type' => 'string'],
+            ],
+        ],
+        [
+            'key' => 'pick_age', 'label' => 'اختيار العمر',
+            'produces' => 'core.pickAge', 'default_shape' => 'button', 'screen' => 'add_information',
+        ],
+        [
+            'key' => 'complete_profile', 'label' => 'إرسال (إكمال الملف)',
+            'produces' => 'core.completeProfile', 'default_shape' => 'button', 'screen' => 'add_information',
+            'params' => [
+                ['key' => 'nameField', 'label' => 'حقل الاسم', 'type' => 'field_ref'],
             ],
         ],
 
@@ -641,6 +738,24 @@ return [
                 'background'  => ['type' => 'gradient', 'gradFrom' => $C['authFrom'], 'gradTo' => $C['authTo'], 'gradDir' => 'to bottom right'],
             ],
             'widgets'      => $registerWidgets,
+        ],
+        [
+            'name'         => 'add_information',
+            'label'        => 'إكمال الملف',
+            'icon'         => '🧩',
+            'version'      => '1.0.0',
+            'nav'          => false,
+            'navIcon'      => 'badge',
+            'order'        => 4,
+            'role'         => 'onboarding.add_info',
+            'requiresAuth' => true,
+            'showOnce'     => false,
+            'opens'        => null,
+            'chrome'       => [
+                'appBar'     => ['enabled' => false, 'title' => 'إكمال الملف', 'bg' => $C['authBg'], 'actions' => []],
+                'background'  => ['type' => 'gradient', 'gradFrom' => $C['authFrom'], 'gradTo' => $C['authTo'], 'gradDir' => 'to bottom right'],
+            ],
+            'widgets'      => $addInfoWidgets,
         ],
         [
             'name'         => 'home',

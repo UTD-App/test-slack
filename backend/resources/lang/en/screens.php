@@ -21,4 +21,8 @@ return [
         'welcome_title'    => 'Welcome to your app',
         'welcome_subtitle' => 'Start exploring all the features',
     ],
+    'add_info' => [
+        'title'    => 'Welcome 👋',
+        'subtitle' => 'Complete your profile to get started',
+    ],
 ];

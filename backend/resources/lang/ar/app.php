@@ -83,5 +83,13 @@ return [
     'profile_unavailable'    => 'البروفايل غير متاح حاليًا',
     'permission_denied'      => 'تم رفض الإذن. فعّله من الإعدادات.',
     'could_not_open_link'    => 'تعذّر فتح الرابط',
+    // add_information (onboarding / إكمال الملف)
+    'upload_picture'         => 'رفع صورة',
+    'full_name'              => 'الاسم الكامل',
+    'your_gender'            => 'جنسك',
+    'male'                   => 'ذكر',
+    'female'                 => 'أنثى',
+    'your_age'               => 'عمرك',
+    'submit'                 => 'إرسال',
     'app.hello'              => 'مرحباً'
 ];

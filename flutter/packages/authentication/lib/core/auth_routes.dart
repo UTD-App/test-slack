@@ -67,7 +67,11 @@ class AuthRoutes {
         ),
         GoRoute(
           path: addInformation,
-          builder: (context, state) => const AddInformationPage(),
+          // add_information renders the server-driven screen (native fallback).
+          builder: (context, state) => const StacDynamicScreen(
+            screenName: 'add_information',
+            fallback: AddInformationPage(),
+          ),
         ),
         GoRoute(
           path: recoverPassword,

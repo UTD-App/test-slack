@@ -10,6 +10,8 @@ import 'package:utd_app/network/network.dart';
 import 'package:utd_app/shared/core/toast_manager.dart';
 import 'package:utd_app/shared/models/my_data_model.dart';
 import 'package:utd_app/shared/notifiers/user_data_notifier.dart';
+import 'package:utd_app/shared/services/user_session_service.dart';
+import 'package:utd_app/shared/widgets/wheel_picker.dart';
 import 'package:utd_studio_sdk/utd_studio_sdk.dart';
 
 /// The Base app's APP-SPECIFIC core actions (auth/profile/settings).
@@ -489,6 +491,136 @@ class CoreCopyActionParser extends StacMapActionParser {
   }
 }
 
+/// Derives age (years) from a stored birthday `yyyy-MM-dd`, or null when unset
+/// — used to seed the age wheel with the current draft pick.
+int? _ageFromBirthday(String? text) {
+  if (text == null || text.isEmpty) return null;
+  final birth = DateTime.tryParse(text);
+  if (birth == null) return null;
+  final now = DateTime.now();
+  var age = now.year - birth.year;
+  if (now.month < birth.month ||
+      (now.month == birth.month && now.day < birth.day)) {
+    age--;
+  }
+  return age;
+}
+
+/// `core.selectGender` — `{ gender: 'male' | 'female' }`. Records the onboarding
+/// gender draft and refreshes the renderer so the chosen card shows its check
+/// (the `core.onboarding.genderMaleCheck/femaleCheck` bound Text). Used by the
+/// server-driven add_information screen.
+class CoreSelectGenderActionParser extends StacMapActionParser {
+  const CoreSelectGenderActionParser();
+
+  @override
+  String get actionType => 'core.selectGender';
+
+  @override
+  Future<void> onCall(BuildContext context, Map<String, dynamic> model) async {
+    final g = (model['gender'] as String?)?.trim().toLowerCase();
+    if (g != 'male' && g != 'female') return;
+    await CacheManager.saveOnboardingDraft(
+      g,
+      CacheManager.getOnboardingBirthday(),
+    );
+    StacDataRegistry.instance.invalidate();
+  }
+}
+
+/// `core.pickAge` — opens the age wheel, converts the picked age to a birthday
+/// (`yyyy-MM-dd`, the backend contract), stores it in the onboarding draft, and
+/// refreshes so `core.onboarding.ageLabel` shows it. Used by add_information.
+class CorePickAgeActionParser extends StacMapActionParser {
+  const CorePickAgeActionParser();
+
+  @override
+  String get actionType => 'core.pickAge';
+
+  @override
+  Future<void> onCall(BuildContext context, Map<String, dynamic> model) async {
+    final current = _ageFromBirthday(CacheManager.getOnboardingBirthday()) ?? 18;
+    final age = await showAgePickerSheet(
+      context,
+      title: 'اختر عمرك',
+      doneLabel: 'تم',
+      initial: current,
+      min: 18,
+      max: 80,
+    );
+    if (age == null) return;
+    final now = DateTime.now();
+    final b = DateTime(now.year - age, now.month, now.day);
+    final ymd = '${b.year.toString().padLeft(4, '0')}-'
+        '${b.month.toString().padLeft(2, '0')}-'
+        '${b.day.toString().padLeft(2, '0')}';
+    await CacheManager.saveOnboardingDraft(
+      CacheManager.getOnboardingGender(),
+      ymd,
+    );
+    StacDataRegistry.instance.invalidate();
+  }
+}
+
+/// `core.completeProfile` — `{ nameField }`. Submits the onboarding profile:
+/// reads the name from the enclosing form + gender/birthday from the draft,
+/// calls the AddInfo use case (`POST /profile/update`), hydrates the session and
+/// navigates home. The avatar is uploaded separately by `core.changeAvatar`.
+class CoreCompleteProfileActionParser extends StacMapActionParser {
+  const CoreCompleteProfileActionParser();
+
+  @override
+  String get actionType => 'core.completeProfile';
+
+  @override
+  Future<void> onCall(BuildContext context, Map<String, dynamic> model) async {
+    final useCase = AuthLocator.addInfo;
+    if (useCase == null) return;
+
+    final name = readFormField(context, model, 'nameField').trim();
+    final gender = CacheManager.getOnboardingGender();
+    final birthday = CacheManager.getOnboardingBirthday();
+
+    final missing = <String>[];
+    if (name.isEmpty) missing.add('الاسم');
+    if (gender == null) missing.add('الجنس');
+    if (birthday == null || birthday.isEmpty) missing.add('العمر');
+    if (missing.isNotEmpty) {
+      ToastManager.showToast(
+        context,
+        message: 'يرجى إكمال: ${missing.join('، ')}',
+        isError: true,
+      );
+      return;
+    }
+
+    final result = await useCase(
+      InformationParameter(
+        name: name,
+        gender: gender == 'male' ? 1 : 0,
+        date: birthday,
+        image: null,
+      ),
+    );
+
+    switch (result) {
+      case Success(data: final data):
+        if (context.mounted) {
+          await UserSessionService.hydrate(context.read<UserDataNotifier>());
+        }
+        await CacheManager.clearOnboardingDraft();
+        if (context.mounted) {
+          ToastManager.showToast(context, message: data.message);
+          context.go(AppFlow.instance.onAuthSuccess);
+        }
+      case Failure(message: final message):
+        if (context.mounted) {
+          ToastManager.showToast(context, message: message, isError: true);
+        }
+    }
+  }
+}
+
 /// The app-specific core actions, passed to `StudioConfig.extraActions`.
 const List<StacActionParser> appCoreActionParsers = [
   CoreLoginActionParser(),
@@ -501,4 +633,7 @@ const List<StacActionParser> appCoreActionParsers = [
   CoreRefreshActionParser(),
   CoreCopyActionParser(),
   CoreLogoutActionParser(),
+  CoreSelectGenderActionParser(),
+  CorePickAgeActionParser(),
+  CoreCompleteProfileActionParser(),
 ];

@@ -86,4 +86,12 @@ return [
     'profile_unavailable'    => 'Profile not available',
     'permission_denied'      => 'Permission denied. Enable it from Settings.',
     'could_not_open_link'    => 'Could not open the link',
+    // add_information (onboarding / complete profile)
+    'upload_picture'         => 'Upload Picture',
+    'full_name'              => 'Full Name',
+    'your_gender'            => 'Your gender',
+    'male'                   => 'Male',
+    'female'                 => 'Female',
+    'your_age'               => 'Your age',
+    'submit'                 => 'Submit',
 ];

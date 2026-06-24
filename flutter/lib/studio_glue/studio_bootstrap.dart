@@ -42,4 +42,5 @@ Future<void> bootstrapStudio({
   // Base app's own core data sources (core.currentUser + core.app branding).
   registerCoreStacSources();
   registerCoreAppSource();
+  registerCoreOnboardingSource();
 }

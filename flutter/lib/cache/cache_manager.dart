@@ -120,6 +120,31 @@ class CacheManager {
 
   static bool get onboardingSeen => _box.get(_onboardingSeenKey) == true;
 
+  // ── Onboarding draft (complete-profile / add_information) ──────────────────
+  // Transient draft for the server-driven add_information screen: the gender and
+  // birthday picks are held here (not in the user record) so the `core.onboarding`
+  // Stac source can show the selected state, and `core.completeProfile` can read
+  // them on submit. Cleared once the profile is completed.
+
+  static Future<void> saveOnboardingDraft(String? gender, String? birthday) async {
+    gender == null
+        ? await _box.delete('_ob_gender')
+        : await _box.put('_ob_gender', gender);
+    birthday == null
+        ? await _box.delete('_ob_birthday')
+        : await _box.put('_ob_birthday', birthday);
+  }
+
+  static String? getOnboardingGender() => _box.get('_ob_gender') as String?;
+
+  static String? getOnboardingBirthday() => _box.get('_ob_birthday') as String?;
+
+  static Future<void> clearOnboardingDraft() async {
+    await _box.delete('_ob_gender');
+    await _box.delete('_ob_birthday');
+  }
+
+
   // ── Session helpers ───────────────────────────────────────────────────────
 
   static bool get hasSession => getToken() != null;
