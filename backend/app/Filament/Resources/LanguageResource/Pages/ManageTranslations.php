@@ -26,6 +26,7 @@ use Filament\Tables\Contracts\HasTable;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
+use Livewire\Attributes\Url;
 
 class ManageTranslations extends Page implements HasTable
 {
@@ -49,17 +50,32 @@ class ManageTranslations extends Page implements HasTable
     public Language $record;
     public ?string $selectedGroup = null;
 
+    // Which tab is shown ('admin' | 'app'). A Livewire #[Url] property — NOT
+    // request()->query() — so it survives pagination/search/poll (those are
+    // Livewire AJAX requests that DON'T carry the page's query string; reading the
+    // query there silently reverted to 'admin', making the app tab "jump back" and
+    // hiding app.* rows from search/pagination). #[Url] also keeps it shareable.
+    #[Url]
+    public ?string $activeTab = 'admin';
+
     public function mount(Language $record): void
     {
         $this->record = $record;
         app(TranslationLoader::class)->syncKeysFromFiles();
     }
 
+    /** Switching tabs clears the group filter and returns to page 1. */
+    public function updatedActiveTab(): void
+    {
+        $this->selectedGroup = null;
+        $this->resetPage($this->getTablePaginationPageName());
+    }
+
     private array $adminGroups = ['admin', 'dashboard', 'auth', 'validation', 'passwords', 'pagination'];
 
     public function table(Table $table): Table
     {
-        $activeTab = request()->query('tab', 'admin');
+        $activeTab = $this->activeTab ?: 'admin';
 
         // UI translations live in lang/<code>/*.php — read the locale's flat map
         // once and resolve each row's value from it (replaces the old DB lookup).
@@ -133,7 +149,7 @@ class ManageTranslations extends Page implements HasTable
                     ->action(function () {
                         AiTranslateMissingTranslations::dispatch(
                             $this->record->id,
-                            request()->query('tab', 'admin'),
+                            $this->activeTab ?: 'admin',
                             $this->selectedGroup,
                         );
                         Notification::make()
@@ -258,8 +274,8 @@ class ManageTranslations extends Page implements HasTable
     public function getBreadcrumbs(): array
     {
         return [
-            LanguageResource::getUrl() => 'Languages',
-            '#' => $this->record->name . ' — Translations',
+            LanguageResource::getUrl() => __('admin.languages'),
+            '#' => $this->record->name . ' — ' . __('admin.translations'),
         ];
     }
 }
