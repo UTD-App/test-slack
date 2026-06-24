@@ -9,6 +9,7 @@ import 'data/charisma_remote_datasource.dart';
 import 'domain/charisma_model.dart';
 import 'domain/charisma_repository.dart';
 import 'presentation/bloc/charisma_bloc.dart';
+import 'presentation/charisma_strings.dart';
 import 'presentation/view/charisma_leaderboard_sheet.dart';
 
 class CharismaPlugin extends AudioRoomPlugin {
@@ -153,9 +154,10 @@ class CharismaPlugin extends AudioRoomPlugin {
 
   @override
   List<PluginSettingRow> getSettingRows(BuildContext context, int roomId) {
+    final s = CharismaStrings.of(context);
     return [
       PluginSettingRow(
-        title: 'الكاريزما',
+        title: s.charisma,
         type: PluginSettingType.toggle,
         currentValue: _isActive,
         onToggle: (value) {
@@ -170,7 +172,7 @@ class CharismaPlugin extends AudioRoomPlugin {
       ),
       if (_isActive)
         PluginSettingRow(
-          title: 'ريست الكاريزما',
+          title: s.resetCharisma,
           type: PluginSettingType.action,
           onTap: () {
             _bloc.add(ResetCharismaEvent(roomId: roomId));

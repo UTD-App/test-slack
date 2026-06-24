@@ -7,6 +7,7 @@ import '../../data/emoji_remote_datasource.dart';
 import '../../domain/emoji_model.dart';
 import '../../domain/emoji_repository.dart';
 import '../bloc/emoji_bloc.dart';
+import '../emoji_strings.dart';
 import 'emoji_grid_page.dart';
 
 class EmojiPickerSheet extends StatelessWidget {
@@ -130,9 +131,10 @@ class EmojiPickerSheet extends StatelessWidget {
   Widget _buildEmojiGrid() {
     return BlocBuilder<EmojiBloc, EmojiState>(
       builder: (context, state) {
+        final s = EmojiStrings.of(context);
         final categoryId = state.categoryId;
         if (categoryId == null) {
-          return const Center(child: Text('Select a category'));
+          return Center(child: Text(s.selectCategory));
         }
 
         final reqState =
@@ -144,11 +146,11 @@ class EmojiPickerSheet extends StatelessWidget {
         }
 
         if (reqState == RequestState.empty || emojis.isEmpty) {
-          return const Center(child: Text('No emojis available'));
+          return Center(child: Text(s.noEmojis));
         }
 
         if (reqState == RequestState.error) {
-          return Center(child: Text(state.message ?? 'Error loading emojis'));
+          return Center(child: Text(state.message ?? s.errorLoading));
         }
 
         return EmojiGridPage(

@@ -4,6 +4,7 @@ import 'package:utd_audio_room_kit/utd_audio_room_kit.dart';
 
 import '../../domain/charisma_model.dart';
 import '../bloc/charisma_bloc.dart';
+import '../charisma_strings.dart';
 
 class CharismaLeaderboardSheet extends StatelessWidget {
   final CharismaBloc bloc;
@@ -90,6 +91,8 @@ class CharismaLeaderboardSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = CharismaStrings.of(context);
+
     return BlocBuilder<CharismaBloc, CharismaState>(
       bloc: bloc,
       builder: (context, state) {
@@ -107,14 +110,14 @@ class CharismaLeaderboardSheet extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 16),
-            const Row(
+            Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.favorite, color: Colors.pinkAccent, size: 20),
-                SizedBox(width: 6),
+                const Icon(Icons.favorite, color: Colors.pinkAccent, size: 20),
+                const SizedBox(width: 6),
                 Text(
-                  'ترتيب الكاريزما',
-                  style: TextStyle(
+                  s.charismaRanking,
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -124,11 +127,11 @@ class CharismaLeaderboardSheet extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             if (data.isEmpty)
-              const Expanded(
+              Expanded(
                 child: Center(
                   child: Text(
-                    'لا توجد بيانات',
-                    style: TextStyle(color: Colors.white54, fontSize: 14),
+                    s.noData,
+                    style: const TextStyle(color: Colors.white54, fontSize: 14),
                   ),
                 ),
               )
@@ -183,11 +186,12 @@ class _LeaderboardRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = CharismaStrings.of(context);
     final isTop3 = rank <= 3;
     final rankColors = [Colors.amber, Colors.grey.shade400, Colors.orange];
     final displayName = (userName != null && userName!.isNotEmpty)
         ? userName!
-        : 'User ${entry.userId}';
+        : s.user(entry.userId);
     final hasAvatar = avatarUrl != null && avatarUrl!.isNotEmpty;
 
     return Padding(
