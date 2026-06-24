@@ -6,6 +6,7 @@ import '../addons/ui_slot.dart';
 import '../addons/widget_registry.dart';
 import '../config/app_layout.dart';
 import '../config/nav_icons.dart';
+import '../localization/localization.dart';
 import 'package:utd_studio_sdk/utd_studio_sdk.dart';
 import 'self_profile_fallback.dart';
 
@@ -91,7 +92,10 @@ class _AppShellState extends State<AppShell> {
             if (tab.label.isNotEmpty) ...[
               const SizedBox(height: 4),
               Text(
-                tab.label,
+                // Nav labels go through translation: a key (e.g. "app.home")
+                // localizes; a plain literal passes through unchanged (context.tr
+                // returns its input when it isn't a catalog key).
+                context.tr(tab.label),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(
