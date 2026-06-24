@@ -80,7 +80,13 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(\App\Services\AuditLogger::class);
         $this->app->singleton('utd.audit', fn ($app) => $app->make(\App\Services\AuditLogger::class));
 
-        if ($this->app->isLocal()) {
+        // Telescope is the server-problem viewer (exceptions, failed requests,
+        // failed jobs, error-level logs, slow queries). Register it in ALL
+        // environments — not just local — so admins can open /telescope on the
+        // live server too. Access is locked down to logged-in admins by the
+        // viewTelescope gate (TelescopeServiceProvider), and in non-local only
+        // problem entries are stored. Set TELESCOPE_ENABLED=false to turn it off.
+        if (config('telescope.enabled', true)) {
             $this->app->register(\Laravel\Telescope\TelescopeServiceProvider::class);
             $this->app->register(TelescopeServiceProvider::class);
         }

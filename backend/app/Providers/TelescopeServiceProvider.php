@@ -51,14 +51,16 @@ class TelescopeServiceProvider extends TelescopeApplicationServiceProvider
     /**
      * Register the Telescope gate.
      *
-     * This gate determines who can access Telescope in non-local environments.
+     * Determines who can open /telescope in non-local environments. Admins log
+     * in on the `admin` guard (Filament), NOT the default `web` guard Telescope
+     * inspects — so we check that guard explicitly. The `$user = null` default
+     * lets the gate run for a guest on the web guard (otherwise Laravel skips
+     * the callback) and then we authorize purely on an active admin session.
      */
     protected function gate(): void
     {
-        Gate::define('viewTelescope', function ($user) {
-            return in_array($user->email, [
-                //
-            ]);
+        Gate::define('viewTelescope', function ($user = null) {
+            return auth('admin')->check();
         });
     }
 }
