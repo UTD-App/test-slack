@@ -248,7 +248,20 @@ $homeWidgets = [
 //   • name+flag+pencil / uid / bio+pencil + tappable menu cards.
 $profileWidgets = array_merge(
     [
-        'ROOT'        => $node('Container', true, array_merge($style, ['background' => $C['screen'], 'padding' => 16, 'gap' => 14, 'align' => 'stretch', 'flex' => 0]), ['scope', 'mSettings'], null),
+        'ROOT'        => $node('Container', true, array_merge($style, ['background' => $C['screen'], 'padding' => 16, 'gap' => 14, 'align' => 'stretch', 'flex' => 0]), ['topBar', 'scope', 'mSettings'], null),
+
+        // Edit + refresh buttons at the top (justify flex-start → Start, which in
+        // the RTL app is physically TOP-RIGHT), mirroring the native Me-landing
+        // top bar. `core.editProfile` opens the name/bio edit sheet; `core.refresh`
+        // re-fetches the live user source (+ a "تم التحديث" toast). Both actions
+        // already ship in the Flutter app (appCoreActionParsers) and are declared
+        // in `action_elements` below.
+        'topBar'         => $node('Row', true, ['gap' => 8, 'justify' => 'flex-start', 'align' => 'center'], ['editBtn', 'refreshBtn'], 'ROOT'),
+        'editBtn'        => $node('Container', true, array_merge($style, ['width' => 40, 'height' => 40, 'radius' => 20, 'background' => $C['frost'], 'borderWidth' => 1, 'borderColor' => $C['frostBorder'], 'align' => 'center', 'valign' => 'center', 'flex' => 0, 'onTapAction' => 'core.editProfile']), ['editBtnIcon'], 'topBar'),
+        'editBtnIcon'    => $node('Icon', false, ['name' => 'edit_rounded', 'size' => 20, 'color' => $C['white']], [], 'editBtn'),
+        'refreshBtn'     => $node('Container', true, array_merge($style, ['width' => 40, 'height' => 40, 'radius' => 20, 'background' => $C['frost'], 'borderWidth' => 1, 'borderColor' => $C['frostBorder'], 'align' => 'center', 'valign' => 'center', 'flex' => 0, 'onTapAction' => 'core.refresh']), ['refreshBtnIcon'], 'topBar'),
+        'refreshBtnIcon' => $node('Icon', false, ['name' => 'refresh_rounded', 'size' => 20, 'color' => $C['white']], [], 'refreshBtn'),
+
         'scope'       => $node('Scope', true, ['source' => 'core.currentUser'], ['header'], 'ROOT'),
         'header'      => $node('Container', true, ['background' => '#00000000', 'padding' => 8, 'gap' => 10, 'align' => 'center', 'flex' => 0], ['avatarBox', 'nameRow', 'uid', 'bioRow'], 'scope'),
 
@@ -482,6 +495,11 @@ return [
             'key' => 'edit_profile', 'label' => 'تعديل الملف (مودال)',
             'produces' => 'core.editProfile', 'default_shape' => 'button', 'screen' => 'profile',
         ],
+        // تحديث: إعادة جلب بيانات المستخدم الحيّة (مع توست "تم التحديث") — زر أعلى البروفايل.
+        [
+            'key' => 'refresh', 'label' => 'تحديث',
+            'produces' => 'core.refresh', 'default_shape' => 'button', 'screen' => 'profile',
+        ],
 
         // ── settings ──
         [
@@ -631,7 +649,7 @@ return [
             'name'         => 'profile',
             'label'        => 'الملف الشخصي',
             'icon'         => '👤',
-            'version'      => '1.9.0',
+            'version'      => '1.10.0',
             'nav'          => true,
             'navIcon'      => 'person',
             'order'        => 30,
