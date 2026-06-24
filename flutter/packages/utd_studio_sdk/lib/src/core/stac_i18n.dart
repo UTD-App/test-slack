@@ -5,9 +5,13 @@ import '../runtime/studio_runtime.dart';
 
 /// Localises a server-driven screen's translatable `Text` nodes BEFORE render.
 ///
-/// A `Text` node is localised when it carries either:
-///   • `"tKey": "auth.login"`            — an explicit translation key, or
-///   • `"binding": "t.auth.login"`       — a binding whose root source is `t`.
+/// A `Text` node is localised when it carries any of:
+///   • `"tKey": "auth.login"`            — an explicit translation key,
+///   • `"binding": "t.auth.login"`       — a binding whose root source is `t`, or
+///   • `"data": "auth.login"`            — a literal that is ITSELF a catalog key
+///                                         (fallback for Studio elements that bake
+///                                         the key as text; self-guarding so plain
+///                                         literals are never touched).
 ///
 /// Its `data` is set to the current-locale string via the app-provided
 /// [StudioRuntime.translate] port (e.g. `context.tr(key)`), and the translation
@@ -38,6 +42,18 @@ dynamic _walk(dynamic node, BuildContext ctx, StacTranslate translate) {
         if (value.isNotEmpty && value != key) out['data'] = value;
         // It's a translation, not a data binding — don't let the Scope pass touch it.
         out.remove('binding');
+      } else {
+        // FALLBACK: a Text whose `data` is ITSELF a known translation key — e.g. a
+        // Studio element that baked the key as literal text (`"data": "app.hellow"`)
+        // instead of emitting a `tKey` / `t.`-binding. Self-guarding: the translate
+        // port returns the key unchanged when it isn't a catalog key, so a real
+        // literal ("Welcome!", "بحث", …) is never touched — only an actual key that
+        // resolves to a value is swapped. `t.`/`tKey` stay the primary contract.
+        final data = out['data'];
+        if (data is String && data.isNotEmpty) {
+          final value = translate(ctx, data);
+          if (value.isNotEmpty && value != data) out['data'] = value;
+        }
       }
     }
 
