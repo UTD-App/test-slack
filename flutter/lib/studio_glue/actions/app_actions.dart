@@ -1,5 +1,6 @@
 import 'package:authentication/authentication.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -458,6 +459,36 @@ class CoreRefreshActionParser extends StacMapActionParser {
   }
 }
 
+/// `core.copy` — copies a value to the clipboard (+ "تم النسخ" toast). Uses the
+/// literal `value` when provided, otherwise reads the named `field` from the
+/// signed-in user cache (default `uid` → uuid/uid/id). Wired to the copy glyph
+/// next to the profile UID, mirroring the native Me-landing "ID: …" copy row.
+class CoreCopyActionParser extends StacMapActionParser {
+  const CoreCopyActionParser();
+
+  @override
+  String get actionType => 'core.copy';
+
+  @override
+  Future<void> onCall(BuildContext context, Map<String, dynamic> model) async {
+    var text = (model['value'] as String?)?.trim() ?? '';
+    if (text.isEmpty) {
+      final field = (model['field'] as String?)?.trim();
+      final user = CacheManager.getUserData() ?? const <String, dynamic>{};
+      if (field == null || field.isEmpty || field == 'uid' || field == 'uuid') {
+        text = (user['uuid'] ?? user['uid'] ?? user['id'] ?? '').toString();
+      } else {
+        text = (user[field] ?? '').toString();
+      }
+    }
+    if (text.isEmpty) return;
+    await Clipboard.setData(ClipboardData(text: text));
+    if (context.mounted) {
+      ToastManager.showToast(context, message: 'تم النسخ');
+    }
+  }
+}
+
 /// The app-specific core actions, passed to `StudioConfig.extraActions`.
 const List<StacActionParser> appCoreActionParsers = [
   CoreLoginActionParser(),
@@ -468,5 +499,6 @@ const List<StacActionParser> appCoreActionParsers = [
   CoreOpenProfileActionParser(),
   CoreEditProfileActionParser(),
   CoreRefreshActionParser(),
+  CoreCopyActionParser(),
   CoreLogoutActionParser(),
 ];

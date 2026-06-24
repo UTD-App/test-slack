@@ -263,7 +263,7 @@ $profileWidgets = array_merge(
         'refreshBtnIcon' => $node('Icon', false, ['name' => 'refresh_rounded', 'size' => 20, 'color' => $C['white']], [], 'refreshBtn'),
 
         'scope'       => $node('Scope', true, ['source' => 'core.currentUser'], ['header'], 'ROOT'),
-        'header'      => $node('Container', true, ['background' => '#00000000', 'padding' => 8, 'gap' => 10, 'align' => 'center', 'flex' => 0], ['avatarBox', 'nameRow', 'uid', 'bioRow'], 'scope'),
+        'header'      => $node('Container', true, ['background' => '#00000000', 'padding' => 8, 'gap' => 10, 'align' => 'center', 'flex' => 0], ['avatarBox', 'nameRow', 'uidRow', 'badgeRow', 'bioRow'], 'scope'),
 
         // Avatar: a FIXED-SIZE box → gradient ring + circular image + an
         // overlapping camera badge. The Stack MUST be wrapped in a 124×124
@@ -299,8 +299,22 @@ $profileWidgets = array_merge(
         'femaleSign'  => $node('Text', false, ['text' => '', 'binding' => 'core.currentUser.femaleSign', 'fontSize' => 20, 'fontWeight' => 700, 'color' => '#EC407A', 'align' => 'center', 'maxLines' => 1], [], 'nameRow'),
         'namePencil'  => $node('Icon', false, ['name' => 'edit_rounded', 'size' => 16, 'color' => $C['accentLt'], 'onTapAction' => 'core.editProfile'], [], 'nameRow'),
 
-        // UID.
-        'uid'         => $node('Text', false, ['text' => '', 'binding' => 'core.currentUser.uid', 'visibleBinding' => 'core.currentUser.uid', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'maxLines' => 1], [], 'header'),
+        // UID + copy glyph. Tapping copy fires core.copy → copies the signed-in
+        // user's uid to the clipboard (+ a "تم النسخ" toast), matching the native
+        // Me-landing "ID: …" copy row.
+        'uidRow'      => $node('Row', true, ['gap' => 4, 'justify' => 'center', 'align' => 'center', 'visibleBinding' => 'core.currentUser.uid'], ['uidLabel', 'uid', 'copyIcon'], 'header'),
+        'uidLabel'    => $node('Text', false, ['text' => 'ID:', 'binding' => '', 'fontSize' => 13, 'fontWeight' => 400, 'color' => $C['muted'], 'align' => 'center', 'maxLines' => 1], [], 'uidRow'),
+        'uid'         => $node('Text', false, ['text' => '', 'binding' => 'core.currentUser.uid', 'fontSize' => 13, 'fontWeight' => 600, 'color' => $C['muted'], 'align' => 'center', 'maxLines' => 1], [], 'uidRow'),
+        'copyIcon'    => $node('Icon', false, ['name' => 'content_copy_rounded', 'size' => 14, 'color' => $C['muted'], 'onTapAction' => 'core.copy', 'onTapParams' => ['field' => 'uid']], [], 'uidRow'),
+
+        // Level badges (wealth + charm) — graceful-empty: each is a bound Text
+        // that stays '' until the backend (gifts/levels package) sends the level,
+        // mirroring the native ProfileIdentity level chips. (The Craft→Stac
+        // transform drops visibleBinding, so an empty bound Text — not a gated
+        // pill — is how an absent badge stays hidden, like the gender signs.)
+        'badgeRow'    => $node('Row', true, ['gap' => 8, 'justify' => 'center', 'align' => 'center'], ['wealthBadge', 'charmBadge'], 'header'),
+        'wealthBadge' => $node('Text', false, ['text' => '', 'binding' => 'core.currentUser.wealthBadge', 'fontSize' => 12, 'fontWeight' => 700, 'color' => $C['accentLt'], 'align' => 'center', 'maxLines' => 1], [], 'badgeRow'),
+        'charmBadge'  => $node('Text', false, ['text' => '', 'binding' => 'core.currentUser.charmBadge', 'fontSize' => 12, 'fontWeight' => 700, 'color' => '#FFB300', 'align' => 'center', 'maxLines' => 1], [], 'badgeRow'),
 
         // Bio + edit pencil.
         'bioRow'      => $node('Row', true, ['gap' => 6, 'justify' => 'center', 'align' => 'center'], ['bio', 'bioPencil'], 'header'),
@@ -392,6 +406,8 @@ return [
         ['key' => 'isFemale', 'label' => 'أنثى؟', 'type' => 'string', 'screen' => 'profile'],
         ['key' => 'maleSign',   'label' => 'رمز ذكر',  'type' => 'string', 'screen' => 'profile'],
         ['key' => 'femaleSign', 'label' => 'رمز أنثى', 'type' => 'string', 'screen' => 'profile'],
+        ['key' => 'wealthBadge', 'label' => 'شارة الثراء',   'type' => 'string', 'screen' => 'profile'],
+        ['key' => 'charmBadge',  'label' => 'شارة الجاذبية', 'type' => 'string', 'screen' => 'profile'],
     ],
 
     // Single-object source: the signed-in user. Resolved on the client by
@@ -413,6 +429,8 @@ return [
                 ['key' => 'isFemale', 'label' => 'أنثى؟', 'type' => 'string'],
                 ['key' => 'maleSign',   'label' => 'رمز ذكر',  'type' => 'string'],
                 ['key' => 'femaleSign', 'label' => 'رمز أنثى', 'type' => 'string'],
+                ['key' => 'wealthBadge', 'label' => 'شارة الثراء',   'type' => 'string'],
+                ['key' => 'charmBadge',  'label' => 'شارة الجاذبية', 'type' => 'string'],
             ],
         ],
         // App-level branding (logo / name / tagline) for server-driven screens
@@ -499,6 +517,15 @@ return [
         [
             'key' => 'refresh', 'label' => 'تحديث',
             'produces' => 'core.refresh', 'default_shape' => 'button', 'screen' => 'profile',
+        ],
+        // نسخ: نسخ قيمة (المعرّف الأبدي افتراضيًا) للحافظة + توست "تم النسخ".
+        [
+            'key' => 'copy', 'label' => 'نسخ',
+            'produces' => 'core.copy', 'default_shape' => 'button', 'screen' => 'profile',
+            'params' => [
+                ['key' => 'field', 'label' => 'الحقل (uid افتراضيًا)', 'type' => 'string'],
+                ['key' => 'value', 'label' => 'قيمة ثابتة (اختياري)', 'type' => 'string'],
+            ],
         ],
 
         // ── settings ──
@@ -649,7 +676,7 @@ return [
             'name'         => 'profile',
             'label'        => 'الملف الشخصي',
             'icon'         => '👤',
-            'version'      => '1.10.0',
+            'version'      => '1.11.0',
             'nav'          => true,
             'navIcon'      => 'person',
             'order'        => 30,

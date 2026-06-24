@@ -49,6 +49,15 @@ Map<String, dynamic> _userFields(Map<String, dynamic> user) {
   final rawCover = (coverList is List && coverList.isNotEmpty)
       ? coverList.first.toString()
       : (coverList is String ? coverList : '');
+  // Level badges (wealth / charm). Sent by the gifts/levels package via
+  // /my-data when installed; absent otherwise → the badge string stays '' so the
+  // bound Text on the Studio profile renders nothing (graceful, like the native
+  // ProfileIdentity which only shows a chip when the level is present).
+  final levels = user['levels'] is Map ? user['levels'] as Map : const {};
+  final wealthLevel =
+      user['wealth_level'] ?? user['wealthLevel'] ?? levels['wealth'];
+  final charmLevel =
+      user['charm_level'] ?? user['charmLevel'] ?? levels['charm'];
   return {
     'name': user['name'] ?? '',
     'email': user['email'] ?? '',
@@ -74,6 +83,13 @@ Map<String, dynamic> _userFields(Map<String, dynamic> user) {
     // empty string is how we hide the non-matching one).
     'maleSign': gender == 1 ? '♂' : '',
     'femaleSign': gender == 2 ? '♀' : '',
+    // Bound to two Text nodes on the Studio profile (empty → renders nothing).
+    'wealthBadge': '$wealthLevel'.trim().isNotEmpty && '$wealthLevel' != 'null'
+        ? '🏆 LV.$wealthLevel'
+        : '',
+    'charmBadge': '$charmLevel'.trim().isNotEmpty && '$charmLevel' != 'null'
+        ? '💎 LV.$charmLevel'
+        : '',
   };
 }
 
@@ -114,7 +130,7 @@ bool _sameUser(Map old, Map neu) {
   final b = _userFields(Map<String, dynamic>.from(neu));
   for (final k in const [
     'name', 'email', 'bio', 'avatar', 'cover', 'country', 'flag', 'uid',
-    'isMale', 'isFemale', 'maleSign', 'femaleSign',
+    'isMale', 'isFemale', 'maleSign', 'femaleSign', 'wealthBadge', 'charmBadge',
   ]) {
     if ((a[k] ?? '').toString() != (b[k] ?? '').toString()) return false;
   }
