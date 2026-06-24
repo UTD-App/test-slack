@@ -15,6 +15,7 @@ class UpdateRoomEvent extends RoomManagementEvent {
   final String? intro;
   final String? rule;
   final String? background;
+  final File? backgroundFile;
   final String? password;
   final int? mode;
   final int? roomType;
@@ -33,6 +34,7 @@ class UpdateRoomEvent extends RoomManagementEvent {
     this.intro,
     this.rule,
     this.background,
+    this.backgroundFile,
     this.password,
     this.mode,
     this.roomType,
@@ -48,7 +50,7 @@ class UpdateRoomEvent extends RoomManagementEvent {
 
   @override
   List<Object?> get props => [
-        roomId, name, intro, rule, background, password,
+        roomId, name, intro, rule, background, backgroundFile, password,
         mode, roomType, roomClass, isCommentsClosed, freeMic, cover,
         emptySeatIcon, lockedSeatIcon, emptySeatIconPreset, lockedSeatIconPreset,
       ];

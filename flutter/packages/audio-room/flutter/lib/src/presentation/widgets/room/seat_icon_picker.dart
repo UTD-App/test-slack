@@ -8,7 +8,7 @@ import 'room_assets.dart';
 import 'room_theme.dart';
 import 'seat_icon_picker_sheet.dart';
 
-enum SeatIconChoiceType { defaultIcon, preset, custom }
+enum SeatIconChoiceType { defaultIcon, preset, custom, pickFromGallery }
 
 class SeatIconChoice {
   final SeatIconChoiceType type;
@@ -29,6 +29,11 @@ class SeatIconChoice {
       : type = SeatIconChoiceType.custom,
         presetName = null,
         file = imageFile;
+
+  const SeatIconChoice.pickFromGallery()
+      : type = SeatIconChoiceType.pickFromGallery,
+        presetName = null,
+        file = null;
 }
 
 class SeatIconPreview extends StatelessWidget {

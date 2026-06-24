@@ -97,6 +97,7 @@ class AudioRoomRemoteDataSourceImpl implements AudioRoomRemoteDataSource {
     String? intro,
     String? rule,
     String? background,
+    File? backgroundFile,
     String? password,
     int? mode,
     int? roomType,
@@ -113,7 +114,11 @@ class AudioRoomRemoteDataSourceImpl implements AudioRoomRemoteDataSource {
     if (name != null) formMap['room_name'] = name;
     if (intro != null) formMap['room_intro'] = intro;
     if (rule != null) formMap['room_rule'] = rule;
-    if (background != null) formMap['room_background'] = background;
+    if (backgroundFile != null) {
+      formMap['room_background'] = await MultipartFile.fromFile(backgroundFile.path);
+    } else if (background != null) {
+      formMap['room_background'] = background;
+    }
     if (password != null) formMap['room_pass'] = password;
     if (mode != null) formMap['mode'] = mode;
     if (roomType != null) formMap['room_type'] = roomType;

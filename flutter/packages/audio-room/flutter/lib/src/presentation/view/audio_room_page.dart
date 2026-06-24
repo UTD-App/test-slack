@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:utd_app/shared/core/enums.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:utd_app/cache/cache_manager.dart';
@@ -27,6 +30,7 @@ import '../widgets/room/room_messages_widget.dart';
 import '../widgets/room/room_strings.dart';
 import '../widgets/room/custom_seat_icon_widget.dart';
 import '../widgets/room/seat_avatar_widget.dart';
+import '../widgets/room/room_customize_sheet.dart';
 import '../widgets/room/seat_mode_sheet.dart';
 import '../widgets/room/seat_options_sheet.dart';
 import '../widgets/room/speaker_invitation_dialog.dart';
@@ -244,6 +248,23 @@ class _AudioRoomPageState extends State<AudioRoomPage>
     );
   }
 
+  Future<void> _showCustomizeSheet(RoomModel room, List<UTDRoomMode> modes) async {
+    final option = await showRoomCustomizeSheet(context);
+    if (option == null || !mounted) return;
+    switch (option) {
+      case RoomCustomizeOption.modes:
+        showSeatModeSheet(context, currentMode: room.mode, modes: modes);
+      case RoomCustomizeOption.background:
+        final picker = ImagePicker();
+        final image = await picker.pickImage(source: ImageSource.gallery, maxWidth: 1920);
+        if (image == null || !mounted) return;
+        final file = File(image.path);
+        context.read<RoomManagementBloc>().add(
+          UpdateRoomEvent(roomId: room.id, backgroundFile: file),
+        );
+    }
+  }
+
   void _showAdmins() {
     showModalBottomSheet(
       context: context,
@@ -373,11 +394,8 @@ class _AudioRoomPageState extends State<AudioRoomPage>
                     child: RoomControlsBar(
                       controller: _controller!,
                       isOwner: room.isOwner == true,
-                      onModeTap: () => showSeatModeSheet(
-                        context,
-                        currentMode: room.mode,
-                        modes: modes,
-                      ),
+                      isAdmin: room.isAdmin == true,
+                      onModeTap: () => _showCustomizeSheet(room, modes),
                     ),
                   ),
                 ],
@@ -502,6 +520,20 @@ class _AudioRoomPageState extends State<AudioRoomPage>
       );
     }
 
-    return audioRoomWidget;
+    return BlocListener<RoomManagementBloc, RoomManagementState>(
+      listenWhen: (prev, curr) => prev.updateState != curr.updateState,
+      listener: (context, state) {
+        if (state.updateState == RequestState.loaded && state.updatedRoom != null) {
+          final updated = state.updatedRoom!;
+          setState(() {
+            _room = _room!.copyWith(
+              roomBackground: updated.roomBackground,
+            );
+          });
+          broadcastRoomSettingsUpdate(updated);
+        }
+      },
+      child: audioRoomWidget,
+    );
   }
 }

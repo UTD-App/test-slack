@@ -10,12 +10,14 @@ class RoomControlsBar extends StatelessWidget {
   final UTDRoomController controller;
   final VoidCallback? onModeTap;
   final bool isOwner;
+  final bool isAdmin;
 
   const RoomControlsBar({
     super.key,
     required this.controller,
     this.onModeTap,
     this.isOwner = false,
+    this.isAdmin = false,
   });
 
   @override
@@ -30,7 +32,7 @@ class RoomControlsBar extends StatelessWidget {
           return Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              if (isOwner && onModeTap != null) ...[
+              if ((isOwner || isAdmin) && onModeTap != null) ...[
                 IconControlButton(
                   icon: Icons.grid_view_rounded,
                   onTap: onModeTap,

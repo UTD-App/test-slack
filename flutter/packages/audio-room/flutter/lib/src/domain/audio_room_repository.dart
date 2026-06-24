@@ -39,6 +39,7 @@ abstract class AudioRoomRepository {
     String? intro,
     String? rule,
     String? background,
+    File? backgroundFile,
     String? password,
     int? mode,
     int? roomType,
@@ -148,6 +149,7 @@ class AudioRoomRepositoryImpl implements AudioRoomRepository {
     String? intro,
     String? rule,
     String? background,
+    File? backgroundFile,
     String? password,
     int? mode,
     int? roomType,
@@ -166,6 +168,7 @@ class AudioRoomRepositoryImpl implements AudioRoomRepository {
         intro: intro,
         rule: rule,
         background: background,
+        backgroundFile: backgroundFile,
         password: password,
         mode: mode,
         roomType: roomType,
@@ -260,7 +263,7 @@ abstract class AudioRoomRemoteDataSource {
   Future<Result<BaseResponse<List<RoomModel>>>> getRooms({int page, int? categoryId, String? search, String? sortBy});
   Future<Result<BaseResponse<RoomModel>>> getRoom(int id);
   Future<Result<BaseResponse<RoomModel>>> createRoom({required String name, required int mode, String? intro, int? roomType, int? roomClass, String? password, File? cover, File? emptySeatIcon, File? lockedSeatIcon, String? emptySeatIconPreset, String? lockedSeatIconPreset});
-  Future<Result<BaseResponse<RoomModel>>> updateRoom(int id, {String? name, String? intro, String? rule, String? background, String? password, int? mode, int? roomType, int? roomClass, bool? isCommentsClosed, bool? freeMic, File? cover, File? emptySeatIcon, File? lockedSeatIcon, String? emptySeatIconPreset, String? lockedSeatIconPreset});
+  Future<Result<BaseResponse<RoomModel>>> updateRoom(int id, {String? name, String? intro, String? rule, String? background, File? backgroundFile, String? password, int? mode, int? roomType, int? roomClass, bool? isCommentsClosed, bool? freeMic, File? cover, File? emptySeatIcon, File? lockedSeatIcon, String? emptySeatIconPreset, String? lockedSeatIconPreset});
   Future<Result<BaseResponse>> deleteRoom(int id);
   Future<Result<BaseResponse<RoomModel>>> enterRoom(int id, {String? password});
   Future<Result<BaseResponse>> exitRoom(int id);

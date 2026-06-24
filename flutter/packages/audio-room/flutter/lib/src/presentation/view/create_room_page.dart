@@ -221,7 +221,15 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                 iconType: SeatIconType.empty,
                 onTap: () async {
                   final result = await showSeatIconPicker(context, iconType: SeatIconType.empty);
-                  if (result != null) {
+                  if (result == null || !mounted) return;
+                  if (result.type == SeatIconChoiceType.pickFromGallery) {
+                    final image = await ImagePicker().pickImage(
+                      source: ImageSource.gallery,
+                      maxWidth: 512,
+                    );
+                    if (image == null || !mounted) return;
+                    setState(() => _emptySeatChoice = SeatIconChoice.custom(File(image.path)));
+                  } else {
                     setState(() => _emptySeatChoice = result);
                   }
                 },
@@ -233,7 +241,15 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                 iconType: SeatIconType.locked,
                 onTap: () async {
                   final result = await showSeatIconPicker(context, iconType: SeatIconType.locked);
-                  if (result != null) {
+                  if (result == null || !mounted) return;
+                  if (result.type == SeatIconChoiceType.pickFromGallery) {
+                    final image = await ImagePicker().pickImage(
+                      source: ImageSource.gallery,
+                      maxWidth: 512,
+                    );
+                    if (image == null || !mounted) return;
+                    setState(() => _lockedSeatChoice = SeatIconChoice.custom(File(image.path)));
+                  } else {
                     setState(() => _lockedSeatChoice = result);
                   }
                 },

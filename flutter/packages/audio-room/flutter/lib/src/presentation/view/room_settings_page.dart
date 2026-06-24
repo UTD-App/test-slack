@@ -493,8 +493,20 @@ class _RoomSettingsPageState extends State<RoomSettingsPage> {
                       currentValue: _currentEmptySeatIcon,
                       iconType: SeatIconType.empty,
                     );
-                    if (result == null) return;
-                    if (result.type == SeatIconChoiceType.custom) {
+                    if (result == null || !mounted) return;
+                    if (result.type == SeatIconChoiceType.pickFromGallery) {
+                      final image = await ImagePicker().pickImage(
+                        source: ImageSource.gallery,
+                        maxWidth: 512,
+                      );
+                      if (image == null || !mounted) return;
+                      final file = File(image.path);
+                      setState(() {
+                        _emptySeatIconFile = file;
+                        _currentEmptySeatIcon = null;
+                      });
+                      _save(emptySeatIcon: file);
+                    } else if (result.type == SeatIconChoiceType.custom) {
                       setState(() {
                         _emptySeatIconFile = result.file;
                         _currentEmptySeatIcon = null;
@@ -540,8 +552,20 @@ class _RoomSettingsPageState extends State<RoomSettingsPage> {
                       currentValue: _currentLockedSeatIcon,
                       iconType: SeatIconType.locked,
                     );
-                    if (result == null) return;
-                    if (result.type == SeatIconChoiceType.custom) {
+                    if (result == null || !mounted) return;
+                    if (result.type == SeatIconChoiceType.pickFromGallery) {
+                      final image = await ImagePicker().pickImage(
+                        source: ImageSource.gallery,
+                        maxWidth: 512,
+                      );
+                      if (image == null || !mounted) return;
+                      final file = File(image.path);
+                      setState(() {
+                        _lockedSeatIconFile = file;
+                        _currentLockedSeatIcon = null;
+                      });
+                      _save(lockedSeatIcon: file);
+                    } else if (result.type == SeatIconChoiceType.custom) {
                       setState(() {
                         _lockedSeatIconFile = result.file;
                         _currentLockedSeatIcon = null;

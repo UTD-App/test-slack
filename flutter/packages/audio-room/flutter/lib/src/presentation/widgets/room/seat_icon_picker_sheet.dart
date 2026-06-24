@@ -1,8 +1,5 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:image_picker/image_picker.dart';
 
 import 'default_option_tile.dart';
 import 'preset_chip.dart';
@@ -83,15 +80,8 @@ class SeatIconPickerSheet extends StatelessWidget {
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: () async {
-                  final picker = ImagePicker();
-                  final image = await picker.pickImage(
-                    source: ImageSource.gallery,
-                    maxWidth: 512,
-                  );
-                  if (image != null && context.mounted) {
-                    Navigator.pop(context, SeatIconChoice.custom(File(image.path)));
-                  }
+                onPressed: () {
+                  Navigator.pop(context, const SeatIconChoice.pickFromGallery());
                 },
                 icon: const Icon(Icons.upload_rounded, color: RoomTheme.accent),
                 label: Text(s.uploadIcon, style: const TextStyle(color: RoomTheme.accent)),

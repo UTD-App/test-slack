@@ -172,6 +172,9 @@ class RoomStrings {
       _isAr ? 'جاري التحميل...' : 'Loading...';
   String get changeSeatMode => _isAr ? 'تغيير المقاعد' : 'Change Seat Mode';
   String get currentMode => _isAr ? 'الحالي' : 'Current';
+  String get roomCustomize => _isAr ? 'تخصيص الغرفة' : 'Customize Room';
+  String get seatModes => _isAr ? 'المودات' : 'Seat Modes';
+  String get changeBackground => _isAr ? 'تغيير الخلفية' : 'Change Background';
 
   // ── Seat Icons ──
   String get emptySeatIcon => _isAr ? 'أيقونة الكرسي الفاضي' : 'Empty Seat Icon';

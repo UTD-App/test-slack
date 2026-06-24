@@ -97,7 +97,8 @@ class MomentPostMenuAction extends _MomentMapAction {
     final id = _int(model, 'moment_id');
     final repo = MomentStacBridge.repository;
     if (id == null || repo == null) return;
-    final isOwner = _item(model)['is_owner'] == true || model['is_owner'] == true;
+    final isOwner =
+        _item(model)['is_owner'] == true || model['is_owner'] == true;
 
     final choice = await showModalBottomSheet<String>(
       context: context,
@@ -125,7 +126,10 @@ class MomentPostMenuAction extends _MomentMapAction {
     if (choice == 'report') {
       final ok = await showReportMomentDialog(context, id);
       if (ok && context.mounted) {
-        ToastManager.showToast(context, message: context.tr(MomentStrings.reportedThanks));
+        ToastManager.showToast(
+          context,
+          message: context.tr(MomentStrings.reportedThanks),
+        );
       }
     } else if (choice == 'delete') {
       final confirm = await showThemedConfirm(
@@ -139,7 +143,10 @@ class MomentPostMenuAction extends _MomentMapAction {
         await repo.deleteMoment(id);
         StacDataRegistry.instance.invalidate();
         if (context.mounted) {
-          ToastManager.showToast(context, message: context.tr(MomentStrings.deleted));
+          ToastManager.showToast(
+            context,
+            message: context.tr(MomentStrings.deleted),
+          );
         }
       }
     }
@@ -180,7 +187,8 @@ class MomentAddCommentAction extends _MomentMapAction {
     final fieldId = (model['commentField'] as String?)?.trim();
     final momentId = MomentStacBridge.currentMomentId;
     final repo = MomentStacBridge.repository;
-    if (fieldId == null || fieldId.isEmpty || momentId == null || repo == null) return;
+    if (fieldId == null || fieldId.isEmpty || momentId == null || repo == null)
+      return;
 
     final controller = FieldRegistry.of(fieldId);
     final text = controller.text.trim();
@@ -191,16 +199,20 @@ class MomentAddCommentAction extends _MomentMapAction {
       controller.clear();
       StacDataRegistry.instance.invalidate(); // comments list refetches
     } else if (context.mounted) {
-      ToastManager.showToast(context, message: context.tr(MomentStrings.somethingWrong), isError: true);
+      ToastManager.showToast(
+        context,
+        message: context.tr(MomentStrings.somethingWrong),
+        isError: true,
+      );
     }
   }
 }
 
 /// The package's Stac action parsers, registered via [MomentFeature.getStacActionParsers].
 List<StacActionParser> momentStacActionParsers() => const [
-      MomentToggleLikeAction(),
-      MomentOpenAction(),
-      MomentPostMenuAction(),
-      MomentSendGiftAction(),
-      MomentAddCommentAction(),
-    ];
+  MomentToggleLikeAction(),
+  MomentOpenAction(),
+  MomentPostMenuAction(),
+  MomentSendGiftAction(),
+  MomentAddCommentAction(),
+];

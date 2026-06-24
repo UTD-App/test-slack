@@ -39,6 +39,7 @@ class RoomManagementBloc
       intro: event.intro,
       rule: event.rule,
       background: event.background,
+      backgroundFile: event.backgroundFile,
       password: event.password,
       mode: event.mode,
       roomType: event.roomType,
