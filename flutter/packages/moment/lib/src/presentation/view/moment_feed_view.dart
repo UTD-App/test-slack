@@ -102,17 +102,19 @@ class _MomentFeedViewState extends State<MomentFeedView> {
               final moment = state.moments[i];
               return MomentCard(
                 moment: moment,
-                onLike: () => context.read<MomentFeedBloc>().add(MomentLikeToggled(moment)),
+                onReact: (type) => context.read<MomentFeedBloc>().add(MomentReacted(moment, type)),
                 onOpenLikes: () => showMomentLikes(context, moment.id),
                 onOpenComments: () {
                   final feedBloc = context.read<MomentFeedBloc>();
                   showMomentComments(
                     context,
                     moment.id,
+                    momentOwnerId: moment.userId,
                     onCommentAdded: () => feedBloc.add(MomentCommentAdded(moment.id)),
+                    onCommentDeleted: (n) => feedBloc.add(MomentCommentRemoved(moment.id, n)),
                   );
                 },
-                onGiftSent: () => context.read<MomentFeedBloc>().add(MomentGiftSent(moment.id)),
+                onGiftSent: (coins) => context.read<MomentFeedBloc>().add(MomentGiftSent(moment.id, coins)),
                 onReport: () async {
                   final ok = await showReportMomentDialog(context, moment.id);
                   if (ok && context.mounted) {

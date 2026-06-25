@@ -6,27 +6,33 @@ import 'package:utd_app/shared/profile/profile_navigator.dart';
 import '../../../../core/moment_strings.dart';
 import '../../../domain/entities/moment_entity.dart';
 import '../../utils/media.dart';
+import '../../utils/number_format.dart';
+import '../../utils/reactions.dart';
 import '../../utils/time.dart';
 import 'moment_avatar.dart';
 
 /// A single Facebook-style moment card.
 class MomentCard extends StatelessWidget {
   final MomentEntity moment;
-  final VoidCallback onLike;
+
+  /// Set a reaction (tap = 'like', long-press picks one of the 6). Same type
+  /// again toggles it off.
+  final void Function(String reactionType) onReact;
   final VoidCallback onOpenLikes;
   final VoidCallback onOpenComments;
   final VoidCallback onReport;
   final VoidCallback onDelete;
   final void Function(String url) onTapImage;
 
-  /// Called after a gift is successfully sent on this moment, so the parent can
-  /// bump the gift count without reloading the feed. Optional (e.g. Stac).
-  final VoidCallback? onGiftSent;
+  /// Called after a gift is successfully sent on this moment with the total COINS
+  /// sent, so the parent can bump the moment's gift total without reloading the
+  /// feed. Optional (e.g. Stac).
+  final void Function(int coins)? onGiftSent;
 
   const MomentCard({
     super.key,
     required this.moment,
-    required this.onLike,
+    required this.onReact,
     required this.onOpenLikes,
     required this.onOpenComments,
     required this.onReport,
@@ -114,27 +120,32 @@ class MomentCard extends StatelessWidget {
           // images
           if (moment.images.isNotEmpty) _MomentImages(images: moment.images, onTap: onTapImage),
 
-          // actions
+          // actions — the original compact single row (reaction / comment / gift,
+          // then "who liked" pushed to the end).
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             child: Row(
               children: [
-                TextButton.icon(
-                  onPressed: onLike,
-                  icon: Icon(
-                    moment.isLike ? Icons.favorite : Icons.favorite_border,
-                    color: moment.isLike ? Colors.red : Colors.grey,
-                    size: 20,
+                // Reaction button: tap = like toggle, long-press = pick one of the
+                // 6 reactions. Icon shows the user's reaction (or a default thumb)
+                // and the label shows just the count — one icon, no duplicate thumb.
+                GestureDetector(
+                  onLongPress: () async {
+                    final picked = await showReactionPicker(context);
+                    if (picked != null) onReact(picked);
+                  },
+                  child: TextButton.icon(
+                    onPressed: () => onReact('like'),
+                    icon: _reactionIcon(),
+                    label: Text('${moment.likeNum}', style: const TextStyle(color: Colors.grey)),
                   ),
-                  label: Text('${moment.likeNum}', style: const TextStyle(color: Colors.grey)),
                 ),
                 TextButton.icon(
                   onPressed: onOpenComments,
                   icon: const Icon(Icons.mode_comment_outlined, color: Colors.grey, size: 20),
                   label: Text('${moment.commentNum}', style: const TextStyle(color: Colors.grey)),
                 ),
-                // Gift button — only when the Gifts package is installed (wires
-                // GiftBridge). Opens the gift picker for this moment.
+                // Gift button — only when the Gifts package is installed.
                 if (GiftBridge.instance.isAvailable)
                   TextButton.icon(
                     onPressed: () => GiftBridge.instance.open(
@@ -142,10 +153,11 @@ class MomentCard extends StatelessWidget {
                       contextType: 'moment',
                       contextId: moment.id,
                       receiverName: moment.userName,
-            //          onSent: onGiftSent,
+                      onSent: onGiftSent,
                     ),
                     icon: const Icon(Icons.card_giftcard, color: Colors.grey, size: 20),
-                    label: Text('${moment.giftsCount}', style: const TextStyle(color: Colors.grey)),
+                    // Total gift COINS on this moment, K-formatted (e.g. 22.5K).
+                    label: Text(compactNumber(moment.giftsCoins), style: const TextStyle(color: Colors.grey)),
                   ),
                 const Spacer(),
                 TextButton(
@@ -166,6 +178,13 @@ class MomentCard extends StatelessWidget {
     if (moment.userId > 0) {
       ProfileNavigator.open(context, userId: moment.userId);
     }
+  }
+
+  /// The current user's reaction emoji, or a default outline thumb when none.
+  Widget _reactionIcon() {
+    final r = reactionByType(moment.myReaction);
+    if (r != null) return Text(r.emoji, style: const TextStyle(fontSize: 18));
+    return const Icon(Icons.thumb_up_alt_outlined, color: Colors.grey, size: 20);
   }
 }
 

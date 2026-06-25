@@ -3,17 +3,15 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
-import 'package:stac/stac.dart' show StacActionParser;
 import 'package:utd_app/addons/addons.dart';
+import 'package:utd_app/shared/profile/profile_view_arguments.dart';
 
 import '../src/data/datasources/moment_api_service.dart';
 import '../src/data/repositories/moment_repository_impl.dart';
 import '../src/domain/repositories/moment_repository.dart';
 import '../src/presentation/bloc/moment_feed/moment_feed_bloc.dart';
 import '../src/presentation/view/moment_feed_page.dart';
-import '../src/presentation/view/moment_profile_section.dart';
-import '../src/stac/moment_actions.dart';
-import '../src/stac/moment_stac_sources.dart';
+import '../src/presentation/view/moment_feed_view.dart';
 import 'moment_routes.dart';
 import 'moment_strings.dart';
 
@@ -39,9 +37,6 @@ class MomentFeature extends AppFeature {
     _api = MomentApiService();
     _repository = MomentRepositoryImpl(_api);
     _feedBloc = MomentFeedBloc(_repository);
-
-    // Server-Driven UI: expose the feed as the `moment.feed` Stac list source.
-    registerMomentStacSources(_repository);
   }
 
   @override
@@ -59,9 +54,6 @@ class MomentFeature extends AppFeature {
   List<GoRoute> getRoutes() => MomentRoutes.routes();
 
   @override
-  List<StacActionParser> getStacActionParsers() => momentStacActionParsers();
-
-  @override
   List<UiContribution> getUiContributions() => [
         UiContribution(
           slot: UiSlot.bottomNav,
@@ -70,12 +62,25 @@ class MomentFeature extends AppFeature {
           inactiveIcon: const Icon(Icons.dynamic_feed_outlined),
           builder: (context) => const MomentFeedPage(),
         ),
-        // Moments count on a user's profile (when Moment is installed).
+        // A "Moments" tab on a visited user's profile, scoped to that user's
+        // posts. Decoupled: appears only because this package is installed.
         UiContribution(
-          slot: UiSlot.userProfile,
+          slot: UiSlot.profileTab,
           label: MomentStrings.title,
-          order: 10,
-          builder: (context) => const MomentProfileSection(),
+          order: 1,
+          builder: (context) {
+            int? userId;
+            try {
+              userId = context.read<ProfileViewArguments>().userId;
+            } catch (_) {
+              // Rendered outside a profile (no scope) → global feed.
+            }
+            return BlocProvider<MomentFeedBloc>(
+              create: (ctx) =>
+                  MomentFeedBloc(ctx.read<MomentRepository>(), userId: userId),
+              child: const MomentFeedView(),
+            );
+          },
         ),
       ];
 

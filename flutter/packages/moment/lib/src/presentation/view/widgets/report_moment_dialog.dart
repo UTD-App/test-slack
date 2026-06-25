@@ -5,20 +5,36 @@ import 'package:utd_app/localization/localization.dart';
 import '../../../../core/moment_strings.dart';
 import '../../../domain/repositories/moment_repository.dart';
 
-/// Shows the report dialog and submits the report. Returns true on success.
-Future<bool> showReportMomentDialog(BuildContext context, int momentId) async {
+/// Report a moment. Returns true on success.
+Future<bool> showReportMomentDialog(BuildContext context, int momentId) {
   final repo = context.read<MomentRepository>();
+  return _show(
+    context,
+    onSubmit: (desc, type) => repo.reportMoment(momentId, description: desc, type: type).then((r) => r.isSuccess),
+  );
+}
+
+/// Report a single comment (or reply). Returns true on success.
+Future<bool> showReportCommentDialog(BuildContext context, int momentId, int commentId) {
+  final repo = context.read<MomentRepository>();
+  return _show(
+    context,
+    onSubmit: (desc, type) =>
+        repo.reportComment(momentId, commentId, description: desc, type: type).then((r) => r.isSuccess),
+  );
+}
+
+Future<bool> _show(BuildContext context, {required Future<bool> Function(String desc, String type) onSubmit}) async {
   final result = await showDialog<bool>(
     context: context,
-    builder: (ctx) => _ReportDialog(repo: repo, momentId: momentId),
+    builder: (ctx) => _ReportDialog(onSubmit: onSubmit),
   );
   return result ?? false;
 }
 
 class _ReportDialog extends StatefulWidget {
-  final MomentRepository repo;
-  final int momentId;
-  const _ReportDialog({required this.repo, required this.momentId});
+  final Future<bool> Function(String desc, String type) onSubmit;
+  const _ReportDialog({required this.onSubmit});
 
   @override
   State<_ReportDialog> createState() => _ReportDialogState();
@@ -68,10 +84,9 @@ class _ReportDialogState extends State<_ReportDialog> {
               : () async {
                   if (_desc.text.trim().isEmpty) return;
                   setState(() => _submitting = true);
-                  final res = await widget.repo
-                      .reportMoment(widget.momentId, description: _desc.text.trim(), type: _type);
+                  final ok = await widget.onSubmit(_desc.text.trim(), _type);
                   if (!context.mounted) return;
-                  Navigator.pop(context, res.isSuccess);
+                  Navigator.pop(context, ok);
                 },
           child: _submitting
               ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))

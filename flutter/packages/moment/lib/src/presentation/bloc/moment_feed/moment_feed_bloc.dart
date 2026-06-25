@@ -15,8 +15,10 @@ class MomentFeedBloc extends Bloc<MomentFeedEvent, MomentFeedState> {
     on<FeedRefreshRequested>(_onRefresh);
     on<FeedLoadMoreRequested>(_onLoadMore);
     on<MomentLikeToggled>(_onLike);
+    on<MomentReacted>(_onReact);
     on<MomentDeleted>(_onDelete);
     on<MomentCommentAdded>(_onCommentAdded);
+    on<MomentCommentRemoved>(_onCommentRemoved);
     on<MomentGiftSent>(_onGiftSent);
     on<MomentCreated>(_onCreate);
   }
@@ -28,9 +30,22 @@ class MomentFeedBloc extends Bloc<MomentFeedEvent, MomentFeedState> {
     emit(state.copyWith(moments: updated));
   }
 
-  void _onGiftSent(MomentGiftSent event, Emitter<MomentFeedState> emit) {
+  void _onCommentRemoved(MomentCommentRemoved event, Emitter<MomentFeedState> emit) {
     final updated = state.moments
-        .map((m) => m.id == event.momentId ? m.copyWith(giftsCount: m.giftsCount + 1) : m)
+        .map((m) => m.id == event.momentId
+            ? m.copyWith(commentNum: (m.commentNum - event.count).clamp(0, 1 << 30))
+            : m)
+        .toList();
+    emit(state.copyWith(moments: updated));
+  }
+
+  void _onGiftSent(MomentGiftSent event, Emitter<MomentFeedState> emit) {
+    // Bump both the gift count and the coins total so the K-formatted number next
+    // to the gift icon updates immediately (no refresh needed).
+    final updated = state.moments
+        .map((m) => m.id == event.momentId
+            ? m.copyWith(giftsCount: m.giftsCount + 1, giftsCoins: m.giftsCoins + event.coins)
+            : m)
         .toList();
     emit(state.copyWith(moments: updated));
   }
@@ -78,6 +93,40 @@ class MomentFeedBloc extends Bloc<MomentFeedEvent, MomentFeedState> {
     if (res.isFailure) {
       // revert
       emit(state.copyWith(moments: state.moments));
+      add(const FeedRefreshRequested());
+    }
+  }
+
+  Future<void> _onReact(MomentReacted event, Emitter<MomentFeedState> emit) async {
+    final prevMoments = state.moments;
+    final updated = state.moments.map((m) {
+      if (m.id != event.moment.id) return m;
+      final prev = m.myReaction;
+      final next = (prev == event.reactionType) ? null : event.reactionType; // same → toggle off
+      final delta = (prev == null && next != null) ? 1 : (prev != null && next == null) ? -1 : 0;
+      final bd = Map<String, int>.from(m.reactionsBreakdown);
+      if (prev != null) {
+        final v = (bd[prev] ?? 1) - 1;
+        if (v > 0) {
+          bd[prev] = v;
+        } else {
+          bd.remove(prev);
+        }
+      }
+      if (next != null) bd[next] = (bd[next] ?? 0) + 1;
+      return m.copyWith(
+        myReaction: next,
+        clearMyReaction: next == null,
+        isLike: next != null,
+        likeNum: (m.likeNum + delta).clamp(0, 1 << 30),
+        reactionsBreakdown: bd,
+      );
+    }).toList();
+    emit(state.copyWith(moments: updated));
+
+    final res = await repository.reactMoment(event.moment.id, event.reactionType);
+    if (res.isFailure) {
+      emit(state.copyWith(moments: prevMoments));
       add(const FeedRefreshRequested());
     }
   }

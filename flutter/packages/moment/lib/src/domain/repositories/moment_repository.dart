@@ -22,13 +22,22 @@ abstract class MomentRepository {
   /// Toggle like; returns the new isLike state is handled optimistically by the bloc.
   Future<Result<bool>> likeMoment(int momentId);
 
+  /// Set a Facebook-style reaction (like/love/haha/wow/sad/angry); same type
+  /// again toggles it off (server-side).
+  Future<Result<bool>> reactMoment(int momentId, String reactionType);
+
   Future<Result<List<MomentLikeEntity>>> fetchLikes(int momentId, {int page = 1});
 
   Future<Result<List<MomentCommentEntity>>> fetchComments(int momentId, {int page = 1});
 
-  Future<Result<bool>> addComment(int momentId, String comment);
+  Future<Result<bool>> addComment(int momentId, String comment, {int? parentId});
 
   Future<Result<bool>> deleteComment(int momentId, int commentId);
 
+  /// Set a Facebook-style reaction on a comment; same type again toggles it off.
+  Future<Result<bool>> reactComment(int momentId, int commentId, String reactionType);
+
   Future<Result<bool>> reportMoment(int momentId, {required String description, required String type});
+
+  Future<Result<bool>> reportComment(int momentId, int commentId, {required String description, required String type});
 }

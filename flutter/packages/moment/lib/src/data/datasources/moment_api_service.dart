@@ -62,6 +62,12 @@ class MomentApiService extends BaseApiService {
     return post<bool>('/moment/$momentId/like', fromJson: _status);
   }
 
+  /// Send a Facebook-style reaction (like/love/haha/wow/sad/angry). Sending the
+  /// same type again toggles it off (handled server-side).
+  Future<Result<bool>> reactMoment(int momentId, String reactionType) {
+    return post<bool>('/moment/$momentId/like', data: {'reaction_type': reactionType}, fromJson: _status);
+  }
+
   Future<Result<List<MomentLikeModel>>> fetchLikes(int momentId, {int page = 1}) {
     return get<List<MomentLikeModel>>(
       '/moment/$momentId/like',
@@ -78,17 +84,38 @@ class MomentApiService extends BaseApiService {
     );
   }
 
-  Future<Result<bool>> addComment(int momentId, String comment) {
-    return post<bool>('/moment/$momentId/comment', data: {'comment': comment}, fromJson: _status);
+  Future<Result<bool>> addComment(int momentId, String comment, {int? parentId}) {
+    return post<bool>(
+      '/moment/$momentId/comment',
+      data: {'comment': comment, if (parentId != null) 'parent_id': parentId},
+      fromJson: _status,
+    );
   }
 
   Future<Result<bool>> deleteComment(int momentId, int commentId) {
     return delete<bool>('/moment/$momentId/comment/$commentId', fromJson: _status);
   }
 
+  /// React to a comment (or reply); same type again toggles it off (server-side).
+  Future<Result<bool>> reactComment(int momentId, int commentId, String reactionType) {
+    return post<bool>(
+      '/moment/$momentId/comment/$commentId/like',
+      data: {'reaction_type': reactionType},
+      fromJson: _status,
+    );
+  }
+
   Future<Result<bool>> reportMoment(int momentId, {required String description, required String type}) {
     return post<bool>(
       '/moment/$momentId/report',
+      data: {'description': description, 'type': type},
+      fromJson: _status,
+    );
+  }
+
+  Future<Result<bool>> reportComment(int momentId, int commentId, {required String description, required String type}) {
+    return post<bool>(
+      '/moment/$momentId/comment/$commentId/report',
       data: {'description': description, 'type': type},
       fromJson: _status,
     );

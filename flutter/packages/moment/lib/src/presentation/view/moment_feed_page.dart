@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:utd_app/localization/localization.dart';
+import 'package:utd_app/shared/core/color_manager.dart';
+import 'package:utd_app/shared/widgets/gradient_background.dart';
 
 import '../../../core/moment_strings.dart';
 import '../../domain/repositories/moment_repository.dart';
@@ -34,14 +36,31 @@ class MomentFeedPage extends StatelessWidget {
 
   Widget _scaffold(BuildContext context, {required bool showAdd}) {
     return Scaffold(
-      appBar: AppBar(title: Text(context.tr(titleKey ?? MomentStrings.title))),
+      backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: ColorManager.lumiaTextPrimary),
+        title: Text(
+          context.tr(titleKey ?? MomentStrings.title),
+          style: const TextStyle(
+            color: ColorManager.lumiaTextPrimary,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
       floatingActionButton: showAdd
           ? FloatingActionButton(
+              backgroundColor: ColorManager.lumiaAccent,
+              foregroundColor: Colors.white,
               onPressed: () => context.push('/moment/add'),
               child: const Icon(Icons.add),
             )
           : null,
-      body: const MomentFeedView(),
+      body: const GradientBackground(
+        child: SafeArea(child: MomentFeedView()),
+      ),
     );
   }
 }

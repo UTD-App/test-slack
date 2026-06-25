@@ -13,7 +13,17 @@ class MomentEntity extends Equatable {
   final int commentNum;
   final int likeNum;
   final int giftsCount;
+
+  /// Total coins spent on gifts for this moment (backend `gifts_coins`). Shown
+  /// K-formatted next to the gift icon instead of the raw gift count.
+  final double giftsCoins;
   final bool isLike;
+
+  /// The current user's reaction type (like/love/haha/wow/sad/angry), or null.
+  final String? myReaction;
+
+  /// Per-type reaction counts for the summary, e.g. {like: 5, love: 2}.
+  final Map<String, int> reactionsBreakdown;
   final String createdAt;
 
   /// True when the current user authored this moment (from backend `is_owner`).
@@ -36,7 +46,10 @@ class MomentEntity extends Equatable {
     required this.commentNum,
     required this.likeNum,
     required this.giftsCount,
+    required this.giftsCoins,
     required this.isLike,
+    this.myReaction,
+    this.reactionsBreakdown = const {},
     required this.createdAt,
     this.isOwner = false,
     required this.userName,
@@ -46,7 +59,16 @@ class MomentEntity extends Equatable {
     required this.age,
   });
 
-  MomentEntity copyWith({int? likeNum, int? commentNum, bool? isLike, int? giftsCount}) {
+  MomentEntity copyWith({
+    int? likeNum,
+    int? commentNum,
+    bool? isLike,
+    int? giftsCount,
+    double? giftsCoins,
+    String? myReaction,
+    bool clearMyReaction = false,
+    Map<String, int>? reactionsBreakdown,
+  }) {
     return MomentEntity(
       id: id,
       userId: userId,
@@ -56,7 +78,10 @@ class MomentEntity extends Equatable {
       commentNum: commentNum ?? this.commentNum,
       likeNum: likeNum ?? this.likeNum,
       giftsCount: giftsCount ?? this.giftsCount,
+      giftsCoins: giftsCoins ?? this.giftsCoins,
       isLike: isLike ?? this.isLike,
+      myReaction: clearMyReaction ? null : (myReaction ?? this.myReaction),
+      reactionsBreakdown: reactionsBreakdown ?? this.reactionsBreakdown,
       createdAt: createdAt,
       isOwner: isOwner,
       userName: userName,
@@ -68,5 +93,5 @@ class MomentEntity extends Equatable {
   }
 
   @override
-  List<Object?> get props => [id, likeNum, commentNum, isLike];
+  List<Object?> get props => [id, likeNum, commentNum, isLike, myReaction];
 }

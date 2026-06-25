@@ -13,11 +13,15 @@ class MomentAvatar extends StatelessWidget {
   final String name;
   final double radius;
 
+  /// Optional tap handler (e.g. open the user's profile).
+  final VoidCallback? onTap;
+
   const MomentAvatar({
     super.key,
     required this.image,
     required this.name,
     this.radius = 20,
+    this.onTap,
   });
 
   @override
@@ -33,25 +37,26 @@ class MomentAvatar extends StatelessWidget {
       ),
     );
 
-    if (url.isEmpty) {
-      return CircleAvatar(radius: radius, backgroundColor: bg, child: initialsWidget);
-    }
+    final avatar = url.isEmpty
+        ? CircleAvatar(radius: radius, backgroundColor: bg, child: initialsWidget)
+        : CircleAvatar(
+            radius: radius,
+            backgroundColor: bg,
+            child: ClipOval(
+              child: Image.network(
+                url,
+                width: radius * 2,
+                height: radius * 2,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Center(child: initialsWidget),
+                loadingBuilder: (_, child, progress) =>
+                    progress == null ? child : Center(child: initialsWidget),
+              ),
+            ),
+          );
 
-    return CircleAvatar(
-      radius: radius,
-      backgroundColor: bg,
-      child: ClipOval(
-        child: Image.network(
-          url,
-          width: radius * 2,
-          height: radius * 2,
-          fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Center(child: initialsWidget),
-          loadingBuilder: (_, child, progress) =>
-              progress == null ? child : Center(child: initialsWidget),
-        ),
-      ),
-    );
+    if (onTap == null) return avatar;
+    return GestureDetector(behavior: HitTestBehavior.opaque, onTap: onTap, child: avatar);
   }
 
   static String _initials(String name) {

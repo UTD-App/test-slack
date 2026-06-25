@@ -1,7 +1,15 @@
 import '../../domain/entities/moment_entity.dart';
 
 int _toInt(dynamic v) => v is int ? v : int.tryParse('${v ?? ''}') ?? 0;
+double _toDouble(dynamic v) => v is num ? v.toDouble() : double.tryParse('${v ?? ''}') ?? 0;
 bool _toBool(dynamic v) => v == true || v == 1 || v == '1';
+
+Map<String, int> _toReactions(dynamic v) {
+  if (v is Map) {
+    return {for (final e in v.entries) e.key.toString(): _toInt(e.value)};
+  }
+  return const {};
+}
 
 class MomentModel extends MomentEntity {
   const MomentModel({
@@ -13,7 +21,10 @@ class MomentModel extends MomentEntity {
     required super.commentNum,
     required super.likeNum,
     required super.giftsCount,
+    required super.giftsCoins,
     required super.isLike,
+    super.myReaction,
+    super.reactionsBreakdown,
     required super.createdAt,
     super.isOwner,
     required super.userName,
@@ -43,7 +54,10 @@ class MomentModel extends MomentEntity {
       commentNum: _toInt(json['comment_num']),
       likeNum: _toInt(json['like_num']),
       giftsCount: _toInt(json['gifts_count']),
+      giftsCoins: _toDouble(json['gifts_coins']),
       isLike: _toBool(json['is_like']),
+      myReaction: (json['my_reaction'] == null || json['my_reaction'] == '') ? null : json['my_reaction'].toString(),
+      reactionsBreakdown: _toReactions(json['reactions']),
       createdAt: json['created_at']?.toString() ?? '',
       isOwner: _toBool(json['is_owner']),
       userName: user['name']?.toString() ?? '',

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:utd_app/localization/localization.dart';
+import 'package:utd_app/shared/profile/profile_navigator.dart';
 
 import '../../../../core/moment_strings.dart';
 import '../../../domain/repositories/moment_repository.dart';
 import '../../bloc/moment_likes/moment_likes_cubit.dart';
+import '../../utils/reactions.dart';
 import '../../utils/time.dart';
 import 'moment_avatar.dart';
 
@@ -21,8 +23,30 @@ Future<void> showMomentLikes(BuildContext context, int momentId) {
   );
 }
 
-class _LikesSheet extends StatelessWidget {
+class _LikesSheet extends StatefulWidget {
   const _LikesSheet();
+  @override
+  State<_LikesSheet> createState() => _LikesSheetState();
+}
+
+class _LikesSheetState extends State<_LikesSheet> {
+  final _scroll = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scroll.addListener(() {
+      if (_scroll.position.pixels >= _scroll.position.maxScrollExtent - 200) {
+        context.read<MomentLikesCubit>().loadMore();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,27 +69,83 @@ class _LikesSheet extends StatelessWidget {
                 if (state.status == LikesStatus.loading) {
                   return const Center(child: CircularProgressIndicator());
                 }
+                if (state.status == LikesStatus.failure && state.likes.isEmpty) {
+                  return _ErrorRetry(
+                    message: state.error ?? context.tr(MomentStrings.somethingWrong),
+                    onRetry: () => context.read<MomentLikesCubit>().load(),
+                  );
+                }
                 if (state.likes.isEmpty) {
                   return Center(child: Text(context.tr(MomentStrings.noLikes), style: const TextStyle(color: Colors.grey)));
                 }
-                return ListView.builder(
+                return RefreshIndicator(
+                  onRefresh: () => context.read<MomentLikesCubit>().load(),
+                  child: ListView.builder(
+                  controller: _scroll,
                   padding: const EdgeInsets.all(8),
-                  itemCount: state.likes.length,
+                  itemCount: state.likes.length + (state.isLoadingMore ? 1 : 0),
                   itemBuilder: (_, i) {
+                    if (i >= state.likes.length) {
+                      return const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: Center(child: CircularProgressIndicator()),
+                      );
+                    }
                     final l = state.likes[i];
+                    void openProfile() {
+                      if (l.userId > 0) ProfileNavigator.open(context, userId: l.userId);
+                    }
                     return ListTile(
-                      leading: MomentAvatar(image: l.userImage, name: l.userName, radius: 20),
+                      onTap: openProfile,
+                      leading: MomentAvatar(image: l.userImage, name: l.userName, radius: 20, onTap: openProfile),
                       title: Text(l.userName.isEmpty ? context.tr(MomentStrings.user) : l.userName,
                           style: const TextStyle(color: Colors.black87)),
                       subtitle: Text(timeAgo(l.createdAt),
                           maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: Colors.black54)),
-                      trailing: const Icon(Icons.favorite, color: Colors.red, size: 18),
+                      trailing: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(reactionByType(l.reactionType)?.emoji ?? '👍',
+                              style: const TextStyle(fontSize: 20)),
+                          const SizedBox(height: 2),
+                          Text(context.tr(MomentStrings.reactionLabelKey(l.reactionType)),
+                              style: const TextStyle(fontSize: 10, color: Colors.black54)),
+                        ],
+                      ),
                     );
                   },
+                  ),
                 );
               },
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Inline error + retry used inside the sheets.
+class _ErrorRetry extends StatelessWidget {
+  final String message;
+  final VoidCallback onRetry;
+  const _ErrorRetry({required this.message, required this.onRetry});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.cloud_off, size: 40, color: Colors.grey),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(message, textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey)),
+          ),
+          const SizedBox(height: 12),
+          FilledButton(onPressed: onRetry, child: Text(context.tr(MomentStrings.retry))),
         ],
       ),
     );

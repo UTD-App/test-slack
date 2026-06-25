@@ -28,6 +28,16 @@ class MomentLikeToggled extends MomentFeedEvent {
   List<Object?> get props => [moment.id];
 }
 
+/// Optimistic Facebook-style reaction. Sending the current reaction again
+/// removes it (toggle off).
+class MomentReacted extends MomentFeedEvent {
+  final MomentEntity moment;
+  final String reactionType;
+  const MomentReacted(this.moment, this.reactionType);
+  @override
+  List<Object?> get props => [moment.id, reactionType];
+}
+
 class MomentDeleted extends MomentFeedEvent {
   final int momentId;
   const MomentDeleted(this.momentId);
@@ -43,13 +53,24 @@ class MomentCommentAdded extends MomentFeedEvent {
   List<Object?> get props => [momentId];
 }
 
-/// A gift was sent (from the gift picker) — bump the card's gift count so it
-/// updates immediately without a full feed refresh.
+/// One or more comments were deleted (a top-level delete also removes its
+/// replies) — drop the card's comment count by [count].
+class MomentCommentRemoved extends MomentFeedEvent {
+  final int momentId;
+  final int count;
+  const MomentCommentRemoved(this.momentId, this.count);
+  @override
+  List<Object?> get props => [momentId, count];
+}
+
+/// A gift was sent (from the gift picker) — bump the card's gift total by the
+/// coins sent so it updates immediately without a full feed refresh.
 class MomentGiftSent extends MomentFeedEvent {
   final int momentId;
-  const MomentGiftSent(this.momentId);
+  final int coins;
+  const MomentGiftSent(this.momentId, this.coins);
   @override
-  List<Object?> get props => [momentId];
+  List<Object?> get props => [momentId, coins];
 }
 
 /// Create a new moment, then refresh the feed.
