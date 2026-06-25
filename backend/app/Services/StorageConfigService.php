@@ -130,7 +130,11 @@ class StorageConfigService
             'endpoint'                => $this->get('storage_endpoint') ?: null,
             'use_path_style_endpoint' => (bool) $this->get('storage_endpoint'),
             'visibility'              => 'public',
-            'throw'                   => false,
+            // Throw on write failure so StorageMediaUploader's catch block logs
+            // the real driver error (otherwise put() returns false and the cause
+            // is silently swallowed). The uploader still wraps it in a clean
+            // MediaUploadException for the API.
+            'throw'                   => true,
         ];
     }
 
@@ -172,6 +176,11 @@ class StorageConfigService
             // Bucket is admin-configurable at runtime (DB), with an env-derived fallback.
             'bucket'        => $this->get('storage_bucket') ?: ($base['bucket'] ?? null),
             'visibility'    => 'public',
+            // Throw on write failure so the real GCS error (403 read-only / 404
+            // project-not-found / ACL) is logged by StorageMediaUploader instead
+            // of being swallowed (put() returning false). The API response stays
+            // a clean MediaUploadException.
+            'throw'         => true,
         ];
     }
 
