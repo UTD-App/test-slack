@@ -176,6 +176,13 @@ class StorageConfigService
             // Bucket is admin-configurable at runtime (DB), with an env-derived fallback.
             'bucket'        => $this->get('storage_bucket') ?: ($base['bucket'] ?? null),
             'visibility'    => 'public',
+            // Never set legacy per-object ACLs. Modern GCS buckets enable Uniform
+            // Bucket-Level Access (UBLA) by default, which REJECTS object ACLs with
+            // a 400 ("Cannot insert legacy ACL ... when uniform bucket-level access
+            // is enabled"). This handler makes the adapter skip the predefinedAcl
+            // call; make objects public at the BUCKET level instead (grant allUsers
+            // roles/storage.objectViewer). Works for UBLA and fine-grained buckets.
+            'visibilityHandler' => \League\Flysystem\GoogleCloudStorage\UniformBucketLevelAccessVisibility::class,
             // Throw on write failure so the real GCS error (403 read-only / 404
             // project-not-found / ACL) is logged by StorageMediaUploader instead
             // of being swallowed (put() returning false). The API response stays
