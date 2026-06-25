@@ -60,9 +60,14 @@ Route::get('/run-gcs-test', function (\Illuminate\Http\Request $request) {
     $file = new \Illuminate\Http\UploadedFile($tmp, 'gcs-test.png', 'image/png', null, true);
 
     $out = [
-        'provider' => config('filesystems.default'),
-        'driver'   => $disk['driver'] ?? null,
-        'bucket'   => $disk['bucket'] ?? null,
+        'provider'        => config('filesystems.default'),
+        'driver'          => $disk['driver'] ?? null,
+        'bucket'          => $disk['bucket'] ?? null,
+        'project_id'      => $disk['project_id'] ?? null,
+        // Safe to expose on this temporary debug route: a path string + a bool,
+        // never the key contents.
+        'key_file_path'   => $disk['key_file_path'] ?? null,
+        'key_file_exists' => isset($disk['key_file_path']) ? file_exists($disk['key_file_path']) : null,
     ];
     try {
         $r = \App\Facades\Media::upload($file, 'gcs-test');
@@ -78,8 +83,16 @@ Route::get('/run-gcs-test', function (\Illuminate\Http\Request $request) {
         }
         $out['ok']             = ($out['exists_on_disk'] === true) && ($http->status() === 200);
     } catch (\Throwable $e) {
-        $out['ok']    = false;
-        $out['error'] = $e->getMessage();
+        $out['ok'] = false;
+        // MediaUploadException masks the real driver error as a generic message
+        // and keeps the cause as $previous — walk the whole chain so the actual
+        // GCS error (403 read-only / uniform bucket-level access / missing key /
+        // project mismatch) is visible here, not just "Failed to store...".
+        $chain = [];
+        for ($x = $e; $x !== null; $x = $x->getPrevious()) {
+            $chain[] = get_class($x) . ': ' . $x->getMessage();
+        }
+        $out['error'] = $chain;
     } finally {
         @unlink($tmp);
     }
