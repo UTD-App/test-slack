@@ -791,7 +791,7 @@ return [
             'name'         => 'profile',
             'label'        => 'الملف الشخصي',
             'icon'         => '👤',
-            'version'      => '1.11.0',
+            'version'      => '1.12.0',
             'nav'          => true,
             'navIcon'      => 'person',
             'order'        => 30,
