@@ -36,6 +36,13 @@ class _EditProfileFormState extends State<EditProfileForm> {
   late TextEditingController _bioController;
   bool _isSaving = false;
 
+  /// The values the name/bio fields were last seeded with (from the session,
+  /// then refreshed from the server). Used so a late server refresh only
+  /// overwrites a field the user hasn't started editing — it never clobbers
+  /// typed input.
+  String _seedName = '';
+  String _seedBio = '';
+
   /// Locally-picked avatar, not yet uploaded. Previews over the network avatar
   /// and is uploaded (then sent as a path) on save.
   XFile? _pickedImage;
@@ -52,23 +59,38 @@ class _EditProfileFormState extends State<EditProfileForm> {
   void initState() {
     super.initState();
     final user = context.read<UserDataNotifier>().user;
-    _nameController = TextEditingController(text: user.name ?? '');
-    _bioController = TextEditingController(text: user.bio ?? '');
-    // Self-source the current covers (the shared user model doesn't carry them).
-    _loadCovers();
+    // Seed instantly from the in-memory session for a no-flicker first paint…
+    _seedName = user.name ?? '';
+    _seedBio = user.bio ?? '';
+    _nameController = TextEditingController(text: _seedName);
+    _bioController = TextEditingController(text: _seedBio);
+    // …then self-source the live profile so the fields are correct even when the
+    // session model is empty/stale (e.g. login returns only id+token and the
+    // follow-up /my-data hadn't populated name/bio/covers yet).
+    _loadProfile();
   }
 
-  /// Fetches the signed-in user's profile to seed the covers section, so the
-  /// screen shows the live covers regardless of how it was opened. On failure it
-  /// leaves `_coversKnown` false → a save won't touch the stored covers.
-  Future<void> _loadCovers() async {
-    final id = context.read<UserDataNotifier>().user.id ?? 0;
+  /// Fetches the signed-in user's profile and seeds the whole form (name, bio,
+  /// avatar, covers) from the live server data, so the screen always shows
+  /// something to edit regardless of how it was opened or whether the shared
+  /// user model had loaded yet. The name/bio fields are only refreshed while the
+  /// user hasn't started typing (so a late response never clobbers input). On
+  /// failure it leaves the seeded values and `_coversKnown` false → a save won't
+  /// touch the stored covers.
+  Future<void> _loadProfile() async {
+    // Capture the notifier before the first await so we never touch `context`
+    // across an async gap (the provider reference itself is stable).
+    final notifier = context.read<UserDataNotifier>();
+    final id = notifier.user.id ?? 0;
     if (id <= 0) return;
     try {
       final res = await ApiClient.instance.dio.get('/users/$id/profile');
       final data = res.data;
       final inner = data is Map ? data['data'] : null;
-      final profile = inner is Map ? inner['profile'] : null;
+      if (inner is! Map) return;
+      final profile = inner['profile'];
+      final name = inner['name']?.toString();
+      final bio = inner['bio']?.toString();
       // Prefer the backend-resolved `cover_images` (absolute, correctly-bucketed
       // URLs) for display; `covers` are the raw paths sent back on save.
       final urls = profile is Map
@@ -87,9 +109,30 @@ class _EditProfileFormState extends State<EditProfileForm> {
         while (_coverUrls.length < _coverPaths.length) {
           _coverUrls.add('');
         }
+        // Refresh the editable fields from the server unless the user already
+        // changed them (text still equals what we seeded → safe to overwrite).
+        if (name != null && _nameController.text == _seedName) {
+          _nameController.text = name;
+          _seedName = name;
+        }
+        if (bio != null && _bioController.text == _seedBio) {
+          _bioController.text = bio;
+          _seedBio = bio;
+        }
       });
+      // Push the fresh data into the shared user so the avatar/header (watched
+      // from the notifier) render too, and the rest of the app stays in sync.
+      if (profile is Map) {
+        notifier.update(
+          name: name,
+          bio: bio,
+          profile: ProfileRoomModel.fromJson(
+            Map<String, dynamic>.from(profile),
+          ),
+        );
+      }
     } catch (_) {
-      // Leave covers hidden on failure (graceful) — save won't touch them.
+      // Leave the seeded values on failure (graceful) — save won't touch covers.
     }
   }
 
@@ -205,6 +248,7 @@ class _EditProfileFormState extends State<EditProfileForm> {
         // reflects the new name/bio/avatar immediately on return (no manual refresh).
         StacDataRegistry.instance.invalidate();
         final messenger = ScaffoldMessenger.of(context);
+        final navigator = Navigator.of(context);
         final successText = context.tr('app.success');
         // Persist the updated user so the new avatar survives an app restart.
         // Login and UserSessionService.hydrate() both write the user to the
@@ -213,7 +257,7 @@ class _EditProfileFormState extends State<EditProfileForm> {
         await CacheManager.saveUserData(notifier.user.toJson());
         messenger.showSnackBar(SnackBar(content: Text(successText)));
         // Close the edit page after a successful save (mirrors the native flow).
-        if (Navigator.of(context).canPop()) Navigator.of(context).pop();
+        if (navigator.canPop()) navigator.pop();
       }
     } catch (_) {
       if (mounted) {
