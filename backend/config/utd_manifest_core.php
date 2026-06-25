@@ -263,7 +263,7 @@ $profileWidgets = array_merge(
         'refreshBtnIcon' => $node('Icon', false, ['name' => 'refresh_rounded', 'size' => 20, 'color' => $C['white']], [], 'refreshBtn'),
 
         'scope'       => $node('Scope', true, ['source' => 'core.currentUser'], ['header'], 'ROOT'),
-        'header'      => $node('Container', true, ['background' => '#00000000', 'padding' => 8, 'gap' => 10, 'align' => 'center', 'flex' => 0], ['avatarBox', 'nameRow', 'uidRow', 'badgeRow', 'bioRow'], 'scope'),
+        'header'      => $node('Container', true, ['background' => '#00000000', 'padding' => 8, 'gap' => 10, 'align' => 'center', 'flex' => 0], ['avatarBox', 'nameRow', 'uidRow', 'bioRow'], 'scope'),
 
         // Avatar: a FIXED-SIZE box → gradient ring + circular image + an
         // overlapping camera badge. The Stack MUST be wrapped in a 124×124
@@ -307,14 +307,12 @@ $profileWidgets = array_merge(
         'uid'         => $node('Text', false, ['text' => '', 'binding' => 'core.currentUser.uid', 'fontSize' => 13, 'fontWeight' => 600, 'color' => $C['muted'], 'align' => 'center', 'maxLines' => 1], [], 'uidRow'),
         'copyIcon'    => $node('Icon', false, ['name' => 'content_copy_rounded', 'size' => 14, 'color' => $C['muted'], 'onTapAction' => 'core.copy', 'onTapParams' => ['field' => 'uid']], [], 'uidRow'),
 
-        // Level badges (wealth + charm) — graceful-empty: each is a bound Text
-        // that stays '' until the backend (gifts/levels package) sends the level,
-        // mirroring the native ProfileIdentity level chips. (The Craft→Stac
-        // transform drops visibleBinding, so an empty bound Text — not a gated
-        // pill — is how an absent badge stays hidden, like the gender signs.)
-        'badgeRow'    => $node('Row', true, ['gap' => 8, 'justify' => 'center', 'align' => 'center'], ['wealthBadge', 'charmBadge'], 'header'),
-        'wealthBadge' => $node('Text', false, ['text' => '', 'binding' => 'core.currentUser.wealthBadge', 'fontSize' => 12, 'fontWeight' => 700, 'color' => $C['accentLt'], 'align' => 'center', 'maxLines' => 1], [], 'badgeRow'),
-        'charmBadge'  => $node('Text', false, ['text' => '', 'binding' => 'core.currentUser.charmBadge', 'fontSize' => 12, 'fontWeight' => 700, 'color' => '#FFB300', 'align' => 'center', 'maxLines' => 1], [], 'badgeRow'),
+        // Level badges (wealth + charm) were REMOVED from the Me-landing: they were
+        // a dedicated row of empty bound Texts (no level data ships yet, and the
+        // Craft→Stac transform drops visibleBinding so the row can't self-hide), so
+        // the empty row + its column gaps left a large blank band between the UID
+        // and the bio. Re-add them inside an always-present row (e.g. nameRow/uidRow)
+        // — NOT as their own row — once the levels/gifts package feeds real values.
 
         // Bio + edit pencil.
         'bioRow'      => $node('Row', true, ['gap' => 6, 'justify' => 'center', 'align' => 'center'], ['bio', 'bioPencil'], 'header'),
