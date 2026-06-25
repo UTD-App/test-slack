@@ -6,6 +6,7 @@ import 'stac_object_parser.dart';
 import 'stac_scroll_parser.dart';
 import 'utd_positioned_directional_parser.dart';
 import 'utd_sized_parser.dart';
+import 'utd_slot_parser.dart';
 import 'utd_tabs_parser.dart';
 import 'utd_text_field_parser.dart';
 
@@ -20,6 +21,7 @@ const List<StacParser> builtinStacParsers = [
   StacUtdObjectParser(),
   StacUtdScrollParser(),
   StacUtdSizedParser(),
+  StacUtdSlotParser(),
   StacUtdLoadingParser(),
   StacUtdTabsParser(),
   StacUtdTextFieldParser(),

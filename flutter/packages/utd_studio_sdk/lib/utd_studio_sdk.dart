@@ -26,6 +26,9 @@ export 'src/spi/stac_contributor.dart';
 
 // Data binding + registries (shared by Base core.* and chat chat.* — ONE singleton).
 export 'src/core/stac_data_registry.dart';
+// Studio screen slot contributions (package cards injected into screens they do
+// NOT own — the Studio analogue of native UiSlot). ONE singleton.
+export 'src/core/studio_slot_registry.dart';
 export 'src/core/stac_binding.dart'; // StacBinding.injectItemContext is public
 export 'src/core/field_registry.dart';
 export 'src/core/stac_coerce.dart';

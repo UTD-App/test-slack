@@ -40,8 +40,11 @@ class WalletFeature extends AppFeature {
     _cubit = WalletCubit(_repository);
 
     // UTD Studio: expose `wallet.balance` (coins) so a server-driven screen can
-    // bind the coin card as Craft nodes. No-op on a native (non-Studio) base.
+    // bind the coin card as Craft nodes, and contribute the coin card to the
+    // server-driven `profile` screen (injected at render — no server push; the
+    // Studio analogue of the native UiSlot card below). No-op on a native base.
     registerWalletStacSources();
+    registerWalletStudioCards();
   }
 
   @override

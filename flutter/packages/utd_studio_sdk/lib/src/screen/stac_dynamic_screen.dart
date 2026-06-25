@@ -3,6 +3,7 @@ import 'package:stac/stac.dart';
 
 import '../core/stac_coerce.dart';
 import '../core/stac_i18n.dart';
+import '../core/studio_slot_registry.dart';
 import '../interfaces/interfaces.dart';
 import '../runtime/studio_runtime.dart';
 
@@ -96,9 +97,14 @@ class _StacDynamicScreenState extends State<StacDynamicScreen> {
   }
 
   Widget _render(BuildContext context, Map<String, dynamic> json) {
+    // Inject any package slot contributions for this screen (e.g. the wallet's
+    // coin card on `profile`) BEFORE localise/parse, so injected nodes flow
+    // through the same i18n + binding pipeline. No-op when nothing is registered.
+    final withSlots =
+        StudioSlotRegistry.instance.injectScreenSlots(widget.screenName, json);
     // Localise translatable Text (tKey / t.* binding) → current-locale strings,
     // then force-parse to fix wrong primitive types before Stac throws.
-    final localized = localizeStac(json, context);
+    final localized = localizeStac(withSlots, context);
     final rendered = Stac.fromJson(StacCoerce.sanitize(localized), context);
     return rendered ??
         (widget.fallback ??
