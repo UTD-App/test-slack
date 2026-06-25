@@ -1,0 +1,22 @@
+{
+    "name": "utd/wallet",
+    "description": "UTD Wallet package — user COIN wallet (balance + unified ledger), coin packages, gateway purchase log, and manual charges. Binds the Base WalletContract so every coin movement goes through one path. Dollars/withdrawals live in the target package.",
+    "type": "library",
+    "license": "proprietary",
+    "version": "1.0.0",
+    "require": {
+        "php": "^8.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Utd\\Wallet\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Utd\\Wallet\\Providers\\WalletServiceProvider"
+            ]
+        }
+    }
+}

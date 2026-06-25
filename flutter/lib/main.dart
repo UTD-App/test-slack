@@ -2,6 +2,7 @@ import 'package:audio_room/audio_room.dart';
 import 'package:audio_room_charisma/audio_room_charisma.dart';
 import 'package:authentication/authentication.dart';
 import 'package:profile/profile.dart';
+import 'package:wallet/wallet.dart';
 import 'package:moment/moment.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -74,6 +75,7 @@ void main() async {
       AuthFeature(),
       NotificationsFeature(),
       ProfileFeature(),
+      WalletFeature(),
       MomentFeature(),
       audioRoom,
     ];
