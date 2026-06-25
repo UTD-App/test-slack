@@ -1,4 +1,5 @@
 import 'package:authentication/core/auth_routes.dart';
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:utd_studio_sdk/utd_studio_sdk.dart';
 import '../addons/feature_registry.dart';
@@ -36,8 +37,18 @@ GoRouter createRouter(FeatureRegistry registry) {
       // never dead-ends on a GoRouter "no routes for location" error.
       GoRoute(
         path: '/s/:name',
-        builder: (context, state) =>
-            StacDynamicScreen(screenName: state.pathParameters['name'] ?? ''),
+        // A pushed Studio screen renders its own Stac scaffold which — unlike the
+        // AppShell tabs — has NO top SafeArea, so its header draws under the
+        // status-bar clock / camera notch. Wrap in a SafeArea (mirroring
+        // AppShell's tab treatment) over a scaffold background so the strip
+        // behind the status bar stays filled.
+        builder: (context, state) => Scaffold(
+          body: SafeArea(
+            bottom: false,
+            child:
+                StacDynamicScreen(screenName: state.pathParameters['name'] ?? ''),
+          ),
+        ),
       ),
       // Basic read-only profile for another user, shown when the Profile package
       // isn't installed (ProfileNavigator routes here as the fallback).
