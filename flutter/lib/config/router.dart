@@ -10,6 +10,7 @@ import '../screens/contact_us_screen.dart';
 import '../screens/content_page.dart';
 import '../screens/edit_profile_form.dart';
 import '../screens/home_screen.dart';
+import '../screens/language_screen.dart';
 import '../screens/settings_screen.dart';
 import '../screens/visited_profile_fallback.dart';
 
@@ -35,13 +36,13 @@ GoRouter createRouter(FeatureRegistry registry) {
       // published Stac screen by name; StacDynamicScreen shows its own loader /
       // fallback when the screen isn't published yet — so a server-driven push
       // never dead-ends on a GoRouter "no routes for location" error.
+      //
+      // A pushed Studio screen renders its own Stac scaffold which — unlike the
+      // AppShell tabs — has NO top SafeArea, so its header would draw under the
+      // status-bar clock / camera notch. Wrap in a SafeArea (mirroring AppShell's
+      // tab treatment) so pushed server screens clear the status bar.
       GoRoute(
         path: '/s/:name',
-        // A pushed Studio screen renders its own Stac scaffold which — unlike the
-        // AppShell tabs — has NO top SafeArea, so its header draws under the
-        // status-bar clock / camera notch. Wrap in a SafeArea (mirroring
-        // AppShell's tab treatment) over a scaffold background so the strip
-        // behind the status bar stays filled.
         builder: (context, state) => Scaffold(
           body: SafeArea(
             bottom: false,
@@ -71,6 +72,14 @@ GoRouter createRouter(FeatureRegistry registry) {
                 fallback: EditProfileForm(),
               )),
       GoRoute(path: '/settings', builder: (context, state) => const SettingsScreen()),
+      // Language picker reached from the (server-driven) Settings screen, whose
+      // "Language" row fires `core.navigate → /language-screen` (see the core
+      // manifest). Without this route that push dead-ended on a GoRouter
+      // "no routes for location: /language-screen" exception.
+      GoRoute(
+        path: AuthRoutes.languageScreen,
+        builder: (context, state) => const LanguageScreen(),
+      ),
       GoRoute(path: '/contact-us', builder: (context, state) => const ContactUsScreen()),
       GoRoute(
         path: '/page/:key',
