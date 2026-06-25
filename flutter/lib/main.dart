@@ -1,6 +1,7 @@
 import 'package:audio_room/audio_room.dart';
 import 'package:audio_room_charisma/audio_room_charisma.dart';
 import 'package:authentication/authentication.dart';
+import 'package:gifts/gifts.dart';
 import 'package:profile/profile.dart';
 import 'package:wallet/wallet.dart';
 import 'package:moment/moment.dart';
@@ -73,6 +74,7 @@ void main() async {
   List<AppFeature> buildFeatures() {
     return [
       AuthFeature(),
+      GiftsFeature(),
       NotificationsFeature(),
       ProfileFeature(),
       WalletFeature(),

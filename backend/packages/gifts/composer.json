@@ -1,0 +1,22 @@
+{
+    "name": "utd/gifts",
+    "description": "UTD Gifts package — gift catalog + sending engine. Binds the Base GiftSender so any feature (Moment, Reels, Room…) can send gifts: spends sender coins, credits receiver diamonds, records the gift log.",
+    "type": "library",
+    "license": "proprietary",
+    "version": "1.0.0",
+    "require": {
+        "php": "^8.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Utd\\Gifts\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Utd\\Gifts\\Providers\\GiftsServiceProvider"
+            ]
+        }
+    }
+}

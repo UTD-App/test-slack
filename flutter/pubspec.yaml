@@ -43,6 +43,8 @@ dependencies:
   webview_flutter: ^4.14.0
   authentication:
     path: packages/authentication
+  gifts:
+    path: packages/gifts
   profile:
     path: packages/profile
   wallet:
