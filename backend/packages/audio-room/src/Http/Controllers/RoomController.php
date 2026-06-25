@@ -527,6 +527,48 @@ class RoomController extends Controller
         return Common::apiResponse(true, '', []);
     }
 
+    public function pinMessage(Request $request, int $id): JsonResponse
+    {
+        $room = Room::findOrFail($id);
+
+        if (!$room->isOwnerOrAdmin(Auth::id())) {
+            return Common::apiResponse(false, 'Unauthorized', null, 403);
+        }
+
+        $request->validate([
+            'text' => 'required|string',
+            'sender_id' => 'required',
+            'sender_name' => 'required|string',
+            'sender_avatar' => 'nullable|string',
+            'timestamp' => 'required|integer',
+        ]);
+
+        $room->update([
+            'pinned_message' => [
+                'senderId' => (string) $request->sender_id,
+                'senderName' => $request->sender_name,
+                'text' => $request->text,
+                'senderAvatar' => $request->sender_avatar ?? '',
+                'timestamp' => $request->timestamp,
+            ],
+        ]);
+
+        return Common::apiResponse(true, 'Message pinned');
+    }
+
+    public function unpinMessage(int $id): JsonResponse
+    {
+        $room = Room::findOrFail($id);
+
+        if (!$room->isOwnerOrAdmin(Auth::id())) {
+            return Common::apiResponse(false, 'Unauthorized', null, 403);
+        }
+
+        $room->update(['pinned_message' => null]);
+
+        return Common::apiResponse(true, 'Message unpinned');
+    }
+
     public function config(): JsonResponse
     {
         // Public client config only — never expose the server_secret (it signs
@@ -579,6 +621,7 @@ class RoomController extends Controller
             'created_at' => $room->created_at,
             'empty_seat_icon' => $this->formatSeatIconUrl($room->empty_seat_icon, $storage),
             'locked_seat_icon' => $this->formatSeatIconUrl($room->locked_seat_icon, $storage),
+            'pinned_message' => $room->pinned_message,
         ];
     }
 

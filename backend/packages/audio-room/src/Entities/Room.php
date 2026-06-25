@@ -13,7 +13,7 @@ class Room extends Model
         'num_id', 'user_id', 'room_name', 'room_cover', 'room_intro',
         'room_rule', 'room_background', 'room_pass', 'room_type',
         'room_class', 'type', 'mode', 'room_status', 'is_afk',
-        'is_comment_closed', 'free_mic', 'max_admin',
+        'is_comment_closed', 'free_mic', 'max_admin', 'pinned_message',
         'empty_seat_icon', 'locked_seat_icon',
     ];
 
@@ -28,6 +28,7 @@ class Room extends Model
         'is_afk' => 'boolean',
         'is_comment_closed' => 'boolean',
         'free_mic' => 'boolean',
+        'pinned_message' => 'array',
     ];
 
     protected $hidden = ['room_pass'];

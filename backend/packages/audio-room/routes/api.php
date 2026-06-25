@@ -34,6 +34,8 @@ Route::middleware(['auth:sanctum', 'checkLatestToken', 'generalBan', 'userBan', 
     Route::post('rooms/{id}/mute-writing', [RoomController::class, 'muteWriting']);
     Route::post('rooms/{id}/unmute-writing', [RoomController::class, 'unmuteWriting']);
     Route::post('rooms/{id}/yellow-banner', [RoomController::class, 'sendBanner']);
+    Route::post('rooms/{id}/pin-message', [RoomController::class, 'pinMessage']);
+    Route::post('rooms/{id}/unpin-message', [RoomController::class, 'unpinMessage']);
     Route::get('rooms/{id}/users', [RoomController::class, 'users']);
     Route::get('rooms/{id}/ranking', [RoomController::class, 'ranking']);
     Route::get('config/room', [RoomController::class, 'config']);
