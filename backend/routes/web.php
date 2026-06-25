@@ -69,6 +69,20 @@ Route::get('/run-gcs-test', function (\Illuminate\Http\Request $request) {
         'key_file_path'   => $disk['key_file_path'] ?? null,
         'key_file_exists' => isset($disk['key_file_path']) ? file_exists($disk['key_file_path']) : null,
     ];
+
+    // Decode the SA key (NOT the private key) so we can compare the project the
+    // key belongs to against the configured project_id — a mismatch is the most
+    // common cause of "The requested project was not found." client_email is an
+    // identifier, not a secret; the private_key is never exposed.
+    if (!empty($disk['key_file_path']) && is_file($disk['key_file_path'])) {
+        $kf = json_decode((string) file_get_contents($disk['key_file_path']), true) ?: [];
+        $out['key_project_id']  = $kf['project_id'] ?? null;
+        $out['key_client_email'] = $kf['client_email'] ?? null;
+        $out['key_type']        = $kf['type'] ?? null;
+        $out['project_matches_key'] = isset($kf['project_id'])
+            ? ($kf['project_id'] === ($disk['project_id'] ?? null))
+            : null;
+    }
     try {
         $r = \App\Facades\Media::upload($file, 'gcs-test');
         $out['url']            = $r->url;
