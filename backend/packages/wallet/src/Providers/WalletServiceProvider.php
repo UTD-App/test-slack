@@ -45,6 +45,15 @@ class WalletServiceProvider extends ServiceProvider
         $this->loadMigrationsFrom(self::PACKAGE_ROOT . '/database/migrations');
         $this->registerTranslations();
         $this->loadRoutes();
+
+        // Design-time contract for UTD Studio (GET /api/utd/manifest) — exposes
+        // `wallet.balance` so the coin card can be bound on a Studio screen.
+        // Guarded so the package still boots on a base without the Studio infra.
+        if (class_exists(\App\Support\UtdManifest::class)) {
+            \App\Support\UtdManifest::registerPackage(
+                require self::PACKAGE_ROOT . '/config/utd_manifest.php'
+            );
+        }
     }
 
     protected function loadRoutes(): void

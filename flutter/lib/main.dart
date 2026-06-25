@@ -15,7 +15,6 @@ import 'package:utd_app/services/notification_service.dart';
 import 'package:utd_app/shared/services/translation_service.dart';
 import 'package:utd_app/shared/stac/parsers/self_profile_card_parser.dart';
 import 'package:utd_app/shared/stac/parsers/edit_profile_form_parser.dart';
-import 'package:utd_app/shared/stac/parsers/wallet_card_parser.dart';
 
 import 'addons/app_feature.dart';
 import 'app.dart';
@@ -160,7 +159,6 @@ void main() async {
     featureParsers: [
       const SelfProfileCardParser(),
       const EditProfileFormParser(),
-      const WalletCardParser(),
       ...featureParsers,
     ],
     featureActionParsers: featureActionParsers,

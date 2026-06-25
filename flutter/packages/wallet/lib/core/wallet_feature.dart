@@ -11,6 +11,7 @@ import '../src/data/repositories/wallet_repository_impl.dart';
 import '../src/domain/repositories/wallet_repository.dart';
 import '../src/presentation/bloc/wallet_cubit.dart';
 import '../src/presentation/view/wallet_profile_section.dart';
+import '../src/stac/wallet_stac_sources.dart';
 import 'wallet_routes.dart';
 import 'wallet_strings.dart';
 
@@ -37,6 +38,10 @@ class WalletFeature extends AppFeature {
     _api = WalletApiService();
     _repository = WalletRepositoryImpl(_api);
     _cubit = WalletCubit(_repository);
+
+    // UTD Studio: expose `wallet.balance` (coins) so a server-driven screen can
+    // bind the coin card as Craft nodes. No-op on a native (non-Studio) base.
+    registerWalletStacSources();
   }
 
   @override
@@ -81,14 +86,4 @@ class WalletFeature extends AppFeature {
 
   @override
   Map<String, Map<String, String>> getTranslations() => WalletStrings.translations();
-
-  /// Studio seam: exposes the coin-balance card under `wallet.card` so a
-  /// server-driven (UTD Studio) screen can place it as a node — e.g. on a
-  /// Studio-composed profile/home screen that replaces the native landing and
-  /// therefore can't pick up the [UiSlot.userProfile] contribution above.
-  /// Native hosts ignore this and use the UiSlot card; harmless when unused.
-  @override
-  void registerWidgets(WidgetRegistry registry) {
-    registry.register('wallet.card', (context) => const WalletProfileSection());
-  }
 }
