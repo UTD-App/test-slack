@@ -97,5 +97,27 @@ Route::get('/run-gcs-test', function (\Illuminate\Http\Request $request) {
         @unlink($tmp);
     }
 
+    // The disk isn't configured with throw=>true, so Storage::put() swallows the
+    // real driver error and just returns false (hence the empty cause chain
+    // above). Re-attempt the write on a clone of the disk WITH throw enabled so
+    // the actual GCS error (403 / uniform-bucket-level-access / project / ACL)
+    // is captured here.
+    try {
+        $probeDisk = $disk;
+        $probeDisk['throw'] = true;
+        config(['filesystems.disks._probe' => $probeDisk]);
+        \Illuminate\Support\Facades\Storage::forgetDisk('_probe');
+        \Illuminate\Support\Facades\Storage::disk('_probe')
+            ->put('gcs-test/probe-' . substr(md5((string) $request->ip()), 0, 8) . '.png', $png, 'public');
+        $out['probe'] = 'raw write succeeded';
+        \Illuminate\Support\Facades\Storage::disk('_probe')->delete('gcs-test/probe.png');
+    } catch (\Throwable $e) {
+        $chain = [];
+        for ($x = $e; $x !== null; $x = $x->getPrevious()) {
+            $chain[] = get_class($x) . ': ' . $x->getMessage();
+        }
+        $out['probe_error'] = $chain;
+    }
+
     return response()->json($out, 200, [], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
