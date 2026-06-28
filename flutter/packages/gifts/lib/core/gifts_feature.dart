@@ -49,6 +49,7 @@ class GiftsFeature extends AppFeature {
       roomId,
       ownerId,
       recipients,
+      onRoomGiftSent,
     }) {
       showGiftPicker(
         context,
@@ -60,6 +61,7 @@ class GiftsFeature extends AppFeature {
         roomId: roomId,
         ownerId: ownerId,
         recipients: recipients,
+        onRoomGiftSent: onRoomGiftSent,
       );
     });
   }

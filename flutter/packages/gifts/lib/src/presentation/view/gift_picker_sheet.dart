@@ -26,6 +26,7 @@ Future<void> showGiftPicker(
   int? roomId,
   int? ownerId,
   List<GiftRecipient>? recipients,
+  RoomGiftSentCallback? onRoomGiftSent,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -46,6 +47,7 @@ Future<void> showGiftPicker(
         contextId: contextId,
         receiverName: receiverName,
         onSent: onSent,
+        onRoomGiftSent: onRoomGiftSent,
       ),
     ),
   );
@@ -60,12 +62,17 @@ class GiftPickerSheet extends StatelessWidget {
   /// moment card) can update its UI without reloading the whole feed.
   final void Function(int coins)? onSent;
 
+  /// Fired after a successful ROOM send with the full gift details, so the room
+  /// can broadcast it (RTM) + play the banner. Null/ignored for moment/reel.
+  final RoomGiftSentCallback? onRoomGiftSent;
+
   const GiftPickerSheet({
     super.key,
     required this.contextType,
     required this.contextId,
     this.receiverName,
     this.onSent,
+    this.onRoomGiftSent,
   });
 
   /// The gift currently selected in the picker (for the full-screen play).
@@ -91,8 +98,11 @@ class GiftPickerSheet extends StatelessWidget {
     // to the host for an instant UI update. In a room the sender pays for EACH
     // selected recipient (price × quantity × recipients).
     final sentGift = _selectedGift(cubit.state);
-    final recipientCount = cubit.isRoom ? cubit.state.selectedRecipientIds.length : 1;
-    final coins = ((sentGift?.price ?? 0) * cubit.state.quantity * recipientCount).round();
+    final isRoom = cubit.isRoom;
+    final giftNum = cubit.state.quantity;
+    final recipientIds = cubit.state.selectedRecipientIds.toList();
+    final recipientCount = isRoom ? recipientIds.length : 1;
+    final coins = ((sentGift?.price ?? 0) * giftNum * recipientCount).round();
 
     final ok = await cubit.send(contextType: contextType, contextId: contextId);
     if (ok) {
@@ -104,6 +114,19 @@ class GiftPickerSheet extends StatelessWidget {
         }
       }
       onSent?.call(coins);
+      // Room sends also hand the full gift details to the host so it can RTM
+      // broadcast + play the banner for everyone in the room.
+      if (isRoom && onRoomGiftSent != null && sentGift != null) {
+        onRoomGiftSent!(
+          giftId: sentGift.id,
+          giftName: sentGift.name,
+          giftImg: sentGift.img,
+          giftPrice: sentGift.price,
+          giftNum: giftNum,
+          recipientIds: recipientIds,
+          totalCoins: coins,
+        );
+      }
       navigator.pop();
       messenger.showSnackBar(SnackBar(content: Text(sentMsg)));
     } else {

@@ -18,6 +18,19 @@ class GiftRecipient {
   });
 }
 
+/// Fired after a successful ROOM gift send with the full sent-gift details, so the
+/// room can broadcast it (RTM) and play the banner/animation for everyone. Only
+/// invoked for room gifting; [GiftLauncher.onSent] still fires for all sends.
+typedef RoomGiftSentCallback = void Function({
+  required int giftId,
+  required String giftName,
+  required String giftImg,
+  required int giftPrice,
+  required int giftNum,
+  required List<int> recipientIds,
+  required int totalCoins,
+});
+
 /// How the Gifts package opens its picker. Receives the context the gift is
 /// sent in (e.g. a moment) so the picker can post to the right endpoint, plus an
 /// optional [onSent] the picker fires after a successful send — with the total
@@ -37,6 +50,7 @@ typedef GiftLauncher = void Function(
   int? roomId,
   int? ownerId,
   List<GiftRecipient>? recipients,
+  RoomGiftSentCallback? onRoomGiftSent,
 });
 
 /// Flutter analog of the backend `App\Contracts\GiftSender` seam.
@@ -65,6 +79,7 @@ class GiftBridge {
     int? roomId,
     int? ownerId,
     List<GiftRecipient>? recipients,
+    RoomGiftSentCallback? onRoomGiftSent,
   }) {
     _launcher?.call(
       context,
@@ -75,6 +90,7 @@ class GiftBridge {
       roomId: roomId,
       ownerId: ownerId,
       recipients: recipients,
+      onRoomGiftSent: onRoomGiftSent,
     );
   }
 }
