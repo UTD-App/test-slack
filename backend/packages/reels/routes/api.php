@@ -1,12 +1,42 @@
 <?php
 
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Route;
+use Utd\Reels\Database\Seeders\ReelsBulkSeeder;
+use Utd\Reels\Entities\Real;
 use Utd\Reels\Http\Controllers\RealsController;
 use Utd\Reels\Http\Controllers\RealsUserCommentController;
 use Utd\Reels\Http\Controllers\RealsUserLikesController;
 use Utd\Reels\Http\Controllers\RealsUserViewsController;
 use Utd\Reels\Http\Controllers\ReelGiftsController;
 use Utd\Reels\Http\Controllers\ReportController;
+
+/*
+| Dev seed route — fills the feed with demo reels (ReelsBulkSeeder, ~100).
+| GET /api/reals/seed runs freely in local/development/testing; in any other
+| environment it requires ?key= to match config('reels.seed_key') (and is
+| blocked when that key is unset). Registered BEFORE the resource group so it
+| isn't swallowed by GET reals/{real}. Convenience only — not a product route.
+*/
+Route::get('reals/seed', function (Request $request) {
+    $key = config('reels.seed_key');
+    $allowed = app()->environment(['local', 'development', 'testing'])
+        || ($key && hash_equals((string) $key, (string) $request->query('key', '')));
+
+    abort_unless($allowed, 403, 'Reels seeding is disabled in this environment.');
+
+    Artisan::call('db:seed', [
+        '--class' => ReelsBulkSeeder::class,
+        '--force' => true,
+    ]);
+
+    return response()->json([
+        'status'  => true,
+        'message' => 'Reels seeded.',
+        'data'    => ['total_reels' => Real::count()],
+    ]);
+});
 
 /*
 | Reels API routes.
