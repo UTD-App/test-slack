@@ -7,6 +7,7 @@ import '../../../core/moment_strings.dart';
 import '../bloc/moment_feed/moment_feed_bloc.dart';
 import '../bloc/moment_feed/moment_feed_event.dart';
 import '../bloc/moment_feed/moment_feed_state.dart';
+import 'widgets/cached_image.dart';
 import 'widgets/confirm_dialog.dart';
 import 'widgets/moment_card.dart';
 import 'widgets/moment_comments_sheet.dart';
@@ -41,7 +42,8 @@ class _MomentFeedViewState extends State<MomentFeedView> {
     super.initState();
     final bloc = context.read<MomentFeedBloc>();
     if (bloc.state.status == FeedStatus.initial) {
-      bloc.add(const FeedRefreshRequested());
+      // Cache-first: paint the last-seen feed instantly, then refresh.
+      bloc.add(const FeedStarted());
     }
     _scroll.addListener(() {
       if (_scroll.position.pixels >= _scroll.position.maxScrollExtent - 300) {
@@ -65,7 +67,7 @@ class _MomentFeedViewState extends State<MomentFeedView> {
           backgroundColor: Colors.black,
           insetPadding: EdgeInsets.zero,
           child: InteractiveViewer(
-            child: Center(child: Image.network(url, fit: BoxFit.contain)),
+            child: Center(child: MomentNetworkImage(url: url, fit: BoxFit.contain)),
           ),
         ),
       ),

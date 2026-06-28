@@ -20,6 +20,12 @@ class MomentRepositoryImpl implements MomentRepository {
   }
 
   @override
+  Future<List<MomentEntity>> cachedMoments({int type = 4, int? userId}) async {
+    final list = await api.cachedMoments(type: type, userId: userId);
+    return list.cast<MomentEntity>();
+  }
+
+  @override
   Future<Result<bool>> addMoment({required String text, List<File> images = const []}) =>
       api.addMoment(text: text, images: images);
 

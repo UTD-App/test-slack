@@ -15,6 +15,10 @@ abstract class MomentRepository {
     int? userId,
   });
 
+  /// The last-cached first page for instant/offline first paint. Returns an
+  /// empty list when nothing has been cached yet. Never hits the network.
+  Future<List<MomentEntity>> cachedMoments({int type = 4, int? userId});
+
   Future<Result<bool>> addMoment({required String text, List<File> images});
 
   Future<Result<bool>> deleteMoment(int momentId);

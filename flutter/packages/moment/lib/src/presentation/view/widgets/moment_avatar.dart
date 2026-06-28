@@ -1,4 +1,6 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:utd_app/shared/media/app_cache_manager.dart';
 
 import '../../utils/media.dart';
 
@@ -43,14 +45,14 @@ class MomentAvatar extends StatelessWidget {
             radius: radius,
             backgroundColor: bg,
             child: ClipOval(
-              child: Image.network(
-                url,
+              child: CachedNetworkImage(
+                imageUrl: url,
+                cacheManager: AppCacheManager.instance.manager,
                 width: radius * 2,
                 height: radius * 2,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Center(child: initialsWidget),
-                loadingBuilder: (_, child, progress) =>
-                    progress == null ? child : Center(child: initialsWidget),
+                placeholder: (_, __) => Center(child: initialsWidget),
+                errorWidget: (_, __, ___) => Center(child: initialsWidget),
               ),
             ),
           );

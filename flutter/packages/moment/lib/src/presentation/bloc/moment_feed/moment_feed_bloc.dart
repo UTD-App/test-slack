@@ -19,6 +19,7 @@ class MomentFeedBloc extends Bloc<MomentFeedEvent, MomentFeedState> {
   final Random _random = Random();
 
   MomentFeedBloc(this.repository, {this.type = 4, this.userId}) : super(const MomentFeedState()) {
+    on<FeedStarted>(_onStarted);
     on<FeedRefreshRequested>(_onRefresh);
     on<FeedLoadMoreRequested>(_onLoadMore);
     on<MomentLikeToggled>(_onLike);
@@ -55,6 +56,22 @@ class MomentFeedBloc extends Bloc<MomentFeedEvent, MomentFeedState> {
             : m)
         .toList();
     emit(state.copyWith(moments: updated));
+  }
+
+  Future<void> _onStarted(FeedStarted event, Emitter<MomentFeedState> emit) async {
+    // Instant paint from the on-disk cache (no spinner), then refresh from the
+    // network. First run ever (empty cache) falls straight through to the
+    // network refresh, which shows the spinner once.
+    final cached = await repository.cachedMoments(type: type, userId: userId);
+    if (cached.isNotEmpty && state.moments.isEmpty) {
+      emit(state.copyWith(
+        status: FeedStatus.success,
+        moments: cached,
+        page: 1,
+        hasMore: true,
+      ));
+    }
+    add(const FeedRefreshRequested());
   }
 
   Future<void> _onRefresh(FeedRefreshRequested event, Emitter<MomentFeedState> emit) async {

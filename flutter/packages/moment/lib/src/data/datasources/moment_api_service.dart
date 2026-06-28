@@ -7,12 +7,16 @@ import 'package:utd_app/network/services/base_api_service.dart';
 import '../models/moment_comment_model.dart';
 import '../models/moment_like_model.dart';
 import '../models/moment_model.dart';
+import 'moment_feed_cache.dart';
 
 /// Talks to the backend `utd/moment` package endpoints.
 ///
 /// Backend wraps every response as `{ status, message, data }`. The helpers
 /// below unwrap `data` / `status` from that envelope.
 class MomentApiService extends BaseApiService {
+  /// On-disk cache of the feed's first page (instant/offline first paint).
+  final MomentFeedCache _cache = MomentFeedCache();
+
   static List<Map<String, dynamic>> _list(dynamic body) {
     final data = body is Map ? body['data'] : body;
     if (data is List) {
@@ -41,8 +45,19 @@ class MomentApiService extends BaseApiService {
         'page': page,
         if (userId != null) 'user_id': userId,
       },
-      fromJson: (body) => _list(body).map(MomentModel.fromJson).toList(),
+      fromJson: (body) {
+        final raw = _list(body);
+        // Persist the first page (the instant-paint window) for next launch.
+        if (page == 1) _cache.save(type, userId, raw);
+        return raw.map(MomentModel.fromJson).toList();
+      },
     );
+  }
+
+  /// The cached first page (instant/offline), parsed to models — empty if none.
+  Future<List<MomentModel>> cachedMoments({int type = 4, int? userId}) async {
+    final raw = await _cache.load(type, userId);
+    return raw.map(MomentModel.fromJson).toList();
   }
 
   Future<Result<bool>> addMoment({required String text, List<File> images = const []}) async {

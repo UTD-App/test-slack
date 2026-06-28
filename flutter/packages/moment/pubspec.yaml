@@ -12,11 +12,15 @@ dependencies:
 
   # Core app contract (AppFeature, networking, config, cache)
   utd_app:
-    path: ../../
+    path: ../../base-project/flutter
 
   go_router: ^13.0.0
   dio: ^5.4.0
   provider: ^6.0.0
+  # On-disk media cache (images download once, survive scroll/refresh, work
+  # offline) + Hive box for the cache-first feed (instant/offline first paint).
+  cached_network_image: ^3.3.1
+  hive_flutter: ^1.1.0
   # Server-Driven UI: this package contributes Stac action parsers + data sources.
   stac: ^1.5.0
   flutter_bloc: ^8.1.6

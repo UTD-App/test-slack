@@ -10,6 +10,12 @@ abstract class MomentFeedEvent extends Equatable {
   List<Object?> get props => [];
 }
 
+/// First mount of the feed: paint the cached first page instantly (no spinner),
+/// then refresh from the network in the background.
+class FeedStarted extends MomentFeedEvent {
+  const FeedStarted();
+}
+
 /// Initial load / pull-to-refresh.
 class FeedRefreshRequested extends MomentFeedEvent {
   const FeedRefreshRequested();

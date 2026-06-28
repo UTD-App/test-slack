@@ -9,6 +9,7 @@ import '../../utils/media.dart';
 import '../../utils/number_format.dart';
 import '../../utils/reactions.dart';
 import '../../utils/time.dart';
+import 'cached_image.dart';
 import 'moment_avatar.dart';
 
 /// A single Facebook-style moment card.
@@ -199,16 +200,11 @@ class _MomentImages extends StatelessWidget {
       final url = resolveMediaUrl(path);
       return GestureDetector(
         onTap: () => onTap(url),
-        child: Image.network(
-          url,
+        child: MomentNetworkImage(
+          url: url,
           height: height,
           width: double.infinity,
           fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => Container(
-            height: height ?? 180,
-            color: Colors.grey.shade200,
-            child: const Icon(Icons.broken_image, color: Colors.grey),
-          ),
         ),
       );
     }
