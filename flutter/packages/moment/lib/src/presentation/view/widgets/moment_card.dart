@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:utd_app/localization/localization.dart';
 import 'package:utd_app/shared/gifts/gift_bridge.dart';
 import 'package:utd_app/shared/profile/profile_navigator.dart';
@@ -12,6 +13,7 @@ import '../../utils/time.dart';
 import 'cached_image.dart';
 import 'expandable_text.dart';
 import 'moment_avatar.dart';
+import 'moment_share.dart';
 
 /// A single Facebook-style moment card.
 class MomentCard extends StatelessWidget {
@@ -128,9 +130,15 @@ class MomentCard extends StatelessWidget {
               child: _MomentMedia(
                 images: moment.images,
                 onOpen: onTapImage,
+                semanticLabel: moment.description.trim().isNotEmpty
+                    ? moment.description.trim()
+                    : context.tr(MomentStrings.imageA11y),
                 onDoubleTapLike: () {
                   // Double-tap always "likes" (never un-likes), Instagram-style.
-                  if (!moment.isLike) onReact('like');
+                  if (!moment.isLike) {
+                    HapticFeedback.lightImpact();
+                    onReact('like');
+                  }
                 },
               ),
             ),
@@ -144,21 +152,38 @@ class MomentCard extends StatelessWidget {
                 // Reaction button: tap = like toggle, long-press = pick one of the
                 // 6 reactions. Icon shows the user's reaction (or a default thumb)
                 // and the label shows just the count — one icon, no duplicate thumb.
-                GestureDetector(
-                  onLongPress: () async {
-                    final picked = await showReactionPicker(context);
-                    if (picked != null) onReact(picked);
-                  },
-                  child: TextButton.icon(
-                    onPressed: () => onReact('like'),
-                    icon: _reactionIcon(),
-                    label: Text('${moment.likeNum}', style: const TextStyle(color: Colors.grey)),
+                Semantics(
+                  button: true,
+                  label: '${context.tr(MomentStrings.like)} ${moment.likeNum}',
+                  onTap: () => onReact('like'),
+                  child: ExcludeSemantics(
+                    child: GestureDetector(
+                      onLongPress: () async {
+                        final picked = await showReactionPicker(context);
+                        if (picked != null) onReact(picked);
+                      },
+                      child: TextButton.icon(
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          onReact('like');
+                        },
+                        icon: _reactionIcon(),
+                        label: Text('${moment.likeNum}', style: const TextStyle(color: Colors.grey)),
+                      ),
+                    ),
                   ),
                 ),
-                TextButton.icon(
-                  onPressed: onOpenComments,
-                  icon: const Icon(Icons.mode_comment_outlined, color: Colors.grey, size: 20),
-                  label: Text('${moment.commentNum}', style: const TextStyle(color: Colors.grey)),
+                Semantics(
+                  button: true,
+                  label: '${context.tr(MomentStrings.comments)} ${moment.commentNum}',
+                  onTap: onOpenComments,
+                  child: ExcludeSemantics(
+                    child: TextButton.icon(
+                      onPressed: onOpenComments,
+                      icon: const Icon(Icons.mode_comment_outlined, color: Colors.grey, size: 20),
+                      label: Text('${moment.commentNum}', style: const TextStyle(color: Colors.grey)),
+                    ),
+                  ),
                 ),
                 // Gift button — only when the Gifts package is installed.
                 if (GiftBridge.instance.isAvailable)
@@ -174,6 +199,17 @@ class MomentCard extends StatelessWidget {
                     // Total gift COINS on this moment, K-formatted (e.g. 22.5K).
                     label: Text(compactNumber(moment.giftsCoins), style: const TextStyle(color: Colors.grey)),
                   ),
+                // Share the moment (text + first image) via the native sheet.
+                IconButton(
+                  onPressed: () => shareMoment(
+                    context,
+                    text: moment.description,
+                    imagePaths: moment.images,
+                  ),
+                  icon: const Icon(Icons.share_outlined, color: Colors.grey, size: 20),
+                  tooltip: context.tr(MomentStrings.share),
+                  visualDensity: VisualDensity.compact,
+                ),
                 const Spacer(),
                 TextButton(
                   onPressed: onOpenLikes,
@@ -215,10 +251,14 @@ class _MomentMedia extends StatefulWidget {
   /// Fired on double-tap (the card decides whether to actually like).
   final VoidCallback onDoubleTapLike;
 
+  /// Screen-reader description for the images.
+  final String semanticLabel;
+
   const _MomentMedia({
     required this.images,
     required this.onOpen,
     required this.onDoubleTapLike,
+    required this.semanticLabel,
   });
 
   @override
@@ -244,6 +284,7 @@ class _MomentMediaState extends State<_MomentMedia>
   }
 
   void _onDoubleTap() {
+    HapticFeedback.lightImpact();
     widget.onDoubleTapLike();
     _heart.forward(from: 0);
   }
@@ -254,6 +295,7 @@ class _MomentMediaState extends State<_MomentMedia>
       width: double.infinity,
       height: double.infinity,
       fit: BoxFit.cover,
+      semanticLabel: widget.semanticLabel,
     );
     return GestureDetector(
       // onTap + onDoubleTap on the SAME detector (the reliable combination):

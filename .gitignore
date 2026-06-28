@@ -23,3 +23,5 @@ pubspec.lock
 
 # Debug screenshots (لقطات أجهزة الاختبار)
 redmi_*.png
+_*.png
+flutter/utd_*.png
