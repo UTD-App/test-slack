@@ -5,12 +5,21 @@ namespace Utd\Gifts\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Cache;
 
 class Gift extends Model
 {
     /** Gift type ids (mirror Eagle): 1 normal … 6 lucky. */
     public const TYPE_NORMAL = 1;
     public const TYPE_LUCKY = 6;
+
+    /** Bust the cached image list whenever a gift changes. */
+    protected static function booted(): void
+    {
+        $forget = fn () => Cache::forget('gifts:images');
+        static::saved($forget);
+        static::deleted($forget);
+    }
 
     protected $fillable = [
         'name', 'e_name', 'type', 'gift_category_id', 'vip_level', 'price',
