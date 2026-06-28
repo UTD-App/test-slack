@@ -13,6 +13,7 @@ class GiftModel extends Gift {
     required super.showImg,
     required super.imageType,
     required super.vipLevel,
+    super.isPlay,
   });
 
   factory GiftModel.fromJson(Map<String, dynamic> json) {
@@ -26,6 +27,7 @@ class GiftModel extends Gift {
       showImg: json['show_img']?.toString() ?? '',
       imageType: json['image_type']?.toString() ?? '',
       vipLevel: _toInt(json['vip_level']),
+      isPlay: json['is_play'] == true || json['is_play'] == 1 || json['is_play'] == '1',
     );
   }
 }

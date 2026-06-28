@@ -123,6 +123,7 @@ class GiftPickerSheet extends StatelessWidget {
           giftImg: sentGift.img,
           giftShowImg: sentGift.showImg,
           giftImageType: sentGift.imageType,
+          giftIsPlay: sentGift.isPlay,
           giftPrice: sentGift.price,
           giftNum: giftNum,
           recipientIds: recipientIds,

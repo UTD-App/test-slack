@@ -12,6 +12,10 @@ class Gift extends Equatable {
   final String imageType;
   final int vipLevel;
 
+  /// "Broadcast animation" (Eagle's is_play): play the gift full-screen for the
+  /// whole room when true; a small banner only when false.
+  final bool isPlay;
+
   const Gift({
     required this.id,
     required this.name,
@@ -22,6 +26,7 @@ class Gift extends Equatable {
     required this.showImg,
     required this.imageType,
     required this.vipLevel,
+    this.isPlay = false,
   });
 
   @override

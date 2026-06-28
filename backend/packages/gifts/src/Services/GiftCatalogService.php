@@ -128,6 +128,7 @@ class GiftCatalogService
             'vip_level'         => $g->vip_level,
             'music_gift'        => $g->music_gift,
             'international_gift' => $g->international_gift,
+            'is_play'           => (bool) $g->is_play,
         ];
     }
 

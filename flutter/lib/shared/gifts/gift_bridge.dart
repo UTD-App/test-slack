@@ -27,6 +27,7 @@ typedef RoomGiftSentCallback = void Function({
   required String giftImg,
   required String giftShowImg,
   required String giftImageType,
+  required bool giftIsPlay,
   required int giftPrice,
   required int giftNum,
   required List<int> recipientIds,
