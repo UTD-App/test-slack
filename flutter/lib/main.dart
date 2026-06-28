@@ -8,6 +8,7 @@ import 'package:gifts/gifts.dart';
 import 'package:profile/profile.dart';
 import 'package:wallet/wallet.dart';
 import 'package:moment/moment.dart';
+import 'package:reels/reels.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -84,6 +85,7 @@ void main() async {
       ProfileFeature(),
       WalletFeature(),
       MomentFeature(),
+      ReelsFeature(),
       audioRoom,
     ];
   }

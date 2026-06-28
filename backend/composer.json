@@ -23,6 +23,7 @@
         "laravel/telescope": "^5.12",
         "laravel/tinker": "^2.5",
         "nwidart/laravel-modules": "8.0",
+        "pbmedia/laravel-ffmpeg": "^8.3",
         "predis/predis": "^2.2",
         "pusher/pusher-php-server": "*",
         "spatie/laravel-google-cloud-storage": "^2.2"

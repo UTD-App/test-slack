@@ -1,0 +1,28 @@
+{
+    "name": "utd/reels",
+    "description": "UTD Reels package — short-video feed (reels, likes, comments, views, categories, reports). Generates poster frames with FFMpeg. Gifting auto-enables when the Gifts package is installed.",
+    "type": "library",
+    "license": "proprietary",
+    "version": "1.0.0",
+    "require": {
+        "php": "^8.2",
+        "pbmedia/laravel-ffmpeg": "^8.3"
+    },
+    "autoload": {
+        "psr-4": {
+            "Utd\\Reels\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Utd\\Reels\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Utd\\Reels\\Providers\\ReelsServiceProvider"
+            ]
+        }
+    }
+}

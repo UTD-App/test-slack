@@ -51,6 +51,8 @@ dependencies:
     path: packages/wallet
   moment:
     path: packages/moment
+  reels:
+    path: packages/reels
   audio_room:
     path: packages/audio-room/flutter
   audio_room_charisma:
@@ -83,6 +85,10 @@ dependency_overrides:
   connectivity_plus: ^6.0.0
   flutter_bloc: ^8.1.6
   bloc: ^8.1.4
+  # audio_room's utd_audio_room_kit pins audio_session ^0.1.21 while reels asks
+  # for ^0.2.0; the 0.1.x API reels uses (AudioSession.instance / configure /
+  # AudioSessionConfiguration.music) is unchanged, so pin to the kit's range.
+  audio_session: ^0.1.21
   # Vendored stac fork lives inside utd_studio_sdk. pub honours overrides ONLY
   # from the entrypoint (this) pubspec — see packages/utd_studio_sdk/UPSTREAM.md.
   stac:
