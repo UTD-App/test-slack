@@ -12,6 +12,7 @@ import '../../utils/time.dart';
 import 'cached_image.dart';
 import 'expandable_text.dart';
 import 'moment_avatar.dart';
+import 'moment_share.dart';
 
 /// A single Facebook-style moment card.
 class MomentCard extends StatelessWidget {
@@ -174,6 +175,17 @@ class MomentCard extends StatelessWidget {
                     // Total gift COINS on this moment, K-formatted (e.g. 22.5K).
                     label: Text(compactNumber(moment.giftsCoins), style: const TextStyle(color: Colors.grey)),
                   ),
+                // Share the moment (text + first image) via the native sheet.
+                IconButton(
+                  onPressed: () => shareMoment(
+                    context,
+                    text: moment.description,
+                    imagePaths: moment.images,
+                  ),
+                  icon: const Icon(Icons.share_outlined, color: Colors.grey, size: 20),
+                  tooltip: context.tr(MomentStrings.share),
+                  visualDensity: VisualDensity.compact,
+                ),
                 const Spacer(),
                 TextButton(
                   onPressed: onOpenLikes,

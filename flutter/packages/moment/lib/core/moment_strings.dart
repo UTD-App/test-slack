@@ -36,6 +36,8 @@ class MomentStrings {
   static const user = 'moment.user';
   static const more = 'moment.more';
   static const less = 'moment.less';
+  static const share = 'moment.share';
+  static const newMoments = 'moment.new_moments';
 
   // reaction labels (the action-button word; emoji comes from reactions.dart)
   static const like = 'moment.like';
@@ -133,6 +135,8 @@ class MomentStrings {
           user: 'User',
           more: 'See more',
           less: 'See less',
+          share: 'Share',
+          newMoments: 'New moments',
           like: 'Like',
           reactLove: 'Love',
           reactHaha: 'Haha',
@@ -188,6 +192,8 @@ class MomentStrings {
           user: 'مستخدم',
           more: 'المزيد',
           less: 'أقل',
+          share: 'مشاركة',
+          newMoments: 'لحظات جديدة',
           like: 'إعجاب',
           reactLove: 'أحبّه',
           reactHaha: 'هههه',

@@ -23,6 +23,8 @@ dependencies:
   hive_flutter: ^1.1.0
   # Full-screen image gallery (pinch-zoom + swipe between a moment's images).
   photo_view: ^0.15.0
+  # Native share sheet (share a moment's text + image to other apps).
+  share_plus: ^10.0.0
   # Server-Driven UI: this package contributes Stac action parsers + data sources.
   stac: ^1.5.0
   flutter_bloc: ^8.1.6

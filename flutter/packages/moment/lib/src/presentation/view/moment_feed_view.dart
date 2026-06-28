@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:utd_app/localization/localization.dart';
 import 'package:utd_app/shared/core/toast_manager.dart';
+import 'package:utd_app/shared/media/app_cache_manager.dart';
 
 import '../../../core/moment_strings.dart';
+import '../../domain/entities/moment_entity.dart';
 import '../bloc/moment_feed/moment_feed_bloc.dart';
 import '../bloc/moment_feed/moment_feed_event.dart';
 import '../bloc/moment_feed/moment_feed_state.dart';
+import '../utils/media.dart';
 import 'widgets/confirm_dialog.dart';
 import 'widgets/moment_card.dart';
 import 'widgets/moment_comments_sheet.dart';
@@ -38,6 +41,13 @@ class _MomentFeedViewState extends State<MomentFeedView> {
   /// turning the random reorder into a smooth, intentional transition.
   int _generation = 0;
 
+  /// Moment ids seen so far — used to detect genuinely new posts on refresh.
+  final Set<int> _knownIds = {};
+
+  /// Shows the floating "new moments" pill when a refresh brought new posts
+  /// while the user was scrolled away from the top.
+  bool _showNewPill = false;
+
   @override
   void initState() {
     super.initState();
@@ -63,21 +73,63 @@ class _MomentFeedViewState extends State<MomentFeedView> {
     MomentGalleryViewer.open(context, images: images, initialIndex: index);
   }
 
+  /// Warm the shared on-disk cache with the first image of the next batch of
+  /// cards so scrolling stays smooth (capped to avoid a download stampede).
+  void _prefetch(List<MomentEntity> moments) {
+    for (final m in moments.take(12)) {
+      if (m.images.isEmpty) continue;
+      final url = resolveMediaUrl(m.images.first);
+      if (url.isNotEmpty) {
+        AppCacheManager.instance.prefetch(url); // fire-and-forget
+      }
+    }
+  }
+
+  /// Jump to the top and reveal the freshest feed (replays the entrance
+  /// cascade), dismissing the "new moments" pill.
+  void _revealNew() {
+    setState(() {
+      _generation++;
+      _showNewPill = false;
+    });
+    if (_scroll.hasClients) {
+      _scroll.animateTo(0,
+          duration: const Duration(milliseconds: 300), curve: Curves.easeOut);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<MomentFeedBloc, MomentFeedState>(
-      // A refresh just landed (loading → success): advance the generation so the
-      // new order animates in. Scroll back to the top so the cascade is seen.
+      // A refresh just landed (loading → success).
       listenWhen: (prev, curr) =>
           prev.status == FeedStatus.loading && curr.status == FeedStatus.success,
       listener: (context, state) {
-        setState(() => _generation++);
-        if (_scroll.hasClients) {
-          _scroll.animateTo(
-            0,
-            duration: const Duration(milliseconds: 250),
-            curve: Curves.easeOut,
-          );
+        // Warm upcoming images for smooth scrolling.
+        _prefetch(state.moments);
+
+        final ids = <int>{for (final m in state.moments) m.id};
+        final hasNew = ids.difference(_knownIds).isNotEmpty;
+        _knownIds
+          ..clear()
+          ..addAll(ids);
+
+        if (_scroll.hasClients && _scroll.offset > 300) {
+          // Scrolled down: don't yank the user up — just flag fresh moments.
+          if (hasNew) setState(() => _showNewPill = true);
+        } else {
+          // At/near the top: reveal the reshuffled feed with the entrance cascade.
+          setState(() {
+            _generation++;
+            _showNewPill = false;
+          });
+          if (_scroll.hasClients) {
+            _scroll.animateTo(
+              0,
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOut,
+            );
+          }
         }
       },
       builder: (context, state) {
@@ -93,7 +145,9 @@ class _MomentFeedViewState extends State<MomentFeedView> {
         if (state.moments.isEmpty) {
           return Center(child: Text(context.tr(MomentStrings.empty), style: const TextStyle(color: Colors.grey)));
         }
-        return RefreshIndicator(
+        return Stack(
+          children: [
+            RefreshIndicator(
           onRefresh: () async {
             context.read<MomentFeedBloc>().add(const FeedRefreshRequested());
             await context.read<MomentFeedBloc>().stream.firstWhere((s) => s.status != FeedStatus.loading);
@@ -156,6 +210,20 @@ class _MomentFeedViewState extends State<MomentFeedView> {
               );
             },
           ),
+            ),
+            if (_showNewPill)
+              Positioned(
+                top: 10,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: _NewMomentsPill(
+                    label: context.tr(MomentStrings.newMoments),
+                    onTap: _revealNew,
+                  ),
+                ),
+              ),
+          ],
         );
       },
     );
@@ -233,6 +301,55 @@ class _ErrorView extends StatelessWidget {
           const SizedBox(height: 12),
           FilledButton(onPressed: onRetry, child: Text(context.tr(MomentStrings.retry))),
         ],
+      ),
+    );
+  }
+}
+
+/// Floating "new moments ↑" chip shown when a refresh brings fresh posts while
+/// the user is scrolled down; tapping it jumps to the top and reveals them.
+class _NewMomentsPill extends StatelessWidget {
+  final String label;
+  final VoidCallback onTap;
+  const _NewMomentsPill({required this.label, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = Theme.of(context).colorScheme.primary;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(24),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+          decoration: BoxDecoration(
+            color: accent,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.25),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.arrow_upward, color: Colors.white, size: 16),
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
