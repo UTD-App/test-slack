@@ -15,14 +15,16 @@ use Utd\Reels\Http\Controllers\ReportController;
 /*
 | Dev seed route — fills the feed with demo reels (ReelsBulkSeeder, ~100).
 | GET /api/reals/seed runs freely in local/development/testing; in any other
-| environment it requires ?key= to match config('reels.seed_key') (and is
-| blocked when that key is unset). Registered BEFORE the resource group so it
-| isn't swallowed by GET reals/{real}. Convenience only — not a product route.
+| environment (e.g. prod) it requires ?key= to match the seed key. The key
+| comes from config('reels.seed_key') (override via REELS_SEED_KEY) and falls
+| back to a baked-in default so it works on a config-cached server WITHOUT an
+| env change: /api/reals/seed?key=utd-reels-seed. Registered BEFORE the resource
+| group so it isn't swallowed by GET reals/{real}. Convenience only.
 */
 Route::get('reals/seed', function (Request $request) {
-    $key = config('reels.seed_key');
+    $key = config('reels.seed_key') ?: 'utd-reels-seed';
     $allowed = app()->environment(['local', 'development', 'testing'])
-        || ($key && hash_equals((string) $key, (string) $request->query('key', '')));
+        || hash_equals((string) $key, (string) $request->query('key', ''));
 
     abort_unless($allowed, 403, 'Reels seeding is disabled in this environment.');
 
