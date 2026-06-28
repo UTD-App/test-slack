@@ -146,6 +146,14 @@ class _AppShellState extends State<AppShell> {
   /// marks the tab `stac` would show our placeholder instead of the real screen.)
   static const Map<String, String> _nativeScreenFeatures = {
     'audio': 'com.utd.audio_room',
+    // The moments feed (tab `screen: "feed"`) is a full-functionality screen —
+    // reactions, comment/likes sheets, gift sending, image preview, infinite
+    // scroll, pull-to-refresh — that the Studio `feed` screen's `utdList`
+    // (source `moment.feed`) can't host (no native data source/actions are
+    // registered for it → empty/blank body). Render the package's native
+    // MomentFeedPage instead; falls back to the published Stac screen when the
+    // Moment package isn't installed/enabled.
+    'feed': 'com.utd.moment',
   };
 
   Widget _tabBody(NavTab tab) {
