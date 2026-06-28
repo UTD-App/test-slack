@@ -18,10 +18,19 @@ return [
 
     /*
     | Fraction of the gift value the receiver earns (1.0 = full value).
-    | Platform / room-owner / agency splits are layered later by listeners of
-    | the App\Events\Gifts\GiftSent event — not here.
+    | Platform / agency splits are layered later by listeners of the
+    | App\Events\Gifts\GiftSent event — not here.
     */
     'receiver_rate' => 1.0,
+
+    /*
+    | Room-owner cut (Eagle's roomowner_obtain): fraction of a room gift's value
+    | credited to the room owner (as the earn currency) when a gift is sent with
+    | a `roomowner_id` context. Default 3%. Admin-tunable via the gift_settings
+    | key `room_owner_rate` (read through Support\GiftSettings). Applied by
+    | Utd\Gifts\Listeners\CreditRoomOwnerOnGiftSent.
+    */
+    'room_owner_rate' => 0.03,
 
     /*
     | Lucky gifts (type = lucky) require the lucky-gift plugin to bind

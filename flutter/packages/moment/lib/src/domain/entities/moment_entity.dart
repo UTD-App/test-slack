@@ -92,6 +92,19 @@ class MomentEntity extends Equatable {
     );
   }
 
+  // Every field the UI mutates optimistically must be here, or Equatable treats
+  // the copyWith result as unchanged and the feed won't rebuild. This is why a
+  // second gift used to not update the coins counter (giftsCount/giftsCoins were
+  // missing): the bloc emitted a "new" state Equatable considered equal.
   @override
-  List<Object?> get props => [id, likeNum, commentNum, isLike, myReaction];
+  List<Object?> get props => [
+        id,
+        likeNum,
+        commentNum,
+        isLike,
+        myReaction,
+        giftsCount,
+        giftsCoins,
+        reactionsBreakdown,
+      ];
 }

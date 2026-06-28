@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:utd_app/shared/gifts/gift_bridge.dart';
 
 import '../../domain/entities/gift.dart';
 import '../../domain/entities/gift_category.dart';
@@ -17,6 +18,11 @@ class GiftPickerState extends Equatable {
   final bool sending;
   final String? error;
 
+  /// Room gifting only: the seats the user can gift, and the chosen subset.
+  /// Empty when not in a room (moment/reel: single implicit receiver).
+  final List<GiftRecipient> recipients;
+  final Set<int> selectedRecipientIds;
+
   const GiftPickerState({
     this.status = GiftPickerStatus.initial,
     this.categories = const [],
@@ -26,6 +32,8 @@ class GiftPickerState extends Equatable {
     this.quantity = 1,
     this.sending = false,
     this.error,
+    this.recipients = const [],
+    this.selectedRecipientIds = const {},
   });
 
   GiftPickerState copyWith({
@@ -38,6 +46,8 @@ class GiftPickerState extends Equatable {
     int? quantity,
     bool? sending,
     String? error,
+    List<GiftRecipient>? recipients,
+    Set<int>? selectedRecipientIds,
   }) {
     return GiftPickerState(
       status: status ?? this.status,
@@ -48,18 +58,34 @@ class GiftPickerState extends Equatable {
       quantity: quantity ?? this.quantity,
       sending: sending ?? this.sending,
       error: error,
+      recipients: recipients ?? this.recipients,
+      selectedRecipientIds: selectedRecipientIds ?? this.selectedRecipientIds,
     );
   }
 
   @override
-  List<Object?> get props =>
-      [status, categories, gifts, selectedCategoryId, selectedGiftId, quantity, sending, error];
+  List<Object?> get props => [
+        status, categories, gifts, selectedCategoryId, selectedGiftId,
+        quantity, sending, error, recipients, selectedRecipientIds,
+      ];
 }
 
 class GiftPickerCubit extends Cubit<GiftPickerState> {
   final GiftRepository repository;
 
-  GiftPickerCubit(this.repository) : super(const GiftPickerState());
+  /// Room gifting context (null for moment/reel sends).
+  final int? roomId;
+  final int? ownerId;
+
+  GiftPickerCubit(
+    this.repository, {
+    this.roomId,
+    this.ownerId,
+    List<GiftRecipient> recipients = const [],
+  }) : super(GiftPickerState(recipients: recipients));
+
+  /// Whether this picker is gifting inside a room (shows the recipient selector).
+  bool get isRoom => roomId != null && state.recipients.isNotEmpty;
 
   Future<void> load() async {
     emit(state.copyWith(status: GiftPickerStatus.loading, error: null));
@@ -93,18 +119,35 @@ class GiftPickerCubit extends Cubit<GiftPickerState> {
 
   void setQuantity(int quantity) => emit(state.copyWith(quantity: quantity.clamp(1, 9999)));
 
-  /// Returns true on success.
+  /// Toggle a room recipient (seat) in/out of the selected set.
+  void toggleRecipient(int userId) {
+    final next = Set<int>.from(state.selectedRecipientIds);
+    next.contains(userId) ? next.remove(userId) : next.add(userId);
+    emit(state.copyWith(selectedRecipientIds: next));
+  }
+
+  /// Returns true on success. In a room it sends to the selected seats via
+  /// /gifts/send; otherwise it posts to the host context endpoint (moment/reel).
   Future<bool> send({required String contextType, required int contextId}) async {
     final giftId = state.selectedGiftId;
     if (giftId == null || state.sending) return false;
+    if (isRoom && state.selectedRecipientIds.isEmpty) return false;
 
     emit(state.copyWith(sending: true, error: null));
-    final res = await repository.sendInContext(
-      contextType: contextType,
-      contextId: contextId,
-      giftId: giftId,
-      quantity: state.quantity,
-    );
+    final res = isRoom
+        ? await repository.sendInRoom(
+            roomId: roomId!,
+            ownerId: ownerId ?? 0,
+            giftId: giftId,
+            quantity: state.quantity,
+            recipientIds: state.selectedRecipientIds.toList(),
+          )
+        : await repository.sendInContext(
+            contextType: contextType,
+            contextId: contextId,
+            giftId: giftId,
+            quantity: state.quantity,
+          );
     emit(state.copyWith(sending: false));
 
     return res.isSuccess && (res.dataOrNull ?? false);

@@ -43,4 +43,21 @@ class GiftRepositoryImpl implements GiftRepository {
       quantity: quantity,
     );
   }
+
+  @override
+  Future<Result<bool>> sendInRoom({
+    required int roomId,
+    required int ownerId,
+    required int giftId,
+    required int quantity,
+    required List<int> recipientIds,
+  }) {
+    return api.sendInRoom(
+      roomId: roomId,
+      ownerId: ownerId,
+      giftId: giftId,
+      quantity: quantity,
+      recipientIds: recipientIds,
+    );
+  }
 }

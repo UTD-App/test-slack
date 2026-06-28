@@ -128,6 +128,47 @@ class GiftSendApiTest extends TestCase
         $this->assertDatabaseCount('gift_logs', 0);
     }
 
+    public function test_send_endpoint_credits_room_owner_their_cut(): void
+    {
+        $sender   = User::factory()->create();
+        $receiver = User::factory()->create();
+        $owner    = User::factory()->create();
+        Wallet::credit($sender, 'coins', 1000, 'admin_charge');
+        $gift = $this->gift(100);
+
+        $this->authed($sender)->postJson('/api/gifts/send', [
+            'id'       => $gift->id,
+            'toUid'    => (string) $receiver->id,
+            'num'      => 2,
+            'room_id'  => 42,
+            'owner_id' => $owner->id,
+        ])->assertStatus(200)->assertJsonPath('status', true);
+
+        // value = 100 * 2 = 200; owner cut = 3% = 6 diamonds.
+        $this->assertEquals(6.0, Wallet::getBalance($owner, 'diamonds'));
+        // receiver still earns the full value; sender pays the gift price only.
+        $this->assertEquals(200.0, Wallet::getBalance($receiver, 'diamonds'));
+        $this->assertEquals(800.0, Wallet::getBalance($sender, 'coins'));
+    }
+
+    public function test_non_room_send_does_not_credit_any_owner(): void
+    {
+        $sender   = User::factory()->create();
+        $receiver = User::factory()->create();
+        Wallet::credit($sender, 'coins', 1000, 'admin_charge');
+        $gift = $this->gift(100);
+
+        // No owner_id → no room-owner cut applied.
+        $this->authed($sender)->postJson('/api/gifts/send', [
+            'id'    => $gift->id,
+            'toUid' => (string) $receiver->id,
+            'num'   => 1,
+        ])->assertStatus(200);
+
+        $this->assertEquals(100.0, Wallet::getBalance($receiver, 'diamonds'));
+        $this->assertEquals(900.0, Wallet::getBalance($sender, 'coins'));
+    }
+
     private function authed(User $user): self
     {
         return $this->withHeader('Authorization', 'Bearer ' . $user->createToken('t')->plainTextToken);

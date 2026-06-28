@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:utd_app/localization/localization.dart';
+import 'package:utd_app/shared/gifts/gift_bridge.dart';
 import 'package:utd_app/shared/media/dynamic_image.dart';
 
 import '../../../core/gifts_strings.dart';
@@ -11,6 +12,10 @@ import 'gift_play_overlay.dart';
 
 /// Opens the gift picker as a modal bottom sheet for a given host context
 /// (e.g. ('moment', 42)). Called by the GiftBridge launcher.
+///
+/// Room gifting passes [roomId]/[ownerId]/[recipients]: a recipient selector then
+/// appears and the send goes to the chosen seats via /gifts/send. When
+/// [recipients] is null/empty it behaves as before (single implicit receiver).
 Future<void> showGiftPicker(
   BuildContext context, {
   required GiftRepository repository,
@@ -18,6 +23,9 @@ Future<void> showGiftPicker(
   required int contextId,
   String? receiverName,
   void Function(int coins)? onSent,
+  int? roomId,
+  int? ownerId,
+  List<GiftRecipient>? recipients,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -27,7 +35,12 @@ Future<void> showGiftPicker(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
     builder: (_) => BlocProvider(
-      create: (_) => GiftPickerCubit(repository)..load(),
+      create: (_) => GiftPickerCubit(
+        repository,
+        roomId: roomId,
+        ownerId: ownerId,
+        recipients: recipients ?? const [],
+      )..load(),
       child: GiftPickerSheet(
         contextType: contextType,
         contextId: contextId,
@@ -75,9 +88,11 @@ class GiftPickerSheet extends StatelessWidget {
     final failedMsg = context.tr(GiftsStrings.failed);
 
     // Capture the gift + quantity BEFORE sending so we can report the coins spent
-    // (unit price × quantity) to the host for an instant UI update.
+    // to the host for an instant UI update. In a room the sender pays for EACH
+    // selected recipient (price × quantity × recipients).
     final sentGift = _selectedGift(cubit.state);
-    final coins = ((sentGift?.price ?? 0) * cubit.state.quantity).round();
+    final recipientCount = cubit.isRoom ? cubit.state.selectedRecipientIds.length : 1;
+    final coins = ((sentGift?.price ?? 0) * cubit.state.quantity * recipientCount).round();
 
     final ok = await cubit.send(contextType: contextType, contextId: contextId);
     if (ok) {
@@ -130,6 +145,17 @@ class GiftPickerSheet extends StatelessWidget {
                   ],
                 ),
 
+                // Recipients selector (room gifting only) — choose who on the
+                // seats receives the gift; sends to all selected.
+                if (state.recipients.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  _RecipientsRow(
+                    recipients: state.recipients,
+                    selectedIds: state.selectedRecipientIds,
+                    onToggle: (id) => context.read<GiftPickerCubit>().toggleRecipient(id),
+                  ),
+                ],
+
                 // Category tabs
                 if (state.categories.isNotEmpty)
                   SizedBox(
@@ -160,11 +186,14 @@ class GiftPickerSheet extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
 
-                // Send (full width, shows the selected quantity)
+                // Send (full width, shows the selected quantity). In a room the
+                // user must also pick at least one recipient.
                 SizedBox(
                   width: double.infinity,
                   child: FilledButton.icon(
-                    onPressed: (state.selectedGiftId == null || state.sending)
+                    onPressed: (state.selectedGiftId == null ||
+                            state.sending ||
+                            (state.recipients.isNotEmpty && state.selectedRecipientIds.isEmpty))
                         ? null
                         : () => _send(context),
                     icon: state.sending
@@ -357,5 +386,91 @@ class _QuantityPresets extends StatelessWidget {
       ),
     );
     if (result != null) onChanged(result);
+  }
+}
+
+/// Horizontal avatar selector for room gifting — tap to toggle who receives the
+/// gift. Multiple seats can be selected; the send goes to all of them.
+class _RecipientsRow extends StatelessWidget {
+  final List<GiftRecipient> recipients;
+  final Set<int> selectedIds;
+  final ValueChanged<int> onToggle;
+
+  const _RecipientsRow({
+    required this.recipients,
+    required this.selectedIds,
+    required this.onToggle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+
+    return SizedBox(
+      height: 66,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        itemCount: recipients.length,
+        separatorBuilder: (_, __) => const SizedBox(width: 12),
+        itemBuilder: (context, i) {
+          final r = recipients[i];
+          final selected = selectedIds.contains(r.userId);
+          final hasAvatar = r.avatar != null && r.avatar!.startsWith('http');
+
+          return GestureDetector(
+            onTap: () => onToggle(r.userId),
+            child: SizedBox(
+              width: 50,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Stack(
+                    children: [
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: selected ? colors.primary : colors.outlineVariant,
+                            width: 2,
+                          ),
+                        ),
+                        child: CircleAvatar(
+                          radius: 20,
+                          backgroundColor: colors.surfaceContainerHighest,
+                          backgroundImage: hasAvatar ? NetworkImage(r.avatar!) : null,
+                          child: hasAvatar
+                              ? null
+                              : Text(
+                                  r.name.isNotEmpty ? r.name[0].toUpperCase() : '?',
+                                  style: const TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                        ),
+                      ),
+                      if (selected)
+                        Positioned(
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            padding: const EdgeInsets.all(1),
+                            decoration: BoxDecoration(color: colors.primary, shape: BoxShape.circle),
+                            child: Icon(Icons.check, size: 12, color: colors.onPrimary),
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    r.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 10),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
   }
 }

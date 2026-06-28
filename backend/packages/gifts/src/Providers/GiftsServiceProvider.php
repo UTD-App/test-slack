@@ -4,10 +4,13 @@ namespace Utd\Gifts\Providers;
 
 use App\Contracts\GiftDirectory;
 use App\Contracts\GiftSender;
+use App\Events\Gifts\GiftSent;
 use App\Services\PackageRegistry;
 use App\Services\ProfileContributorRegistry;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use Utd\Gifts\Listeners\CreditRoomOwnerOnGiftSent;
 use Utd\Gifts\Profile\GiftsProfileContributor;
 use Utd\Gifts\Services\GiftDirectoryService;
 use Utd\Gifts\Services\GiftSendingService;
@@ -51,6 +54,10 @@ class GiftsServiceProvider extends ServiceProvider
         $this->loadRoutes();
         $this->registerProfileSection();
         $this->registerProfileTabs();
+
+        // Credit the room owner their cut on a room gift (Eagle parity). Lives
+        // here until a dedicated Room/Agency package takes the GiftSent split over.
+        Event::listen(GiftSent::class, CreditRoomOwnerOnGiftSent::class);
 
         if ($this->app->runningInConsole()) {
             $this->commands([\Utd\Gifts\Console\Commands\BackfillGiftExp::class]);

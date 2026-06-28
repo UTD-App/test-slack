@@ -114,4 +114,27 @@ class GiftApiService extends BaseApiService {
       fromJson: _status,
     );
   }
+
+  /// Send a gift to one or many room recipients (seats) via the package's own
+  /// POST /gifts/send (Eagle's gift_queue_cp). [recipientIds] become the
+  /// comma-separated `toUid`; [ownerId] (the room owner) drives the owner cut.
+  Future<Result<bool>> sendInRoom({
+    required int roomId,
+    required int ownerId,
+    required int giftId,
+    required int quantity,
+    required List<int> recipientIds,
+  }) {
+    return post<bool>(
+      '/gifts/send',
+      data: {
+        'id': giftId,
+        'toUid': recipientIds.join(','),
+        'num': quantity,
+        'room_id': roomId,
+        if (ownerId > 0) 'owner_id': ownerId,
+      },
+      fromJson: _status,
+    );
+  }
 }

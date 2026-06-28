@@ -38,8 +38,18 @@ class GiftsFeature extends AppFeature {
     // a Wallet package is installed (next launch). Errors default to hidden.
     if (!await _api.walletAvailable()) return;
 
-    // Wire the host seam: now any feature can open the picker.
-    GiftBridge.instance.register((context, {required contextType, required contextId, receiverName, void Function(int coins)? onSent}) {
+    // Wire the host seam: now any feature can open the picker. Room gifting
+    // passes roomId/ownerId/recipients; moment/reel leave them null.
+    GiftBridge.instance.register((
+      context, {
+      required contextType,
+      required contextId,
+      receiverName,
+      void Function(int coins)? onSent,
+      roomId,
+      ownerId,
+      recipients,
+    }) {
       showGiftPicker(
         context,
         repository: _repository,
@@ -47,6 +57,9 @@ class GiftsFeature extends AppFeature {
         contextId: contextId,
         receiverName: receiverName,
         onSent: onSent,
+        roomId: roomId,
+        ownerId: ownerId,
+        recipients: recipients,
       );
     });
   }

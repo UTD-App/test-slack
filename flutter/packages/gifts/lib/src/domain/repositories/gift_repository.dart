@@ -19,4 +19,13 @@ abstract class GiftRepository {
     required int giftId,
     required int quantity,
   });
+
+  /// Send a gift to one or many room recipients (seats) via POST /gifts/send.
+  Future<Result<bool>> sendInRoom({
+    required int roomId,
+    required int ownerId,
+    required int giftId,
+    required int quantity,
+    required List<int> recipientIds,
+  });
 }
