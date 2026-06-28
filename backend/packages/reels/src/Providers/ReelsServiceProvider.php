@@ -113,6 +113,14 @@ class ReelsServiceProvider extends ServiceProvider
             'route'    => '/reels/:reel_id',
         ]);
 
+        $types->register('reels.gift', [
+            'category' => 'reels',
+            'body_key' => 'reels::notifications.gifted',
+            'channels' => ['database', 'push'],
+            'icon'     => 'gift',
+            'route'    => '/reels/:reel_id',
+        ]);
+
         // Admin/dashboard audience (Notifier::toAdmins) — moderation queue.
         $types->register('reels.report', [
             'category' => 'report',

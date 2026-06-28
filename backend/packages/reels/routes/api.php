@@ -44,11 +44,14 @@ Route::get('reals/seed', function (Request $request) {
 | Reels API routes.
 | `package.enabled:reels` returns 403 while the package is disabled in
 | admin/packages (replaces Eagle's appFeatureEnable:reel).
+| `throttle:300,1` = a per-user abuse ceiling (300 req/min ≈ 5/s) — far above
+| normal scroll/view/interaction traffic, but blocks scripted floods (mass
+| like/comment/view). Tune via the number if a power-user ever hits 429.
 | NOTE(gap): other Eagle middleware not in the Base yet:
 |   checkLatestToken, generalBan, userBan, ban.user.actions:reals,
 |   update.last.seen — see NOTES_GAPS.md → "middleware".
 */
-Route::middleware(['auth:sanctum', 'package.enabled:reels'])->group(function () {
+Route::middleware(['auth:sanctum', 'package.enabled:reels', 'throttle:300,1'])->group(function () {
     // Specific routes must precede the apiResource so they aren't swallowed by {real}.
     Route::get('reals/user/{user_id?}', [RealsController::class, 'getUserReals']);
     Route::get('reals/my-reals', [RealsController::class, 'getMyReals']);
