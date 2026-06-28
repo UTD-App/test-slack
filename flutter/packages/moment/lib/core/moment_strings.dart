@@ -34,6 +34,8 @@ class MomentStrings {
   static const replyingTo = 'moment.replying_to';
   static const noLikes = 'moment.no_likes';
   static const user = 'moment.user';
+  static const more = 'moment.more';
+  static const less = 'moment.less';
 
   // reaction labels (the action-button word; emoji comes from reactions.dart)
   static const like = 'moment.like';
@@ -129,6 +131,8 @@ class MomentStrings {
           replyingTo: 'Replying to',
           noLikes: 'No likes yet',
           user: 'User',
+          more: 'See more',
+          less: 'See less',
           like: 'Like',
           reactLove: 'Love',
           reactHaha: 'Haha',
@@ -182,6 +186,8 @@ class MomentStrings {
           replyingTo: 'الرد على',
           noLikes: 'لا توجد إعجابات بعد',
           user: 'مستخدم',
+          more: 'المزيد',
+          less: 'أقل',
           like: 'إعجاب',
           reactLove: 'أحبّه',
           reactHaha: 'هههه',

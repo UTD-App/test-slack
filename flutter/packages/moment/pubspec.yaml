@@ -21,6 +21,8 @@ dependencies:
   # offline) + Hive box for the cache-first feed (instant/offline first paint).
   cached_network_image: ^3.3.1
   hive_flutter: ^1.1.0
+  # Full-screen image gallery (pinch-zoom + swipe between a moment's images).
+  photo_view: ^0.15.0
   # Server-Driven UI: this package contributes Stac action parsers + data sources.
   stac: ^1.5.0
   flutter_bloc: ^8.1.6

@@ -10,6 +10,7 @@ import '../../utils/number_format.dart';
 import '../../utils/reactions.dart';
 import '../../utils/time.dart';
 import 'cached_image.dart';
+import 'expandable_text.dart';
 import 'moment_avatar.dart';
 
 /// A single Facebook-style moment card.
@@ -23,7 +24,9 @@ class MomentCard extends StatelessWidget {
   final VoidCallback onOpenComments;
   final VoidCallback onReport;
   final VoidCallback onDelete;
-  final void Function(String url) onTapImage;
+
+  /// Opens the full-screen gallery at [index] for the moment's resolved [images].
+  final void Function(List<String> images, int index) onTapImage;
 
   /// Called after a gift is successfully sent on this moment with the total COINS
   /// sent, so the parent can bump the moment's gift total without reloading the
@@ -111,15 +114,26 @@ class MomentCard extends StatelessWidget {
             ),
           ),
 
-          // text
+          // text (clamps long posts with a "see more" toggle)
           if (moment.description.isNotEmpty)
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 2, 14, 10),
-              child: Text(moment.description, style: theme.textTheme.bodyLarge),
+              child: ExpandableText(moment.description, style: theme.textTheme.bodyLarge),
             ),
 
-          // images
-          if (moment.images.isNotEmpty) _MomentImages(images: moment.images, onTap: onTapImage),
+          // media collage (1/2/3/4+ layouts) with double-tap-to-like
+          if (moment.images.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: _MomentMedia(
+                images: moment.images,
+                onOpen: onTapImage,
+                onDoubleTapLike: () {
+                  // Double-tap always "likes" (never un-likes), Instagram-style.
+                  if (!moment.isLike) onReact('like');
+                },
+              ),
+            ),
 
           // actions — the original compact single row (reaction / comment / gift,
           // then "who liked" pushed to the end).
@@ -189,41 +203,186 @@ class MomentCard extends StatelessWidget {
   }
 }
 
-class _MomentImages extends StatelessWidget {
+/// The post's media: a smart collage (1 / 2 / 3 / 4+ layouts, with a "+N"
+/// overlay past four) that double-taps to like (with a heart burst) and opens
+/// the full-screen gallery on a single tap.
+class _MomentMedia extends StatefulWidget {
   final List<String> images;
-  final void Function(String url) onTap;
-  const _MomentImages({required this.images, required this.onTap});
+
+  /// Opens the gallery at [index] for the resolved image URLs.
+  final void Function(List<String> images, int index) onOpen;
+
+  /// Fired on double-tap (the card decides whether to actually like).
+  final VoidCallback onDoubleTapLike;
+
+  const _MomentMedia({
+    required this.images,
+    required this.onOpen,
+    required this.onDoubleTapLike,
+  });
+
+  @override
+  State<_MomentMedia> createState() => _MomentMediaState();
+}
+
+class _MomentMediaState extends State<_MomentMedia>
+    with SingleTickerProviderStateMixin {
+  static const double _gap = 2;
+
+  late final List<String> _urls =
+      widget.images.map(resolveMediaUrl).toList(growable: false);
+
+  late final AnimationController _heart = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 700),
+  );
+
+  @override
+  void dispose() {
+    _heart.dispose();
+    super.dispose();
+  }
+
+  void _onDoubleTap() {
+    widget.onDoubleTapLike();
+    _heart.forward(from: 0);
+  }
+
+  Widget _cell(int i, {int extra = 0}) {
+    final image = MomentNetworkImage(
+      url: _urls[i],
+      width: double.infinity,
+      height: double.infinity,
+      fit: BoxFit.cover,
+    );
+    return GestureDetector(
+      // onTap + onDoubleTap on the SAME detector (the reliable combination):
+      // a single tap opens the gallery, a quick double-tap likes.
+      onTap: () => widget.onOpen(_urls, i),
+      onDoubleTap: _onDoubleTap,
+      child: extra <= 0
+          ? image
+          : Stack(
+              fit: StackFit.expand,
+              children: [
+                image,
+                Container(
+                  color: Colors.black.withValues(alpha: 0.45),
+                  alignment: Alignment.center,
+                  child: Text(
+                    '+$extra',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+    );
+  }
+
+  Widget _collage() {
+    final n = _urls.length;
+    if (n == 1) {
+      return AspectRatio(aspectRatio: 16 / 10, child: _cell(0));
+    }
+    if (n == 2) {
+      return SizedBox(
+        height: 220,
+        child: Row(children: [
+          Expanded(child: _cell(0)),
+          const SizedBox(width: _gap),
+          Expanded(child: _cell(1)),
+        ]),
+      );
+    }
+    if (n == 3) {
+      return SizedBox(
+        height: 240,
+        child: Row(children: [
+          Expanded(flex: 2, child: _cell(0)),
+          const SizedBox(width: _gap),
+          Expanded(
+            child: Column(children: [
+              Expanded(child: _cell(1)),
+              const SizedBox(height: _gap),
+              Expanded(child: _cell(2)),
+            ]),
+          ),
+        ]),
+      );
+    }
+    // 4 or more: 2×2 grid, "+N" overlaid on the last tile.
+    return SizedBox(
+      height: 300,
+      child: Column(children: [
+        Expanded(
+          child: Row(children: [
+            Expanded(child: _cell(0)),
+            const SizedBox(width: _gap),
+            Expanded(child: _cell(1)),
+          ]),
+        ),
+        const SizedBox(height: _gap),
+        Expanded(
+          child: Row(children: [
+            Expanded(child: _cell(2)),
+            const SizedBox(width: _gap),
+            Expanded(child: _cell(3, extra: n - 4)),
+          ]),
+        ),
+      ]),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    Widget img(String path, {double? height}) {
-      final url = resolveMediaUrl(path);
-      return GestureDetector(
-        onTap: () => onTap(url),
-        child: MomentNetworkImage(
-          url: url,
-          height: height,
-          width: double.infinity,
-          fit: BoxFit.cover,
-        ),
-      );
-    }
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(12),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          _collage(),
+          // Overlay must never intercept taps meant for the images below.
+          IgnorePointer(child: _HeartBurst(controller: _heart)),
+        ],
+      ),
+    );
+  }
+}
 
-    if (images.length == 1) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: img(images.first, height: 300),
-      );
-    }
+/// The white heart that pops and fades on a double-tap-to-like.
+class _HeartBurst extends StatelessWidget {
+  final AnimationController controller;
+  const _HeartBurst({required this.controller});
 
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 2,
-      crossAxisSpacing: 2,
-      padding: const EdgeInsets.symmetric(horizontal: 2),
-      children: [for (final p in images) ClipRRect(child: img(p, height: 160))],
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, _) {
+        final v = controller.value;
+        if (v == 0) return const SizedBox.shrink();
+        // Fade in fast, hold, then fade out; scale with a soft overshoot.
+        final opacity = v < 0.15
+            ? v / 0.15
+            : (v > 0.6 ? (1 - (v - 0.6) / 0.4).clamp(0.0, 1.0) : 1.0);
+        final scale = 0.5 + 0.7 * Curves.easeOutBack.transform((v * 1.5).clamp(0.0, 1.0));
+        return Opacity(
+          opacity: opacity.clamp(0.0, 1.0),
+          child: Transform.scale(
+            scale: scale,
+            child: const Icon(
+              Icons.favorite,
+              color: Colors.white,
+              size: 96,
+              shadows: [Shadow(color: Colors.black45, blurRadius: 12)],
+            ),
+          ),
+        );
+      },
     );
   }
 }

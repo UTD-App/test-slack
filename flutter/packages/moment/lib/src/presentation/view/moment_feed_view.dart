@@ -7,10 +7,11 @@ import '../../../core/moment_strings.dart';
 import '../bloc/moment_feed/moment_feed_bloc.dart';
 import '../bloc/moment_feed/moment_feed_event.dart';
 import '../bloc/moment_feed/moment_feed_state.dart';
-import 'widgets/cached_image.dart';
 import 'widgets/confirm_dialog.dart';
 import 'widgets/moment_card.dart';
 import 'widgets/moment_comments_sheet.dart';
+import 'widgets/moment_feed_skeleton.dart';
+import 'widgets/moment_gallery_viewer.dart';
 import 'widgets/moment_likes_sheet.dart';
 import 'widgets/report_moment_dialog.dart';
 
@@ -58,20 +59,8 @@ class _MomentFeedViewState extends State<MomentFeedView> {
     super.dispose();
   }
 
-  void _openImage(String url) {
-    showDialog(
-      context: context,
-      builder: (_) => GestureDetector(
-        onTap: () => Navigator.pop(context),
-        child: Dialog(
-          backgroundColor: Colors.black,
-          insetPadding: EdgeInsets.zero,
-          child: InteractiveViewer(
-            child: Center(child: MomentNetworkImage(url: url, fit: BoxFit.contain)),
-          ),
-        ),
-      ),
-    );
+  void _openGallery(List<String> images, int index) {
+    MomentGalleryViewer.open(context, images: images, initialIndex: index);
   }
 
   @override
@@ -93,7 +82,7 @@ class _MomentFeedViewState extends State<MomentFeedView> {
       },
       builder: (context, state) {
         if (state.status == FeedStatus.loading && state.moments.isEmpty) {
-          return const Center(child: CircularProgressIndicator());
+          return const MomentFeedSkeleton();
         }
         if (state.status == FeedStatus.failure && state.moments.isEmpty) {
           return _ErrorView(
@@ -121,7 +110,8 @@ class _MomentFeedViewState extends State<MomentFeedView> {
                 );
               }
               final moment = state.moments[i];
-              return _FeedEntrance(
+              return RepaintBoundary(
+                child: _FeedEntrance(
                 // Re-keyed per generation → the card re-mounts and replays its
                 // entrance whenever the feed is reshuffled by a refresh.
                 key: ValueKey('$_generation-${moment.id}'),
@@ -160,8 +150,9 @@ class _MomentFeedViewState extends State<MomentFeedView> {
                     ToastManager.showToast(context, message: context.tr(MomentStrings.deleted));
                   }
                 },
-                onTapImage: _openImage,
+                onTapImage: _openGallery,
                 ),
+              ),
               );
             },
           ),
