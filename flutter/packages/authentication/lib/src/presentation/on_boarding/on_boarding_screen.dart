@@ -63,25 +63,33 @@ class OnBoardingScreenState extends State<OnBoardingScreen> {
             right: 0,
             left: 0,
             bottom: 0,
-            child: PageView.builder(
-              itemCount: 3,
-              onPageChanged: (index) {
-                setState(() {
-                  currentPage = index;
-                });
-              },
-              itemBuilder: (context, index) {
-                return _OnBoardingBody(
-                  image: images[index],
-                  title: titles[index],
-                  subTitle: subTitles[index],
-                  index: index,
-                  pageController: pageController,
-                );
-              },
-              pageSnapping: true,
-              scrollDirection: Axis.horizontal,
-              controller: pageController,
+            // Force LTR for the carousel mechanics so the PageView index, the
+            // page indicator and the (currentPage-driven) button stay in sync
+            // under an RTL (Arabic) locale — otherwise RTL reverses the visual
+            // page vs the controller index and the final "Get Started" branch
+            // is never reached (the button stays on "Next" forever).
+            child: Directionality(
+              textDirection: TextDirection.ltr,
+              child: PageView.builder(
+                itemCount: 3,
+                onPageChanged: (index) {
+                  setState(() {
+                    currentPage = index;
+                  });
+                },
+                itemBuilder: (context, index) {
+                  return _OnBoardingBody(
+                    image: images[index],
+                    title: titles[index],
+                    subTitle: subTitles[index],
+                    index: index,
+                    pageController: pageController,
+                  );
+                },
+                pageSnapping: true,
+                scrollDirection: Axis.horizontal,
+                controller: pageController,
+              ),
             ),
           ),
           Positioned(
