@@ -14,27 +14,32 @@ use Utd\Reels\Entities\ReportReals;
 /**
  * NOTE(gap): Eagle's feed mixed interest-matched, not-interested and liked reels
  * with per-user random seeds (`real_type`) and Follow/Interest scopes. Those live
- * in packages/columns that aren't in the Base, so the feed here is simplified to
- * a chronological/seeded-shuffle list (mirrors the Moment package). See NOTES_GAPS.md.
+ * in packages/columns that aren't in the Base, so the feed here is a per-user
+ * load-spread feed over a shared recent deck (mirrors the Moment package). See
+ * NOTES_GAPS.md (next step: engagement ranking + seen-exclusion).
  *
- * Performance: like/comment/view counts are read from the denormalized
- * like_num/comment_num/view_num columns (maintained by the like/comment/view
- * services) — NOT per-row withCount() subqueries. The seeded feed shares one
- * briefly-cached recent window across all users and only hydrates the current
- * page's 10 reels, so 5k–10k concurrent viewers don't each re-read+sort 150 rows.
+ * Performance — two layers:
+ *  1) Counts come from the denormalized like_num/comment_num/view_num columns
+ *     (maintained by the like/comment/view services) — NOT withCount() subqueries.
+ *  2) Load spreading: one shared, briefly-cached "deck" of recent reel ids is
+ *     built once per TTL; each user is rotated to a DIFFERENT start index in it,
+ *     so N users entering at once read N different windows of the catalog instead
+ *     of all hammering the newest few (their rows + counters + video files). The
+ *     per-request cost is O(1) offset + O(page) slice (no per-user shuffle), so it
+ *     holds at 5k–10k concurrent viewers, and only the page's 10 reels are hydrated.
  */
 class ReelsRepository
 {
     private const PER_PAGE = 10;
 
-    /** How many recent reels form the shuffled "deck" arranged per seed. */
-    private const FEED_WINDOW = 150;
+    /** Default deck size when reels.feed_deck_size is unset (recent reels a user rotates over). */
+    private const DEFAULT_DECK_SIZE = 1000;
 
-    /** How long the shared recent-reels window is cached (seconds). */
-    private const WINDOW_TTL = 60;
+    /** Default cache TTL (seconds) when reels.feed_window_ttl is unset. */
+    private const DEFAULT_WINDOW_TTL = 60;
 
-    /** Cache key for the shared recent-reels window. */
-    private const WINDOW_KEY = 'reels:feed:window';
+    /** Cache key for the shared, shuffled feed deck. */
+    private const WINDOW_KEY = 'reels:feed:deck';
 
     /**
      * Batch the viewer's reaction + the per-type breakdown for a whole page of
@@ -115,58 +120,86 @@ class ReelsRepository
 
     public function getAllReels($userId, ?int $seed = null)
     {
-        // No seed → plain chronological feed. simplePaginate avoids the COUNT(*)
-        // that paginate() runs every request (the client only checks for a
-        // non-empty page, never the total). Counts come from the *_num columns.
-        if ($seed === null) {
-            return $this->hydrateReactions(
-                Real::query()
-                    ->whereHas('user')
-                    ->likeExists($userId)
-                    ->withUser()
-                    ->orderByDesc('id')
-                    ->simplePaginate(self::PER_PAGE)
-            );
+        // Per-user load spreading: one shared deck of recent reel ids, each user
+        // rotated to a different start index so concurrent users read different
+        // windows of the catalog (not all the newest few). See the class docblock.
+        $deck  = $this->feedDeck();
+        $count = count($deck);
+        if ($count === 0) {
+            return $this->emptyFeedPage();
         }
 
-        // Deterministic per-seed shuffle of the shared recent window. Slicing by
-        // page keeps pages disjoint and stable for a given seed; a fresh seed on
-        // the next refresh produces a brand-new order. This is a single O(n) pass
-        // over ~150 lightweight {id,url} objects — far cheaper per request than
-        // the old layered round-robin arrangement (multiple Collection passes),
-        // which matters at high concurrency, and is visually identical for real
-        // uploads (all-distinct video URLs). The window is shared across users +
-        // cached for WINDOW_TTL, and only the page's 10 reels are hydrated.
-        $ordered = $this->recentWindow()->shuffle($seed);
+        $page        = max(1, (int) Paginator::resolveCurrentPage());
+        $offsetInPass = ($page - 1) * self::PER_PAGE;
 
-        $page    = max(1, Paginator::resolveCurrentPage());
-        $pageIds = $ordered->slice(($page - 1) * self::PER_PAGE, self::PER_PAGE)
-            ->pluck('id')
-            ->all();
+        // One full pass over the deck per session: once a user has scrolled the
+        // whole deck, return an empty page so the client refreshes with a new seed
+        // (a fresh rotation) instead of looping the same order forever.
+        if ($offsetInPass >= $count) {
+            return $this->emptyFeedPage($count, $page);
+        }
+
+        // Stable per-user start (spread across users) + the client refresh nonce
+        // ($seed) so pull-to-refresh advances the user to a fresh slice. Normalised
+        // to [0, count) defensively (crc32 is signed 32-bit on some platforms).
+        $base  = crc32((string) $userId) + (int) ($seed ?? 0);
+        $start = (int) ((($base % $count) + $count) % $count);
+
+        $pageIds = [];
+        for ($i = 0; $i < self::PER_PAGE && ($offsetInPass + $i) < $count; $i++) {
+            $pageIds[] = $deck[($start + $offsetInPass + $i) % $count];
+        }
 
         return $this->hydrateReactions(new LengthAwarePaginator(
             $this->hydrateReels($pageIds, $userId),
-            $ordered->count(),
+            $count,
             self::PER_PAGE,
             $page,
             ['path' => Paginator::resolveCurrentPath()]
         ));
     }
 
-    /**
-     * The recent feed window as lightweight {id, url} objects, shared across all
-     * users and cached for a short TTL so concurrent viewers don't each run the
-     * 150-row scan. whereHas('user') drops reels by soft-deleted authors.
-     */
-    private function recentWindow(): Collection
+    /** An empty feed page (no reels yet, or the user has scrolled the whole deck). */
+    private function emptyFeedPage(int $total = 0, int $page = 1): LengthAwarePaginator
     {
-        return Cache::remember(self::WINDOW_KEY, self::WINDOW_TTL, function () {
-            return Real::query()
+        return new LengthAwarePaginator(
+            collect(),
+            $total,
+            self::PER_PAGE,
+            $page,
+            ['path' => Paginator::resolveCurrentPath()]
+        );
+    }
+
+    /**
+     * The shared feed deck: ids of the most-recent N reels (config reels.feed_deck_size),
+     * shuffled once and cached for a short TTL (reels.feed_window_ttl). Shuffling —
+     * rather than serving plain chronological — means a user's rotation start lands
+     * on a varied mix instead of "newest, shifted"; the per-TTL rebuild also rotates
+     * the deck over time and picks up new uploads. Shared across users + ids only, so
+     * concurrent viewers neither each run the scan nor each shuffle. whereHas('user')
+     * drops reels by soft-deleted authors.
+     *
+     * @return list<int>
+     */
+    private function feedDeck(): array
+    {
+        $size = (int) config('reels.feed_deck_size', self::DEFAULT_DECK_SIZE);
+        $ttl  = (int) config('reels.feed_window_ttl', self::DEFAULT_WINDOW_TTL);
+
+        return Cache::remember(self::WINDOW_KEY, max(1, $ttl), function () use ($size, $ttl) {
+            $ids = Real::query()
                 ->whereHas('user')
                 ->orderByDesc('id')
-                ->limit(self::FEED_WINDOW)
-                ->get(['id', 'url'])
-                ->map(fn (Real $r) => (object) ['id' => $r->id, 'url' => $r->url]);
+                ->limit(max(1, $size))
+                ->pluck('id')
+                ->all();
+
+            // Deterministic shuffle seeded by the TTL bucket: stable within the cache
+            // window (and consistent across app servers) yet different each rebuild.
+            $bucket = $ttl > 0 ? intdiv(time(), $ttl) : 0;
+
+            return collect($ids)->shuffle($bucket)->values()->all();
         });
     }
 

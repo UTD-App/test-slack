@@ -17,8 +17,10 @@ class RealsController extends Controller
     public function index(Request $request)
     {
         $currentUser = Auth::id();
-        // `seed` drives a stable per-refresh random order (see ReelsRepository);
-        // 0/absent means no seed → the default chronological feed.
+        // The feed is spread per-user by default (each user starts at a different
+        // point in the shared deck — see ReelsRepository::getAllReels). `seed` is an
+        // optional refresh nonce the client bumps on pull-to-refresh to advance the
+        // user to a fresh rotation; 0/absent just uses the stable per-user start.
         $seed = $request->integer('seed') ?: null;
         $reals = $this->realsService->getFeed($currentUser, $request->get('filter'), $seed);
 
