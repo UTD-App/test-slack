@@ -59,17 +59,21 @@ class ProcessReelVideo implements ShouldQueue
             return;
         }
 
-        $disk = config('filesystems.default');
-        if (! Storage::disk($disk)->exists($src)) {
-            return;
-        }
-
-        // Optimised output lives beside the original: videos/<uuid>.opt.mp4
-        $dir  = trim(dirname($src), '/.');
-        $base = pathinfo($src, PATHINFO_FILENAME);
-        $dst  = ($dir !== '' ? $dir.'/' : '').$base.self::OPT_MARKER.'mp4';
-
+        // Everything below is wrapped: the job is best-effort on ANY failure,
+        // INCLUDING the storage-layer probe (e.g. the default disk is a remote
+        // bucket that's unreachable / unauthenticated) — a post-process hiccup must
+        // never bubble up and fail the upload (or a test that creates a reel).
         try {
+            $disk = config('filesystems.default');
+            if (! Storage::disk($disk)->exists($src)) {
+                return;
+            }
+
+            // Optimised output lives beside the original: videos/<uuid>.opt.mp4
+            $dir  = trim(dirname($src), '/.');
+            $base = pathinfo($src, PATHINFO_FILENAME);
+            $dst  = ($dir !== '' ? $dir.'/' : '').$base.self::OPT_MARKER.'mp4';
+
             $format = new X264('aac', 'libx264');
             $format->setKiloBitrate(2500)
                 ->setAudioKiloBitrate(128)

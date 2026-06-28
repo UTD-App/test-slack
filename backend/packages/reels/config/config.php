@@ -21,6 +21,12 @@ return [
     //                  the cost of a larger (still id-only) cached array.
     // feed_window_ttl: seconds the shared deck stays cached before it's rebuilt
     //                  (and re-shuffled), picking up newly uploaded reels.
+    // feed_ranking   : when true, the deck is ordered by a recency-decayed
+    //                  engagement score (likes/comments/views) via a weighted
+    //                  shuffle + author-diversity pass, so better/fresher reels
+    //                  surface while every user still gets a varied, spread mix.
+    //                  Set false to fall back to a plain random shuffle.
     'feed_deck_size'  => (int) env('REELS_FEED_DECK_SIZE', 1000),
     'feed_window_ttl' => (int) env('REELS_FEED_WINDOW_TTL', 60),
+    'feed_ranking'    => filter_var(env('REELS_FEED_RANKING', true), FILTER_VALIDATE_BOOLEAN),
 ];

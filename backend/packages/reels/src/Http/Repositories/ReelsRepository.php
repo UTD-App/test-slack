@@ -173,12 +173,18 @@ class ReelsRepository
 
     /**
      * The shared feed deck: ids of the most-recent N reels (config reels.feed_deck_size),
-     * shuffled once and cached for a short TTL (reels.feed_window_ttl). Shuffling —
-     * rather than serving plain chronological — means a user's rotation start lands
-     * on a varied mix instead of "newest, shifted"; the per-TTL rebuild also rotates
-     * the deck over time and picks up new uploads. Shared across users + ids only, so
-     * concurrent viewers neither each run the scan nor each shuffle. whereHas('user')
-     * drops reels by soft-deleted authors.
+     * ordered once and cached for a short TTL (reels.feed_window_ttl). Shared across
+     * users + ids only, so concurrent viewers neither each run the scan nor each
+     * order it; the per-TTL rebuild rotates the deck over time and picks up new
+     * uploads / fresh engagement. whereHas('user') drops reels by soft-deleted authors.
+     *
+     * Ordering (reels.feed_ranking):
+     *  • on  → recency-decayed engagement score via Efraimidis–Spirakis weighted
+     *          sampling, then an author-diversity pass. Higher-scoring reels trend
+     *          toward the front, but it's a randomised MIX (not a strict leaderboard)
+     *          so quality is spread throughout — each user is rotated to a different
+     *          start, so page 1 mustn't be the only good page.
+     *  • off → plain deterministic shuffle.
      *
      * @return list<int>
      */
@@ -186,21 +192,92 @@ class ReelsRepository
     {
         $size = (int) config('reels.feed_deck_size', self::DEFAULT_DECK_SIZE);
         $ttl  = (int) config('reels.feed_window_ttl', self::DEFAULT_WINDOW_TTL);
+        $rank = filter_var(config('reels.feed_ranking', true), FILTER_VALIDATE_BOOLEAN);
 
-        return Cache::remember(self::WINDOW_KEY, max(1, $ttl), function () use ($size, $ttl) {
-            $ids = Real::query()
+        return Cache::remember(self::WINDOW_KEY, max(1, $ttl), function () use ($size, $ttl, $rank) {
+            // Deck seed: the TTL bucket → stable within the cache window, consistent
+            // across app servers, and different each rebuild.
+            $bucket = $ttl > 0 ? intdiv(time(), $ttl) : 0;
+
+            // Candidate pool = the most-recent N reels by id (recency gate); ordering
+            // below re-arranges WITHIN this pool. Only the columns the score needs.
+            $rows = Real::query()
                 ->whereHas('user')
                 ->orderByDesc('id')
                 ->limit(max(1, $size))
-                ->pluck('id')
+                ->get(['id', 'user_id', 'like_num', 'comment_num', 'view_num', 'created_at']);
+
+            if ($rows->isEmpty()) {
+                return [];
+            }
+
+            if (! $rank) {
+                return $rows->pluck('id')->shuffle($bucket)->values()->all();
+            }
+
+            // Weighted sampling key = u^(1/weight): a larger weight pushes the key
+            // toward 1 (nearer the front) while keeping the order randomised, so the
+            // deck stays a varied mix rather than a strict ranking. Seeded by the TTL
+            // bucket for a deterministic, cacheable order.
+            $now = time();
+            mt_srand($bucket);
+            $scored = $rows->map(function (Real $r) use ($now) {
+                $createdTs = $r->created_at ? $r->created_at->getTimestamp() : $now;
+                $ageHours  = max(0.0, ($now - $createdTs) / 3600);
+                // +1 floor so a brand-new reel with zero engagement still competes.
+                $engagement = ($r->like_num * 2) + ($r->comment_num * 3) + ($r->view_num * 0.1) + 1;
+                // Recency decay: divide by (age + 2h)^1.5 so fresh reels outrank stale ones.
+                $score = $engagement / pow($ageHours + 2, 1.5);
+                $u = mt_rand(1, mt_getrandmax()) / mt_getrandmax();
+
+                return [
+                    'id'      => (int) $r->id,
+                    'user_id' => (int) $r->user_id,
+                    'key'     => pow($u, 1.0 / max($score, 0.0001)),
+                ];
+            })
+                ->sortByDesc('key')
+                ->values()
                 ->all();
 
-            // Deterministic shuffle seeded by the TTL bucket: stable within the cache
-            // window (and consistent across app servers) yet different each rebuild.
-            $bucket = $ttl > 0 ? intdiv(time(), $ttl) : 0;
-
-            return collect($ids)->shuffle($bucket)->values()->all();
+            return $this->diversifyByAuthor($scored);
         });
+    }
+
+    /**
+     * Greedily reorder a ranked list so the same author isn't placed back-to-back
+     * where possible — one creator can't monopolise a user's first screens — while
+     * otherwise preserving the ranking. O(n^2) but runs once per TTL on the shared
+     * deck, not per request.
+     *
+     * @param  array<int,array{id:int,user_id:int}>  $items  ranked order
+     * @return list<int>  reel ids in diversified order
+     */
+    private function diversifyByAuthor(array $items): array
+    {
+        $remaining = $items;
+        $ids = [];
+        $lastAuthor = null;
+
+        while (! empty($remaining)) {
+            $chosen = null;
+            foreach ($remaining as $i => $it) {
+                if ($it['user_id'] !== $lastAuthor) {
+                    $chosen = $i;
+                    break;
+                }
+            }
+            if ($chosen === null) {
+                $chosen = array_key_first($remaining); // only same-author reels left
+            }
+
+            $ids[] = $remaining[$chosen]['id'];
+            $lastAuthor = $remaining[$chosen]['user_id'];
+            unset($remaining[$chosen]);
+            $remaining = array_values($remaining);
+        }
+
+        return $ids;
     }
 
     /**
