@@ -1,5 +1,8 @@
+import 'dart:math';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../domain/entities/moment_entity.dart';
 import '../../../domain/repositories/moment_repository.dart';
 import 'moment_feed_event.dart';
 import 'moment_feed_state.dart';
@@ -10,6 +13,10 @@ class MomentFeedBloc extends Bloc<MomentFeedEvent, MomentFeedState> {
 
   /// When set, the feed is scoped to a single user's moments (their "posts").
   final int? userId;
+
+  /// Source of the per-refresh shuffle (see [_freshOrder]). A single reused
+  /// instance so successive pull-to-refreshes keep producing new orders.
+  final Random _random = Random();
 
   MomentFeedBloc(this.repository, {this.type = 4, this.userId}) : super(const MomentFeedState()) {
     on<FeedRefreshRequested>(_onRefresh);
@@ -56,12 +63,47 @@ class MomentFeedBloc extends Bloc<MomentFeedEvent, MomentFeedState> {
     res.when(
       success: (list) => emit(state.copyWith(
         status: FeedStatus.success,
-        moments: list,
+        // The global feed reshuffles on every pull-to-refresh so the timeline
+        // feels live; a user's own scoped posts keep their server (chronological)
+        // order. [_freshOrder] guarantees an order that differs from what's
+        // currently on screen, so a refresh is always visibly different.
+        moments: userId == null ? _freshOrder(list, state.moments) : list,
         page: 1,
         hasMore: list.isNotEmpty,
       )),
       failure: (msg, _) => emit(state.copyWith(status: FeedStatus.failure, error: msg)),
     );
+  }
+
+  /// Returns [list] reordered so it differs from [current] (the order already on
+  /// screen). With 0–1 items there's nothing to vary, so [list] is returned
+  /// as-is; otherwise it shuffles (a few tries) and, as a last resort, swaps the
+  /// first two entries — guaranteeing a perceptible change on each refresh.
+  List<MomentEntity> _freshOrder(
+    List<MomentEntity> list,
+    List<MomentEntity> current,
+  ) {
+    if (list.length < 2) return list;
+    final shuffled = List<MomentEntity>.of(list);
+    final currentIds = [for (final m in current) m.id];
+    for (var attempt = 0; attempt < 6; attempt++) {
+      shuffled.shuffle(_random);
+      if (!_sameOrder([for (final m in shuffled) m.id], currentIds)) {
+        return shuffled;
+      }
+    }
+    final first = shuffled[0];
+    shuffled[0] = shuffled[1];
+    shuffled[1] = first;
+    return shuffled;
+  }
+
+  bool _sameOrder(List<int> a, List<int> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 
   Future<void> _onLoadMore(FeedLoadMoreRequested event, Emitter<MomentFeedState> emit) async {

@@ -31,6 +31,11 @@ class MomentFeedView extends StatefulWidget {
 class _MomentFeedViewState extends State<MomentFeedView> {
   final _scroll = ScrollController();
 
+  /// Bumped on every completed refresh. It's woven into each item's key so the
+  /// reshuffled cards re-mount and replay their staggered entrance animation —
+  /// turning the random reorder into a smooth, intentional transition.
+  int _generation = 0;
+
   @override
   void initState() {
     super.initState();
@@ -69,7 +74,21 @@ class _MomentFeedViewState extends State<MomentFeedView> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<MomentFeedBloc, MomentFeedState>(
+    return BlocConsumer<MomentFeedBloc, MomentFeedState>(
+      // A refresh just landed (loading → success): advance the generation so the
+      // new order animates in. Scroll back to the top so the cascade is seen.
+      listenWhen: (prev, curr) =>
+          prev.status == FeedStatus.loading && curr.status == FeedStatus.success,
+      listener: (context, state) {
+        setState(() => _generation++);
+        if (_scroll.hasClients) {
+          _scroll.animateTo(
+            0,
+            duration: const Duration(milliseconds: 250),
+            curve: Curves.easeOut,
+          );
+        }
+      },
       builder: (context, state) {
         if (state.status == FeedStatus.loading && state.moments.isEmpty) {
           return const Center(child: CircularProgressIndicator());
@@ -100,7 +119,12 @@ class _MomentFeedViewState extends State<MomentFeedView> {
                 );
               }
               final moment = state.moments[i];
-              return MomentCard(
+              return _FeedEntrance(
+                // Re-keyed per generation → the card re-mounts and replays its
+                // entrance whenever the feed is reshuffled by a refresh.
+                key: ValueKey('$_generation-${moment.id}'),
+                index: i,
+                child: MomentCard(
                 moment: moment,
                 onReact: (type) => context.read<MomentFeedBloc>().add(MomentReacted(moment, type)),
                 onOpenLikes: () => showMomentLikes(context, moment.id),
@@ -135,11 +159,63 @@ class _MomentFeedViewState extends State<MomentFeedView> {
                   }
                 },
                 onTapImage: _openImage,
+                ),
               );
             },
           ),
         );
       },
+    );
+  }
+}
+
+/// One-shot fade + upward-slide entrance for a feed card, with a small
+/// index-based delay so cards cascade in (capped so far-down items don't wait).
+/// Re-mounting it (via a changed key) replays the animation — used to make a
+/// reshuffled feed transition smoothly instead of snapping to the new order.
+class _FeedEntrance extends StatefulWidget {
+  final int index;
+  final Widget child;
+
+  const _FeedEntrance({super.key, required this.index, required this.child});
+
+  @override
+  State<_FeedEntrance> createState() => _FeedEntranceState();
+}
+
+class _FeedEntranceState extends State<_FeedEntrance>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 380),
+  );
+  late final Animation<double> _fade =
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut);
+  late final Animation<Offset> _slide = Tween<Offset>(
+    begin: const Offset(0, 0.06),
+    end: Offset.zero,
+  ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+
+  @override
+  void initState() {
+    super.initState();
+    final delayMs = widget.index.clamp(0, 8) * 55;
+    Future.delayed(Duration(milliseconds: delayMs), () {
+      if (mounted) _controller.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(position: _slide, child: widget.child),
     );
   }
 }
