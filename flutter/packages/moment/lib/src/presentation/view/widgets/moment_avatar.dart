@@ -30,6 +30,9 @@ class MomentAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final url = resolveMediaUrl(image);
     final bg = _colorFor(name);
+    // Decode the avatar at its on-screen size (the file is tiny anyway, but this
+    // keeps the in-memory bitmap right-sized when avatars are large).
+    final px = (radius * 2 * MediaQuery.of(context).devicePixelRatio).round();
     final initialsWidget = Text(
       _initials(name),
       style: TextStyle(
@@ -51,14 +54,26 @@ class MomentAvatar extends StatelessWidget {
                 width: radius * 2,
                 height: radius * 2,
                 fit: BoxFit.cover,
+                memCacheWidth: px,
+                memCacheHeight: px,
                 placeholder: (_, __) => Center(child: initialsWidget),
                 errorWidget: (_, __, ___) => Center(child: initialsWidget),
               ),
             ),
           );
 
-    if (onTap == null) return avatar;
-    return GestureDetector(behavior: HitTestBehavior.opaque, onTap: onTap, child: avatar);
+    // Expose the user behind the avatar to screen readers.
+    final labelled = Semantics(
+      label: name.isEmpty ? null : name,
+      image: true,
+      child: avatar,
+    );
+    if (onTap == null) return labelled;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: labelled,
+    );
   }
 
   static String _initials(String name) {
