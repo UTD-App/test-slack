@@ -9,17 +9,22 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:utd_app/shared/core/enums.dart';
 
-import '../widgets/audio_room_app_overlay.dart';
+import 'package:utd_app/localization/localization.dart';
+
+import 'package:audio_room/src/audio_room_strings.dart';
+import '../widgets/overlay/audio_room_app_overlay.dart';
+import '../../audio_room_feature.dart';
+import '../../data/pip_manager.dart';
+import '../../plugin_setting_row.dart';
 import '../../domain/room_model.dart';
-import '../bloc/room_management_bloc.dart';
-import '../widgets/room/room_edit_text_sheet.dart';
-import '../widgets/room/room_password_dialog.dart';
-import '../widgets/room/room_strings.dart';
-import '../widgets/room/room_theme.dart';
-import '../widgets/room/seat_icon_picker.dart';
-import '../widgets/settings/file_icon_preview.dart';
+import '../bloc/room_management/room_management_bloc.dart';
+import '../widgets/room/customize/room_edit_text_sheet.dart';
+import '../widgets/room/customize/room_password_dialog.dart';
+import '../widgets/room/shared/room_theme.dart';
 import '../widgets/settings/setting_row.dart';
 import '../widgets/settings/text_setting_row.dart';
+import 'room_delete_dialog.dart';
+import 'room_settings_seat_icons.dart';
 
 class RoomSettingsPage extends StatefulWidget {
   final RoomModel room;
@@ -88,7 +93,6 @@ class _RoomSettingsPageState extends State<RoomSettingsPage> {
   }
 
   Future<void> _pickCover() async {
-    final s = RoomStrings.of(context);
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       backgroundColor: RoomTheme.cardBg,
@@ -102,7 +106,7 @@ class _RoomSettingsPageState extends State<RoomSettingsPage> {
             ListTile(
               leading: const Icon(Icons.camera_alt, color: RoomTheme.textPrimary),
               title: Text(
-                s.takePhoto,
+                context.tr(AudioRoomKeys.takePhoto),
                 style: const TextStyle(color: RoomTheme.textPrimary),
               ),
               onTap: () => Navigator.pop(ctx, ImageSource.camera),
@@ -110,7 +114,7 @@ class _RoomSettingsPageState extends State<RoomSettingsPage> {
             ListTile(
               leading: const Icon(Icons.photo_library, color: RoomTheme.textPrimary),
               title: Text(
-                s.chooseFromGallery,
+                context.tr(AudioRoomKeys.chooseFromGallery),
                 style: const TextStyle(color: RoomTheme.textPrimary),
               ),
               onTap: () => Navigator.pop(ctx, ImageSource.gallery),
@@ -122,8 +126,10 @@ class _RoomSettingsPageState extends State<RoomSettingsPage> {
 
     if (source == null) return;
 
+    await PipManager.instance.disableAutoPip();
     final picker = ImagePicker();
     final image = await picker.pickImage(source: source, maxWidth: 800);
+    await PipManager.instance.enableAutoPip();
     if (image != null) {
       final file = File(image.path);
       setState(() => _coverImage = file);
@@ -132,120 +138,13 @@ class _RoomSettingsPageState extends State<RoomSettingsPage> {
   }
 
   void _confirmDelete() {
-    final s = RoomStrings.of(context);
-    showDialog(
-      context: context,
-      barrierColor: Colors.black54,
-      builder: (ctx) => Center(
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            margin: EdgeInsets.symmetric(horizontal: 32.w),
-            padding: EdgeInsets.all(24.r),
-            decoration: BoxDecoration(
-              color: RoomTheme.cardBg,
-              borderRadius: BorderRadius.circular(20.r),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 56.r,
-                  height: 56.r,
-                  decoration: BoxDecoration(
-                    color: Colors.red.withValues(alpha: 0.12),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.delete_forever_rounded,
-                    color: Colors.red,
-                    size: 28.r,
-                  ),
-                ),
-                SizedBox(height: 16.h),
-                Text(
-                  s.deleteRoom,
-                  style: TextStyle(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w600,
-                    color: RoomTheme.textPrimary,
-                  ),
-                ),
-                SizedBox(height: 10.h),
-                Divider(color: RoomTheme.dividerColor),
-                SizedBox(height: 10.h),
-                Text(
-                  s.deleteRoomConfirm,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w500,
-                    color: RoomTheme.textSecondary,
-                  ),
-                ),
-                SizedBox(height: 24.h),
-                Row(
-                  children: [
-                    Expanded(
-                      child: SizedBox(
-                        height: 45.h,
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.pop(ctx),
-                          style: OutlinedButton.styleFrom(
-                            side: BorderSide(
-                              color: RoomTheme.textSecondary.withValues(alpha: 0.3),
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12.r),
-                            ),
-                          ),
-                          child: Text(
-                            s.cancel,
-                            style: TextStyle(
-                              color: RoomTheme.textSecondary,
-                              fontWeight: FontWeight.w400,
-                              fontSize: 14.sp,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 16.w),
-                    Expanded(
-                      child: SizedBox(
-                        height: 45.h,
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.pop(ctx);
-                            context.read<RoomManagementBloc>().add(
-                              DeleteRoomEvent(roomId: widget.room.id),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red,
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12.r),
-                            ),
-                          ),
-                          child: Text(
-                            s.delete,
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w400,
-                              fontSize: 14.sp,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+    showDeleteRoomConfirmDialog(
+      context,
+      onConfirm: () {
+        context.read<RoomManagementBloc>().add(
+          DeleteRoomEvent(roomId: widget.room.id),
+        );
+      },
     );
   }
 
@@ -278,7 +177,6 @@ class _RoomSettingsPageState extends State<RoomSettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final s = RoomStrings.of(context);
     return MultiBlocListener(
       listeners: [
         BlocListener<RoomManagementBloc, RoomManagementState>(
@@ -290,13 +188,13 @@ class _RoomSettingsPageState extends State<RoomSettingsPage> {
               }
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text(s.saved),
+                  content: Text(context.tr(AudioRoomKeys.saved)),
                   duration: const Duration(seconds: 1),
                 ),
               );
             } else if (state.updateState == RequestState.error) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message ?? s.error)),
+                SnackBar(content: Text(state.message ?? context.tr(AudioRoomKeys.roomError))),
               );
             }
           },
@@ -306,12 +204,12 @@ class _RoomSettingsPageState extends State<RoomSettingsPage> {
           listener: (context, state) {
             if (state.deleteState == RequestState.loaded) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(s.roomDeleted)),
+                SnackBar(content: Text(context.tr(AudioRoomKeys.roomDeleted))),
               );
               AudioRoomAppOverlay.closeRoom();
             } else if (state.deleteState == RequestState.error) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(state.message ?? s.deleteRoomFailed)),
+                SnackBar(content: Text(state.message ?? context.tr(AudioRoomKeys.deleteRoomFailed))),
               );
             }
           },
@@ -320,7 +218,7 @@ class _RoomSettingsPageState extends State<RoomSettingsPage> {
       child: Scaffold(
         backgroundColor: RoomTheme.bgDark,
         appBar: AppBar(
-          title: Text(s.roomInfo),
+          title: Text(context.tr(AudioRoomKeys.roomInfo)),
           centerTitle: true,
           backgroundColor: RoomTheme.bgDark,
           foregroundColor: RoomTheme.textPrimary,
@@ -331,7 +229,7 @@ class _RoomSettingsPageState extends State<RoomSettingsPage> {
               _strip(),
 
               SettingRow(
-                title: s.roomImage,
+                title: context.tr(AudioRoomKeys.roomImage),
                 onTap: _canEdit ? _pickCover : null,
                 trailing: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -372,14 +270,14 @@ class _RoomSettingsPageState extends State<RoomSettingsPage> {
               _strip(),
 
               SettingRow(
-                title: s.roomNumber,
+                title: context.tr(AudioRoomKeys.roomNumber),
                 onTap: () {
                   Clipboard.setData(
                     ClipboardData(text: widget.room.numId.toString()),
                   );
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(s.copied),
+                      content: Text(context.tr(AudioRoomKeys.copied)),
                       duration: const Duration(seconds: 1),
                     ),
                   );
@@ -400,13 +298,13 @@ class _RoomSettingsPageState extends State<RoomSettingsPage> {
               _strip(),
 
               TextSettingRow(
-                title: s.roomName,
+                title: context.tr(AudioRoomKeys.roomName),
                 value: _currentName,
                 valueWidth: 150,
                 canEdit: _canEdit,
                 onTap: () => showEditTextSheet(
                   context,
-                  title: s.roomName,
+                  title: context.tr(AudioRoomKeys.roomName),
                   initialValue: _currentName ?? '',
                   maxLength: 50,
                   onSave: (val) {
@@ -419,13 +317,13 @@ class _RoomSettingsPageState extends State<RoomSettingsPage> {
               _divider(),
 
               TextSettingRow(
-                title: s.roomAnnouncement,
+                title: context.tr(AudioRoomKeys.roomAnnouncement),
                 value: _currentIntro,
-                placeholder: s.none,
+                placeholder: context.tr(AudioRoomKeys.none),
                 canEdit: _canEdit,
                 onTap: () => showEditTextSheet(
                   context,
-                  title: s.roomAnnouncement,
+                  title: context.tr(AudioRoomKeys.roomAnnouncement),
                   initialValue: _currentIntro ?? '',
                   maxLines: 4,
                   maxLength: 500,
@@ -439,13 +337,13 @@ class _RoomSettingsPageState extends State<RoomSettingsPage> {
               _divider(),
 
               TextSettingRow(
-                title: s.roomRules,
+                title: context.tr(AudioRoomKeys.roomRules),
                 value: _currentRule,
-                placeholder: s.none,
+                placeholder: context.tr(AudioRoomKeys.none),
                 canEdit: _canEdit,
                 onTap: () => showEditTextSheet(
                   context,
-                  title: s.roomRules,
+                  title: context.tr(AudioRoomKeys.roomRules),
                   initialValue: _currentRule ?? '',
                   maxLines: 4,
                   maxLength: 500,
@@ -460,7 +358,7 @@ class _RoomSettingsPageState extends State<RoomSettingsPage> {
                 _strip(),
 
                 SettingRow(
-                  title: s.password,
+                  title: context.tr(AudioRoomKeys.password),
                   onTap: () => _onPasswordToggle(!_hasPassword),
                   trailing: CupertinoSwitch(
                     value: _hasPassword,
@@ -472,7 +370,7 @@ class _RoomSettingsPageState extends State<RoomSettingsPage> {
                 _divider(),
 
                 SettingRow(
-                  title: s.closeComments,
+                  title: context.tr(AudioRoomKeys.closeComments),
                   trailing: CupertinoSwitch(
                     value: _isCommentsClosed,
                     activeTrackColor: RoomTheme.accent,
@@ -485,120 +383,83 @@ class _RoomSettingsPageState extends State<RoomSettingsPage> {
 
                 _strip(),
 
-                SettingRow(
-                  title: s.emptySeatIcon,
-                  onTap: () async {
-                    final result = await showSeatIconPicker(
-                      context,
-                      currentValue: _currentEmptySeatIcon,
-                      iconType: SeatIconType.empty,
+                SeatIconSettingsSection(
+                  currentEmptySeatIcon: _currentEmptySeatIcon,
+                  currentLockedSeatIcon: _currentLockedSeatIcon,
+                  emptySeatIconFile: _emptySeatIconFile,
+                  lockedSeatIconFile: _lockedSeatIconFile,
+                  onSave: ({
+                    File? emptySeatIcon,
+                    File? lockedSeatIcon,
+                    String? emptySeatIconPreset,
+                    String? lockedSeatIconPreset,
+                  }) {
+                    _save(
+                      emptySeatIcon: emptySeatIcon,
+                      lockedSeatIcon: lockedSeatIcon,
+                      emptySeatIconPreset: emptySeatIconPreset,
+                      lockedSeatIconPreset: lockedSeatIconPreset,
                     );
-                    if (result == null || !mounted) return;
-                    if (result.type == SeatIconChoiceType.pickFromGallery) {
-                      final image = await ImagePicker().pickImage(
-                        source: ImageSource.gallery,
-                        maxWidth: 512,
-                      );
-                      if (image == null || !mounted) return;
-                      final file = File(image.path);
-                      setState(() {
-                        _emptySeatIconFile = file;
-                        _currentEmptySeatIcon = null;
-                      });
-                      _save(emptySeatIcon: file);
-                    } else if (result.type == SeatIconChoiceType.custom) {
-                      setState(() {
-                        _emptySeatIconFile = result.file;
-                        _currentEmptySeatIcon = null;
-                      });
-                      _save(emptySeatIcon: result.file);
-                    } else if (result.type == SeatIconChoiceType.preset) {
-                      setState(() {
-                        _emptySeatIconFile = null;
-                        _currentEmptySeatIcon = result.presetName;
-                      });
-                      _save(emptySeatIconPreset: result.presetName);
-                    } else {
-                      setState(() {
-                        _emptySeatIconFile = null;
-                        _currentEmptySeatIcon = null;
-                      });
-                      _save(emptySeatIconPreset: '');
-                    }
                   },
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _emptySeatIconFile != null
-                          ? FileIconPreview(file: _emptySeatIconFile!, size: 36.r)
-                          : SeatIconPreview(
-                              currentValue: _currentEmptySeatIcon,
-                              size: 36.r,
-                              iconType: SeatIconType.empty,
-                            ),
-                      SizedBox(width: 8.w),
-                      Icon(Icons.arrow_forward_ios, color: RoomTheme.textSecondary, size: 14.r),
-                    ],
-                  ),
+                  onStateUpdate: ({
+                    File? emptySeatIconFile,
+                    String? emptySeatIcon,
+                    File? lockedSeatIconFile,
+                    String? lockedSeatIcon,
+                  }) {
+                    setState(() {
+                      if (emptySeatIconFile != null || emptySeatIcon == null) {
+                        _emptySeatIconFile = emptySeatIconFile;
+                        _currentEmptySeatIcon = emptySeatIcon;
+                      }
+                      if (lockedSeatIconFile != null || lockedSeatIcon == null) {
+                        _lockedSeatIconFile = lockedSeatIconFile;
+                        _currentLockedSeatIcon = lockedSeatIcon;
+                      }
+                    });
+                  },
                 ),
 
-                _divider(),
-
-                SettingRow(
-                  title: s.lockedSeatIcon,
-                  onTap: () async {
-                    final result = await showSeatIconPicker(
-                      context,
-                      currentValue: _currentLockedSeatIcon,
-                      iconType: SeatIconType.locked,
-                    );
-                    if (result == null || !mounted) return;
-                    if (result.type == SeatIconChoiceType.pickFromGallery) {
-                      final image = await ImagePicker().pickImage(
-                        source: ImageSource.gallery,
-                        maxWidth: 512,
-                      );
-                      if (image == null || !mounted) return;
-                      final file = File(image.path);
-                      setState(() {
-                        _lockedSeatIconFile = file;
-                        _currentLockedSeatIcon = null;
-                      });
-                      _save(lockedSeatIcon: file);
-                    } else if (result.type == SeatIconChoiceType.custom) {
-                      setState(() {
-                        _lockedSeatIconFile = result.file;
-                        _currentLockedSeatIcon = null;
-                      });
-                      _save(lockedSeatIcon: result.file);
-                    } else if (result.type == SeatIconChoiceType.preset) {
-                      setState(() {
-                        _lockedSeatIconFile = null;
-                        _currentLockedSeatIcon = result.presetName;
-                      });
-                      _save(lockedSeatIconPreset: result.presetName);
-                    } else {
-                      setState(() {
-                        _lockedSeatIconFile = null;
-                        _currentLockedSeatIcon = null;
-                      });
-                      _save(lockedSeatIconPreset: '');
-                    }
-                  },
-                  trailing: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      _lockedSeatIconFile != null
-                          ? FileIconPreview(file: _lockedSeatIconFile!, size: 36.r)
-                          : SeatIconPreview(
-                              currentValue: _currentLockedSeatIcon,
-                              size: 36.r,
-                              iconType: SeatIconType.locked,
+                StatefulBuilder(
+                  builder: (context, setPluginState) {
+                    final rows = AudioRoomFeature.registeredPlugins
+                        .expand((p) => p.getSettingRows(context, widget.room.id))
+                        .toList();
+                    return Column(
+                      children: rows.expand((row) => [
+                        _strip(),
+                        if (row.type == PluginSettingType.toggle)
+                          SettingRow(
+                            title: row.title,
+                            onTap: () {
+                              row.onToggle?.call(!(row.currentValue ?? false));
+                              setPluginState(() {});
+                            },
+                            trailing: Switch.adaptive(
+                              value: row.currentValue ?? false,
+                              onChanged: (v) {
+                                row.onToggle?.call(v);
+                                setPluginState(() {});
+                              },
+                              activeTrackColor: RoomTheme.accent,
                             ),
-                      SizedBox(width: 8.w),
-                      Icon(Icons.arrow_forward_ios, color: RoomTheme.textSecondary, size: 14.r),
-                    ],
-                  ),
+                          )
+                        else
+                          SettingRow(
+                            title: row.title,
+                            onTap: () {
+                              row.onTap?.call();
+                              setPluginState(() {});
+                            },
+                            trailing: Icon(
+                              Icons.arrow_forward_ios,
+                              color: RoomTheme.textSecondary,
+                              size: 14.r,
+                            ),
+                          ),
+                      ]).toList(),
+                    );
+                  },
                 ),
 
                 if (widget.room.isOwner == true) ...[
@@ -611,7 +472,7 @@ class _RoomSettingsPageState extends State<RoomSettingsPage> {
                       final isDeleting =
                           state.deleteState == RequestState.loading;
                       return SettingRow(
-                        title: s.deleteRoom,
+                        title: context.tr(AudioRoomKeys.deleteRoom),
                         titleColor: Colors.red,
                         onTap: isDeleting ? null : _confirmDelete,
                         trailing: isDeleting

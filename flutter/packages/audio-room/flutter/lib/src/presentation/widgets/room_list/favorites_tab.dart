@@ -7,10 +7,10 @@ import 'package:utd_app/shared/core/enums.dart';
 
 import '../../../audio_room_strings.dart';
 import '../../../domain/room_model.dart';
-import '../../bloc/room_list_bloc.dart';
-import '../audio_room_app_overlay.dart';
-import '../room_card.dart';
-import '../room_list_card.dart';
+import '../../bloc/room_list/room_list_bloc.dart';
+import '../overlay/audio_room_app_overlay.dart';
+import 'room_card.dart';
+import 'room_list_card.dart';
 import 'enter_room_password_sheet.dart';
 import 'room_empty_state.dart';
 import 'room_error_state.dart';

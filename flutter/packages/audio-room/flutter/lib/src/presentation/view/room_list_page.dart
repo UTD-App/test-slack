@@ -9,13 +9,14 @@ import 'package:utd_app/localization/localization.dart';
 import 'package:utd_app/network/models/api_response.dart';
 
 import '../../audio_room_routes.dart';
-import '../widgets/audio_room_app_overlay.dart';
+import '../widgets/overlay/audio_room_app_overlay.dart';
 import '../../audio_room_strings.dart';
 import '../../data/audio_room_api_service.dart';
 import '../../data/audio_room_remote_datasource.dart';
 import '../../domain/audio_room_repository.dart';
-import '../bloc/room_list_bloc.dart';
-import '../widgets/room/room_assets.dart';
+import '../../data/audio_room_repository_impl.dart';
+import '../bloc/room_list/room_list_bloc.dart';
+import '../widgets/room/shared/room_assets.dart';
 import '../widgets/room_list/room_search_bar.dart';
 import '../widgets/room_list/room_toolbar.dart';
 import '../widgets/room_list/rooms_tab.dart';

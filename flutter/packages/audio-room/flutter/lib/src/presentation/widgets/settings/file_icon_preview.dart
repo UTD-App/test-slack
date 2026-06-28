@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 
-import '../room/room_theme.dart';
+import '../room/shared/room_theme.dart';
 
 class FileIconPreview extends StatelessWidget {
   final File file;

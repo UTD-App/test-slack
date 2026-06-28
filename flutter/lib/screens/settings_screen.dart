@@ -27,9 +27,7 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _logout() async {
-    final confirmed = await _confirm(
-      title: context.tr('app.are_you_sure'),
-    );
+    final confirmed = await _confirm(title: context.tr('app.are_you_sure'));
     if (confirmed != true || !mounted) return;
     await CacheManager.clear();
     if (!mounted) return;
@@ -37,9 +35,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _comingSoon() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(context.tr('app.coming_soon'))),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(context.tr('app.coming_soon'))));
   }
 
   /// Privacy/Terms: open the admin-set external URL when present, otherwise fall
@@ -300,13 +298,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _divider() => Padding(
-        padding: EdgeInsets.symmetric(horizontal: 12.w),
-        child: Divider(
-          height: 1,
-          thickness: 0.5,
-          color: ColorManager.frostedBorder,
-        ),
-      );
+    padding: EdgeInsets.symmetric(horizontal: 12.w),
+    child: Divider(
+      height: 1,
+      thickness: 0.5,
+      color: ColorManager.frostedBorder,
+    ),
+  );
 
   Widget _tile({
     required IconData icon,

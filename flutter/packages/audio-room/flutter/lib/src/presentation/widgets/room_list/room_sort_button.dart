@@ -4,7 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:utd_app/localization/localization.dart';
 
 import '../../../audio_room_strings.dart';
-import '../../bloc/room_list_bloc.dart';
+import '../../bloc/room_list/room_list_bloc.dart';
 
 class RoomSortButton extends StatelessWidget {
   final String sortBy;

@@ -13,8 +13,9 @@ import 'audio_room_strings.dart';
 import 'data/audio_room_api_service.dart';
 import 'data/audio_room_remote_datasource.dart';
 import 'domain/audio_room_repository.dart';
+import 'data/audio_room_repository_impl.dart';
 import 'domain/room_model.dart';
-import 'presentation/bloc/room_list_bloc.dart';
+import 'presentation/bloc/room_list/room_list_bloc.dart';
 import 'presentation/view/room_list_page.dart';
 
 class AudioRoomFeature extends AppFeature {

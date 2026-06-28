@@ -21,10 +21,20 @@ class Seats22ModePlugin extends AudioRoomModePlugin {
   bool get isPaid => true;
 
   @override
-  double get seatSizeDivisor => 5.2;
+  double get seatSizeDivisor => 3;
 
   @override
   List<List<int>>? get gridRows => null;
+
+  @override
+  List<List<int>> get previewRows => const [
+    [0],
+    [1],
+    [2, 3, 4, 5, 6],
+    [7, 8, 9, 10, 11],
+    [12, 13, 14, 15, 16],
+    [17, 18, 19, 20, 21],
+  ];
 
   @override
   Widget? buildCustomLayout(
@@ -45,13 +55,13 @@ class Seats22ModePlugin extends AudioRoomModePlugin {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Host seat (centered)
         seatBuilder(0, seatSize),
         SizedBox(height: rowGap),
-        // Seat 1 with special background
-        seatBuilder(1, seatSize),
+        Align(
+          alignment: Alignment.centerRight,
+          child: seatBuilder(1, seatSize),
+        ),
         SizedBox(height: rowGap),
-        // Row of 5
         buildRow([2, 3, 4, 5, 6]),
         SizedBox(height: rowGap),
         buildRow([7, 8, 9, 10, 11]),
@@ -68,6 +78,8 @@ class Seats22ModePlugin extends AudioRoomModePlugin {
 
   @override
   Widget? buildSeatDecoration(
-          BuildContext context, int seatIndex, double seatSize) =>
-      null;
+    BuildContext context,
+    int seatIndex,
+    double seatSize,
+  ) => null;
 }

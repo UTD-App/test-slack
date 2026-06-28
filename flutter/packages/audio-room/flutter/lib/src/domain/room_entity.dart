@@ -27,6 +27,7 @@ class RoomEntity extends Equatable {
   final DateTime? createdAt;
   final String? emptySeatIcon;
   final String? lockedSeatIcon;
+  final Map<String, dynamic>? pinnedMessage;
 
   const RoomEntity({
     required this.id,
@@ -55,6 +56,7 @@ class RoomEntity extends Equatable {
     this.createdAt,
     this.emptySeatIcon,
     this.lockedSeatIcon,
+    this.pinnedMessage,
   });
 
   @override

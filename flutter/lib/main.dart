@@ -1,6 +1,9 @@
 import 'package:audio_room/audio_room.dart';
 import 'package:audio_room_charisma/audio_room_charisma.dart';
+import 'package:audio_room_mode_seats12/audio_room_mode_seats12.dart';
+import 'package:audio_room_mode_seats22/audio_room_mode_seats22.dart';
 import 'package:authentication/authentication.dart';
+import 'package:device_preview/device_preview.dart';
 import 'package:gifts/gifts.dart';
 import 'package:profile/profile.dart';
 import 'package:wallet/wallet.dart';
@@ -70,6 +73,8 @@ void main() async {
   // instance (with plugins attached) is reused across buildFeatures() calls.
   final audioRoom = AudioRoomFeature();
   audioRoom.registerPlugin(CharismaPlugin());
+  audioRoom.registerModePlugin(Seats12ModePlugin());
+  audioRoom.registerModePlugin(Seats22ModePlugin());
 
   List<AppFeature> buildFeatures() {
     return [
@@ -199,22 +204,25 @@ void main() async {
   _preloadStudioFonts();
 
   runApp(
-    ValueListenableBuilder<int>(
-      valueListenable: _restartNotifier,
-      builder: (_, restartCount, __) {
-        final disabledIds = CacheManager.getDisabledFeatures().toSet();
-        final selectedContributions = CacheManager.getSelectedContributions();
-        final allFeatures = buildFeatures();
+    DevicePreview(
+      enabled: true,
+      builder: (_) => ValueListenableBuilder<int>(
+        valueListenable: _restartNotifier,
+        builder: (_, restartCount, __) {
+          final disabledIds = CacheManager.getDisabledFeatures().toSet();
+          final selectedContributions = CacheManager.getSelectedContributions();
+          final allFeatures = buildFeatures();
 
-        return AddonPlatformApp(
-          key: ValueKey(restartCount),
-          allFeatures: allFeatures,
-          disabledFeatureIds: disabledIds,
-          selectedContributions: selectedContributions,
-          localeNotifier: localeNotifier,
-          themeNotifier: themeNotifier,
-        );
-      },
+          return AddonPlatformApp(
+            key: ValueKey(restartCount),
+            allFeatures: allFeatures,
+            disabledFeatureIds: disabledIds,
+            selectedContributions: selectedContributions,
+            localeNotifier: localeNotifier,
+            themeNotifier: themeNotifier,
+          );
+        },
+      ),
     ),
   );
 }

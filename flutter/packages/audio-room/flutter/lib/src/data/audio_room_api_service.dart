@@ -29,4 +29,16 @@ class AudioRoomApiService extends BaseApiService {
   String kickPath(int roomId) => '/rooms/$roomId/kick';
   String banPath(int roomId) => '/rooms/$roomId/ban';
   String unbanPath(int roomId, int userId) => '/rooms/$roomId/blacklist/$userId';
+
+  // Moderation
+  String muteWritingPath(int id) => '/rooms/$id/mute-writing';
+  String unmuteWritingPath(int id) => '/rooms/$id/unmute-writing';
+  String yellowBannerPath(int id) => '/rooms/$id/yellow-banner';
+
+  // Pinned message
+  String pinMessagePath(int id) => '/rooms/$id/pin-message';
+  String unpinMessagePath(int id) => '/rooms/$id/unpin-message';
+
+  // Role check
+  String checkRolePath(int id) => '/rooms/$id/check-role';
 }

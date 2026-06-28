@@ -109,6 +109,7 @@ class AudioRoomRemoteDataSourceImpl implements AudioRoomRemoteDataSource {
     File? lockedSeatIcon,
     String? emptySeatIconPreset,
     String? lockedSeatIconPreset,
+    bool removeBackground = false,
   }) async {
     final formMap = <String, dynamic>{};
     if (name != null) formMap['room_name'] = name;
@@ -119,6 +120,7 @@ class AudioRoomRemoteDataSourceImpl implements AudioRoomRemoteDataSource {
     } else if (background != null) {
       formMap['room_background'] = background;
     }
+    if (removeBackground) formMap['remove_background'] = '1';
     if (password != null) formMap['room_pass'] = password;
     if (mode != null) formMap['mode'] = mode;
     if (roomType != null) formMap['room_type'] = roomType;
@@ -355,6 +357,75 @@ class AudioRoomRemoteDataSourceImpl implements AudioRoomRemoteDataSource {
   Future<Result<BaseResponse<Map<String, dynamic>>>> getRoomConfig() async {
     return apiService.get(
       apiService.roomConfigPath(),
+      fromJson: (json) => BaseResponse<Map<String, dynamic>>.fromJson(
+        json,
+        fromJsonT: (data) => data as Map<String, dynamic>,
+      ),
+    );
+  }
+
+  // Moderation
+
+  @override
+  Future<Result<BaseResponse>> muteWriting(int roomId, int userId) async {
+    return apiService.post(
+      apiService.muteWritingPath(roomId),
+      data: {'user_id': userId},
+      fromJson: (json) => BaseResponse.fromJson(json),
+    );
+  }
+
+  @override
+  Future<Result<BaseResponse>> unmuteWriting(int roomId, int userId) async {
+    return apiService.post(
+      apiService.unmuteWritingPath(roomId),
+      data: {'user_id': userId},
+      fromJson: (json) => BaseResponse.fromJson(json),
+    );
+  }
+
+  // Yellow banner
+
+  @override
+  Future<Result<BaseResponse>> sendBanner(int roomId, String message) async {
+    return apiService.post(
+      apiService.yellowBannerPath(roomId),
+      data: {'message': message},
+      fromJson: (json) => BaseResponse.fromJson(json),
+    );
+  }
+
+  // Pinned message
+
+  @override
+  Future<Result<BaseResponse>> pinMessage(int roomId, Map<String, dynamic> data) async {
+    return apiService.post(
+      apiService.pinMessagePath(roomId),
+      data: {
+        'text': data['text'],
+        'sender_id': data['senderId'],
+        'sender_name': data['senderName'],
+        'sender_avatar': data['senderAvatar'],
+        'timestamp': data['timestamp'],
+      },
+      fromJson: (json) => BaseResponse.fromJson(json),
+    );
+  }
+
+  @override
+  Future<Result<BaseResponse>> unpinMessage(int roomId) async {
+    return apiService.post(
+      apiService.unpinMessagePath(roomId),
+      fromJson: (json) => BaseResponse.fromJson(json),
+    );
+  }
+
+  // Role check
+
+  @override
+  Future<Result<BaseResponse<Map<String, dynamic>>>> checkRole(int roomId) async {
+    return apiService.post(
+      apiService.checkRolePath(roomId),
       fromJson: (json) => BaseResponse<Map<String, dynamic>>.fromJson(
         json,
         fromJsonT: (data) => data as Map<String, dynamic>,

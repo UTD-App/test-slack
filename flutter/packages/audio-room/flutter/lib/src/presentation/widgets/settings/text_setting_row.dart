@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 
-import '../room/room_theme.dart';
+import '../room/shared/room_theme.dart';
 import 'setting_row.dart';
 
 class TextSettingRow extends StatelessWidget {

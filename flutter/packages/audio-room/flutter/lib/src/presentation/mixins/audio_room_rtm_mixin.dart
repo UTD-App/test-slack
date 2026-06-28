@@ -2,11 +2,12 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:utd_app/cache/cache_manager.dart';
+import 'package:utd_app/localization/localization.dart';
 import 'package:utd_audio_room_kit/utd_audio_room_kit.dart';
 
+import 'package:audio_room/src/audio_room_strings.dart';
 import '../../audio_room_feature.dart';
 import '../../domain/room_model.dart';
-import '../widgets/room/room_strings.dart';
 
 mixin AudioRoomRtmMixin {
   bool get mounted;
@@ -102,7 +103,9 @@ mixin AudioRoomRtmMixin {
         roomCover: data['room_cover']?.toString(),
         roomIntro: data['room_intro']?.toString(),
         roomRule: data['room_rule']?.toString(),
-        roomBackground: data['room_background']?.toString(),
+        roomBackground: data.containsKey('room_background')
+            ? () => data['room_background']?.toString()
+            : null,
         freeMic: data['free_mic'] as bool?,
         isCommentsClosed: commentsClosed,
         hasPassword: data['has_password'] as bool?,
@@ -118,17 +121,21 @@ mixin AudioRoomRtmMixin {
     if (commentsClosed != null) {
       roomController?.commentsLocked.value = commentsClosed;
     }
+    final newMode = data['mode'] as int?;
+    if (newMode != null) {
+      roomController?.currentMode.value =
+          roomController!.resolveMode(newMode.toString());
+    }
   }
 
   void listenParticipantEvents(UTDRoomController controller) {
-    final s = RoomStrings.of(context);
     joinSub = controller.roomManager.participantJoinedStream.listen((p) {
       final name = p.name.isNotEmpty ? p.name : p.identity;
       controller.chatController.addDisplayMessage(
         UTDChatMessage(
           senderUserId: 'system',
           senderName: '',
-          text: s.userJoined(name),
+          text: context.trArgs(AudioRoomKeys.userJoined, {'name': name}),
           timestamp: DateTime.now(),
         ),
       );
@@ -139,7 +146,7 @@ mixin AudioRoomRtmMixin {
         UTDChatMessage(
           senderUserId: 'system',
           senderName: '',
-          text: s.userLeft(name),
+          text: context.trArgs(AudioRoomKeys.userLeft, {'name': name}),
           timestamp: DateTime.now(),
         ),
       );

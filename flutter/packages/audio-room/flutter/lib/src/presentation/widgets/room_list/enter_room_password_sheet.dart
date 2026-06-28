@@ -8,8 +8,9 @@ import '../../../audio_room_strings.dart';
 import '../../../data/audio_room_api_service.dart';
 import '../../../data/audio_room_remote_datasource.dart';
 import '../../../domain/audio_room_repository.dart';
+import '../../../data/audio_room_repository_impl.dart';
 import '../../../domain/room_model.dart';
-import '../audio_room_app_overlay.dart';
+import '../overlay/audio_room_app_overlay.dart';
 
 class EnterRoomPasswordSheet extends StatefulWidget {
   final RoomModel room;

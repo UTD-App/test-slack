@@ -7,12 +7,14 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:utd_app/shared/core/enums.dart';
 
-import '../bloc/create_room_bloc.dart';
-import '../widgets/audio_room_app_overlay.dart';
-import '../widgets/room/room_strings.dart';
-import '../widgets/room/seat_icon_picker.dart';
-import '../widgets/room/seat_icon_row.dart';
-import '../widgets/room/seat_mode_selector.dart';
+import 'package:utd_app/localization/localization.dart';
+
+import 'package:audio_room/src/audio_room_strings.dart';
+import '../bloc/create_room/create_room_bloc.dart';
+import '../widgets/overlay/audio_room_app_overlay.dart';
+import '../widgets/room/seats/seat_icon_picker.dart';
+import '../widgets/room/seats/seat_icon_row.dart';
+import '../widgets/room/seats/seat_mode_selector.dart';
 
 class CreateRoomPage extends StatefulWidget {
   const CreateRoomPage({super.key});
@@ -91,8 +93,6 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
 
   @override
   Widget build(BuildContext context) {
-    final s = RoomStrings.of(context);
-
     return BlocListener<CreateRoomBloc, CreateRoomState>(
       listenWhen: (prev, curr) => prev.createState != curr.createState,
       listener: (context, state) {
@@ -102,13 +102,13 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
           AudioRoomAppOverlay.openRoom(state.createdRoom!.id);
         } else if (state.createState == RequestState.error) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message ?? s.createError)),
+            SnackBar(content: Text(state.message ?? context.tr(AudioRoomKeys.createError))),
           );
         }
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(s.createRoom),
+          title: Text(context.tr(AudioRoomKeys.createRoom)),
           actions: [
             BlocBuilder<CreateRoomBloc, CreateRoomState>(
               buildWhen: (prev, curr) =>
@@ -126,7 +126,7 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                             strokeWidth: 2,
                           ),
                         )
-                      : Text(s.publish),
+                      : Text(context.tr(AudioRoomKeys.publish)),
                 );
               },
             ),
@@ -163,15 +163,15 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
               TextFormField(
                 controller: _nameController,
                 decoration: InputDecoration(
-                  labelText: s.roomName,
+                  labelText: context.tr(AudioRoomKeys.roomName),
                   border: const OutlineInputBorder(),
                 ),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return s.roomNameRequired;
+                    return context.tr(AudioRoomKeys.roomNameRequired);
                   }
                   if (value.trim().length < 2) {
-                    return s.roomNameTooShort;
+                    return context.tr(AudioRoomKeys.roomNameTooShort);
                   }
                   return null;
                 },
@@ -181,7 +181,7 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                 controller: _introController,
                 maxLines: 3,
                 decoration: InputDecoration(
-                  labelText: s.roomIntro,
+                  labelText: context.tr(AudioRoomKeys.roomIntro),
                   border: const OutlineInputBorder(),
                 ),
               ),
@@ -193,7 +193,7 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                   return DropdownButtonFormField<int>(
                     initialValue: _selectedType,
                     decoration: InputDecoration(
-                      labelText: s.category,
+                      labelText: context.tr(AudioRoomKeys.category),
                       border: const OutlineInputBorder(),
                     ),
                     items: state.types
@@ -216,7 +216,7 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
               ),
               SizedBox(height: 12.h),
               SeatIconRow(
-                label: s.emptySeatIcon,
+                label: context.tr(AudioRoomKeys.emptySeatIcon),
                 choice: _emptySeatChoice,
                 iconType: SeatIconType.empty,
                 onTap: () async {
@@ -236,7 +236,7 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
               ),
               SizedBox(height: 12.h),
               SeatIconRow(
-                label: s.lockedSeatIcon,
+                label: context.tr(AudioRoomKeys.lockedSeatIcon),
                 choice: _lockedSeatChoice,
                 iconType: SeatIconType.locked,
                 onTap: () async {
@@ -256,7 +256,7 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
               ),
               SizedBox(height: 12.h),
               SwitchListTile(
-                title: Text(s.password),
+                title: Text(context.tr(AudioRoomKeys.password)),
                 value: _hasPassword,
                 onChanged: (v) => setState(() => _hasPassword = v),
               ),
@@ -266,16 +266,16 @@ class _CreateRoomPageState extends State<CreateRoomPage> {
                   controller: _passwordController,
                   obscureText: true,
                   decoration: InputDecoration(
-                    labelText: s.enterPassword,
+                    labelText: context.tr(AudioRoomKeys.enterPassword),
                     border: const OutlineInputBorder(),
                   ),
                   validator: (value) {
                     if (!_hasPassword) return null;
                     if (value == null || value.trim().isEmpty) {
-                      return s.passwordRequired;
+                      return context.tr(AudioRoomKeys.passwordRequired);
                     }
                     if (value.trim().length < 4) {
-                      return s.passwordTooShort;
+                      return context.tr(AudioRoomKeys.passwordTooShort);
                     }
                     return null;
                   },
