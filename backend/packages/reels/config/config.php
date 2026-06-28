@@ -29,4 +29,19 @@ return [
     'feed_deck_size'  => (int) env('REELS_FEED_DECK_SIZE', 1000),
     'feed_window_ttl' => (int) env('REELS_FEED_WINDOW_TTL', 60),
     'feed_ranking'    => filter_var(env('REELS_FEED_RANKING', true), FILTER_VALIDATE_BOOLEAN),
+
+    // ── Seen-exclusion (don't re-show reels a user already watched) ───────────
+    // The feed remembers the ids it served each user (in the cache — NO DB write)
+    // and skips them on later pages/refreshes, so scrolling + pull-to-refresh keep
+    // surfacing fresh reels instead of looping the same rotation. Best-effort: any
+    // cache hiccup degrades to "no memory" (a possible repeat), never an error.
+    // Keep feed_seen_cap BELOW feed_deck_size so there's always something unseen
+    // to show (otherwise the feed falls back to re-showing the rotation).
+    //
+    // feed_seen_exclusion: master on/off (REELS_FEED_SEEN).
+    // feed_seen_cap      : max reel ids remembered per user (most-recent kept).
+    // feed_seen_ttl      : how long (seconds) that memory lasts (default 6h).
+    'feed_seen_exclusion' => filter_var(env('REELS_FEED_SEEN', true), FILTER_VALIDATE_BOOLEAN),
+    'feed_seen_cap'       => (int) env('REELS_FEED_SEEN_CAP', 400),
+    'feed_seen_ttl'       => (int) env('REELS_FEED_SEEN_TTL', 21600),
 ];

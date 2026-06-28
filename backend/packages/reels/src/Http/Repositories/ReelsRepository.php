@@ -129,25 +129,25 @@ class ReelsRepository
             return $this->emptyFeedPage();
         }
 
-        $page        = max(1, (int) Paginator::resolveCurrentPage());
-        $offsetInPass = ($page - 1) * self::PER_PAGE;
-
-        // One full pass over the deck per session: once a user has scrolled the
-        // whole deck, return an empty page so the client refreshes with a new seed
-        // (a fresh rotation) instead of looping the same order forever.
-        if ($offsetInPass >= $count) {
-            return $this->emptyFeedPage($count, $page);
-        }
+        $page = max(1, (int) Paginator::resolveCurrentPage());
 
         // Stable per-user start (spread across users) + the client refresh nonce
         // ($seed) so pull-to-refresh advances the user to a fresh slice. Normalised
         // to [0, count) defensively (crc32 is signed 32-bit on some platforms).
-        $base  = crc32((string) $userId) + (int) ($seed ?? 0);
-        $start = (int) ((($base % $count) + $count) % $count);
+        $start = (int) (((crc32((string) $userId) + (int) ($seed ?? 0)) % $count + $count) % $count);
 
-        $pageIds = [];
-        for ($i = 0; $i < self::PER_PAGE && ($offsetInPass + $i) < $count; $i++) {
-            $pageIds[] = $deck[($start + $offsetInPass + $i) % $count];
+        // With seen-exclusion the page is the next batch of reels this user hasn't
+        // watched; otherwise it's the plain rotated slice for this page number.
+        $pageIds = $this->seenExclusionEnabled()
+            ? $this->nextUnseenPage($userId, (int) ($seed ?? 0), $deck, $count, $start, $page)
+            : $this->rotatedPage($deck, $count, $start, $page);
+
+        if (empty($pageIds)) {
+            return $this->emptyFeedPage($count, $page);
+        }
+
+        if ($this->seenExclusionEnabled()) {
+            $this->recordSeen($userId, $pageIds);
         }
 
         return $this->hydrateReactions(new LengthAwarePaginator(
@@ -157,6 +157,122 @@ class ReelsRepository
             $page,
             ['path' => Paginator::resolveCurrentPath()]
         ));
+    }
+
+    /**
+     * The plain rotated page: a disjoint PER_PAGE slice of the deck starting at the
+     * user's rotation offset. One full pass over the deck per session — past the end
+     * returns [] so the client refreshes with a new seed (a fresh rotation).
+     *
+     * @return list<int>
+     */
+    private function rotatedPage(array $deck, int $count, int $start, int $page): array
+    {
+        $offsetInPass = ($page - 1) * self::PER_PAGE;
+        if ($offsetInPass >= $count) {
+            return [];
+        }
+
+        $ids = [];
+        for ($i = 0; $i < self::PER_PAGE && ($offsetInPass + $i) < $count; $i++) {
+            $ids[] = $deck[($start + $offsetInPass + $i) % $count];
+        }
+
+        return $ids;
+    }
+
+    /**
+     * The next PER_PAGE reels (walking the user's rotated order) that aren't in the
+     * user's seen set — so later pages and pull-to-refresh keep surfacing fresh
+     * reels. A per-(user,seed) cursor resumes the scan across pages (page 1 restarts
+     * it); the seen set is the real continuity backbone, so even if the cursor is
+     * evicted the scan still skips what was served (re-scanning from 0, correct just
+     * slightly costlier). If the WHOLE deck is already seen (catalog smaller than the
+     * seen cap), it falls back to the plain rotated page so the user still gets
+     * content instead of an endless empty-refresh loop.
+     *
+     * @return list<int>
+     */
+    private function nextUnseenPage($userId, int $seed, array $deck, int $count, int $start, int $page): array
+    {
+        $seen      = $this->seenSet($userId);                 // [id => true] for O(1) lookups
+        $cursorKey = 'reels:cursor:'.$userId.':'.$seed;
+
+        // page 1 = a fresh scan for this seed; later pages resume from the cursor.
+        $cursor = $page <= 1 ? 0 : (int) Cache::get($cursorKey, 0);
+        $cursor = max(0, min($cursor, $count));
+
+        $ids = [];
+        $scanned = 0;
+        while ($scanned < $count && count($ids) < self::PER_PAGE) {
+            $id = $deck[($start + $cursor) % $count];
+            $cursor++;
+            $scanned++;
+            if (! isset($seen[$id])) {
+                $ids[] = $id;
+            }
+        }
+
+        if (empty($ids)) {
+            // Everything reachable is already seen → re-show the rotation.
+            return $this->rotatedPage($deck, $count, $start, $page);
+        }
+
+        try {
+            Cache::put($cursorKey, $cursor, $this->seenTtl());
+        } catch (\Throwable) {
+            // cursor is only an optimisation — the seen set keeps continuity.
+        }
+
+        return $ids;
+    }
+
+    private function seenExclusionEnabled(): bool
+    {
+        return filter_var(config('reels.feed_seen_exclusion', true), FILTER_VALIDATE_BOOLEAN);
+    }
+
+    private function seenTtl(): int
+    {
+        return max(60, (int) config('reels.feed_seen_ttl', 21600));
+    }
+
+    /** The user's recently-served reel ids as an [id => true] lookup map. */
+    private function seenSet($userId): array
+    {
+        try {
+            $list = Cache::get('reels:seen:'.$userId, []);
+
+            return is_array($list) ? array_fill_keys($list, true) : [];
+        } catch (\Throwable) {
+            return [];
+        }
+    }
+
+    /** Append served ids to the user's seen set, de-duped and capped to the most recent N. */
+    private function recordSeen($userId, array $ids): void
+    {
+        try {
+            $key  = 'reels:seen:'.$userId;
+            $list = Cache::get($key, []);
+            if (! is_array($list)) {
+                $list = [];
+            }
+
+            foreach ($ids as $id) {
+                $list[] = (int) $id;
+            }
+            $list = array_values(array_unique($list));
+
+            $cap = max(1, (int) config('reels.feed_seen_cap', 400));
+            if (count($list) > $cap) {
+                $list = array_slice($list, -$cap);
+            }
+
+            Cache::put($key, $list, $this->seenTtl());
+        } catch (\Throwable) {
+            // best-effort — seen memory is an optimisation, never break the feed.
+        }
     }
 
     /** An empty feed page (no reels yet, or the user has scrolled the whole deck). */
