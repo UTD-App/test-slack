@@ -1,12 +1,29 @@
-# Endpoint Test Coverage & Findings — test-stack backend
+# Test Coverage & Findings — test-stack (backend + Flutter)
 
-> ملخص بالعربي: عملت unit/feature tests لكل الـ endpoints في المشروع (core + كل
-> الباكدچات). النتيجة النهائية: **350 test كلهم ناجحين (0 failures)** و**لا يوجد أي
-> مشكلة (bug) في أي endpoint**. القسم الأخير فيه ملاحظات بسيطة اختيارية للتحسين.
+> ملخص بالعربي: عملت tests شاملة للمشروع كله — الـ backend (endpoints + services +
+> models + middleware + كل باكدج داخلياً) والـ Flutter (base + كل باكدج).
+> **الإجمالي النهائي: 825 backend test + 978 Flutter test (1 skipped) = كلهم ناجحين.**
+> لقينا **4 bugs**: 3 منهم **اتصلّحوا** (null-safety في notifications + profile badges،
+> و cursor-pagination)، وواحد (double-hash للباسوورد) متوثّق ومتساب لقرار المنتج.
 
 Date: 2026-06-29
-Scope: every HTTP API endpoint in `backend/routes/api.php` + all 6 packages
-(`audio-room`, `gifts`, `moment`, `profile`, `reels`, `wallet`).
+Scope: the WHOLE app — every HTTP endpoint, base services/models/middleware/support,
+each package's internal logic (services/models/listeners), plus the Flutter base and
+every Flutter package (`audio-room`, `gifts`, `moment`, `profile`, `reels`, `wallet`,
+`authentication`, `utd_studio_sdk`).
+
+## Grand totals
+
+| Suite | Tests | Result |
+|---|---:|---|
+| **Backend** (`php vendor/bin/phpunit`) | **825** | OK, 0 failures |
+| **Flutter** (`flutter test`) | **978** (+1 skipped) | All passed |
+
+Bugs found: **4** — fixed: notification `id`/`data` casts, `UserProfileModel.badges`
+cast, `Common::paginationMeta` cursor crash; documented-only: `User` password
+double-hash (load-bearing, needs a product decision). Details at the end.
+
+The sections below detail the original endpoint pass first, then the deep coverage.
 
 ---
 
@@ -167,10 +184,72 @@ corrected behavior.)
    backend payload (locked in by a test). Harmless **only** if call sites decide success
    from the HTTP status code rather than `BaseResponse.success`; worth a quick verify.
 
+## Deep coverage — base internals + package internals + Flutter packages
+
+Beyond the HTTP endpoints, a second pass covered the non-HTTP logic across the whole app.
+
+### Backend base (PHP) — full suite now **825 tests**
+- **Services** (`tests/Feature/Unit/`, ~105 tests) — UserDataService, MenuService,
+  UserSettingService, PackageRegistry, ProfileContributorRegistry, notification/role/
+  permission/email-template/translatable registries, StorageConfigService URL building,
+  AuditLogger, NullWallet.
+- **Models + Common helper + Support** (~141 tests) — User (casts/relations/`isOnline`/
+  SoftDeletes/password mutator), Config (`map()` cache + invalidation), Page (`tr()`),
+  Language (single-default), Notification (scopes), Profile (media accessors), Package,
+  Country/StacScreen/Setting/Code/etc.; `Common::apiResponse` envelope + pagination meta;
+  SocialPlatforms, Translatable, UtdManifest, AppLanguages, Auditable, DTOs.
+- **Middleware + Requests + Mail + Events** (~55 tests) — GeneralBan, UserBan,
+  CheckLatestToken, Localization, UpdateLastSeen, AuthRateLimiter, EnsurePackageEnabled,
+  VerifyUtdSecret, StacAuth; Login/Register request rules + 422 envelope; EmailOtp
+  (cooldown / daily-limit / TTL / brute-force lockout) + OtpCodeMail; the 4 events.
+
+### Backend package internals (services/models/listeners — NOT endpoints)
+- **moment / audio-room / profile** (~73 tests) — feed building + ordering, like/comment/
+  react/report services, soft-delete & ownership, Room (owner/admin/password), blacklist
+  expiry, charisma cache, profile infolist + media resolution.
+- **gifts / reels / wallet** (~101 tests) — gift catalog/level/exp + GiftDirectory +
+  `CreditRoomOwnerOnGiftSent` listener; reels like/view/comment services + counter clamps +
+  video processing; wallet money precision, idempotent debit replay, held/available
+  boundary, ChargeService, NullWallet exceptions.
+
+### Flutter packages (pure-Dart, run from the main app context) — full suite now **978 tests**
+Tested via `package:<name>/...` imports under `test/pkg/<name>/`:
+- **gifts / wallet / profile** (117) — models, picker/wallet/profile cubit STATE classes,
+  media resolution, profile computed getters (wealth/charm level, age, social stats).
+- **moment / reels** (120) — models (+nested replies), entities, feed/comment/like state,
+  `timeAgo`/`compactNumber` (en + ar pluralization), reaction/report key mappers.
+- **authentication / utd_studio_sdk** (152) — auth models/params + bloc state, Stac
+  coerce/binding/i18n, registries, parser models, screen store (fake cache+transport),
+  generic action parsers.
+- **audio-room** (95) — room/category/people models, all 5 bloc state classes + events,
+  seat-icon choices, all 7 mode plugins (unique codes, grid math), charisma, translations.
+
+### Bugs found & FIXED in this deep pass (2)
+
+9. **`UserProfileModel.badges` — unsafe `as List?` cast** (Flutter profile package,
+   `packages/profile/lib/src/domain/user_profile_model.dart`). A non-list `badges` value
+   threw `TypeError` (the `?? []` only covered null). **Fixed** → `is List` guard, matching
+   the sibling `covers`/`socialStats` coercers.
+
+10. **`Common::paginationMeta` — crashed on cursor paginators** (`app/Helpers/Common.php`).
+    `apiResponse()` accepts an `AbstractCursorPaginator` and the docblock advertised cursor
+    support, but the meta builder unconditionally called `currentPage()` (absent on cursor
+    paginators) → `BadMethodCallException`. **Fixed** → branch on type: `current_page` for
+    page-number paginators, `next_cursor`/`prev_cursor` for cursor paginators.
+
+### Bug documented (NOT fixed — load-bearing, needs a decision)
+
+11. **`User::setPasswordAttribute` double-hash** (`app/Models/User.php`). It always
+    `bcrypt()`s on assignment, so assigning an already-hashed value double-hashes it. Every
+    current caller passes plaintext (registration / reset), so it's correct in practice, but
+    a guard (or Laravel's `'password' => 'hashed'` cast) would prevent the footgun. Left as-is
+    to avoid an app-wide behavior change; covered by a test asserting current behavior.
+
 ## Conclusion
 
-All ~137 API endpoints across the core app and every package now have automated test
-coverage (**350 backend tests**), plus **494 Flutter tests** (unit + widget) where there
-were none. Everything is green. No backend endpoint defects were found; the Flutter side
-surfaced 2 small null-safety bugs in notification parsing — **both now fixed** (items 6–7)
-— plus the envelope-key note (item 8) left for your review.
+The whole app is now under automated test: **825 backend tests** (endpoints + services +
+models + middleware + every package's internals) and **978 Flutter tests** (base unit +
+widgets + every package), all green. Four bugs surfaced — three **fixed** (notification
+`id`/`data` casts, `UserProfileModel.badges` cast, `Common::paginationMeta` cursor crash)
+and one **documented** (the `User` password double-hash, left for a product decision) —
+plus the cross-stack `status` vs `success` envelope note (item 8) for your review.

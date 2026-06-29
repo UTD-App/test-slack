@@ -45,13 +45,22 @@ class Common
     private static function paginationMeta($paginator): array
     {
         $meta = [
-            'current_page' => $paginator->currentPage(),
             'per_page' => $paginator->perPage(),
             'count' => count($paginator->items()),
             'has_more' => $paginator->hasMorePages(),
             'next_page_url' => $paginator->nextPageUrl(),
             'prev_page_url' => $paginator->previousPageUrl(),
         ];
+
+        // `current_page` exists on page-number paginators (length-aware + simple)
+        // but NOT on cursor paginators, which expose an opaque cursor instead.
+        // Calling currentPage() on a cursor paginator throws — branch on type.
+        if ($paginator instanceof AbstractPaginator) {
+            $meta['current_page'] = $paginator->currentPage();
+        } elseif ($paginator instanceof AbstractCursorPaginator) {
+            $meta['next_cursor'] = $paginator->nextCursor()?->encode();
+            $meta['prev_cursor'] = $paginator->previousCursor()?->encode();
+        }
 
         // total/last_page exist only on length-aware paginators (not simple/cursor).
         if ($paginator instanceof LengthAwarePaginatorContract) {

@@ -121,9 +121,11 @@ class UserProfileModel extends UserProfileEntity {
     return (years >= 0 && years < 150) ? years : null;
   }
 
-  List<String> get badges =>
-      (extensions['badges'] as List?)?.map((e) => e.toString()).toList() ??
-      const [];
+  // Guard with `is List` (like covers/socialStats) so a malformed non-list
+  // `badges` value can't throw — falls back to an empty list.
+  List<String> get badges => extensions['badges'] is List
+      ? (extensions['badges'] as List).map((e) => e.toString()).toList()
+      : const [];
 
   /// Friends / Following / Followers counts (denormalised on the backend user).
   /// Empty when the backend doesn't send them.
