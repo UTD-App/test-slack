@@ -44,6 +44,12 @@ jobs:
           php artisan view:cache
           php artisan filament:assets 2>/dev/null || true
 
+      - name: Restart queue workers
+        # Signals running queue:work processes (supervisor-managed) to restart so
+        # they pick up the new code. No-op if no worker is running. See
+        # deploy/README.md for the supervisor + scheduler-cron server setup.
+        run: php artisan queue:restart
+
       - name: Fix permissions
         run: |
           sudo chown -R www-data:www-data /var/www/project-x/backend/storage /var/www/project-x/backend/bootstrap/cache
@@ -55,11 +61,19 @@ jobs:
           sudo service nginx reload
 
       - name: Health check
+        # Hits /api/health which now verifies DB connectivity (200 only when
+        # healthy). Retries to ride out a brief post-reload blip, then fails the
+        # deploy on a sustained non-200 so a broken release is surfaced.
         run: |
-          sleep 3
-          STATUS=$(curl -sf -o /dev/null -w "%{http_code}" http://localhost || echo "000")
-          echo "HTTP Status: $STATUS"
-          if [ "$STATUS" -ge 500 ] || [ "$STATUS" = "000" ]; then
-            echo "::warning::Health check returned $STATUS"
+          STATUS="000"
+          for i in 1 2 3 4 5; do
+            sleep 3
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/api/health || echo "000")
+            echo "Attempt $i: HTTP $STATUS"
+            [ "$STATUS" = "200" ] && break
+          done
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Health check failed with status $STATUS"
+            exit 1
           fi
-          echo "Deploy complete"
+          echo "Deploy healthy"

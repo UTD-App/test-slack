@@ -1,0 +1,7 @@
+# Laravel scheduler for project-x (test-slack backend).
+# Install:  sudo cp this file to /etc/cron.d/project-x-scheduler  (then it loads automatically)
+# Runs the scheduler every minute; Laravel decides which due tasks to fire
+# (see app/Console/Kernel.php: monthly financial rollover + daily prunes).
+# Without this, the monthly_update rollover and prune jobs NEVER run.
+
+* * * * * www-data cd /var/www/project-x/backend && php artisan schedule:run >> /dev/null 2>&1
