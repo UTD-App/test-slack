@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use Utd\AudioRoom\Entities\Room;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Utd\AudioRoom\Models\CharismaLevel;
 use Utd\AudioRoom\Models\CharismaRoomData;
@@ -63,6 +64,10 @@ class CharismaController extends Controller
             return Common::apiResponse(false, 'Room not found', null, 404);
         }
 
+        if (!$room->isOwnerOrAdmin(Auth::id())) {
+            return Common::apiResponse(false, 'Unauthorized', null, 403);
+        }
+
         $room->charizma_status = $request->status;
         $room->charizma_timestamp = $request->status ? time() : null;
         $room->save();
@@ -75,6 +80,15 @@ class CharismaController extends Controller
     public function reset(Request $request): JsonResponse
     {
         $request->validate(['room_id' => 'required|integer']);
+
+        $room = Room::find($request->room_id);
+        if (!$room) {
+            return Common::apiResponse(false, 'Room not found', null, 404);
+        }
+
+        if (!$room->isOwnerOrAdmin(Auth::id())) {
+            return Common::apiResponse(false, 'Unauthorized', null, 403);
+        }
 
         CharismaRoomData::where('room_id', $request->room_id)
             ->update(['total' => 0]);
