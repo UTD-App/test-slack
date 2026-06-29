@@ -25,7 +25,7 @@ class ReportController extends Controller
 
         $moment = Moment::find($momentId);
         if (! $moment) {
-            return Common::apiResponse(0, __('moment::messages.not_found'), [], 402);
+            return Common::apiResponse(0, __('moment::messages.not_found'), [], 404);
         }
 
         $reportedId = $moment->user_id;
@@ -35,12 +35,12 @@ class ReportController extends Controller
             ->where('Reporter_id', $userId)
             ->first();
         if ($alreadyReported) {
-            return Common::apiResponse(0, __('moment::messages.already_reported'), [], 402);
+            return Common::apiResponse(0, __('moment::messages.already_reported'), [], 409);
         }
 
         $user = User::find($reportedId);
         if (! $user) {
-            return Common::apiResponse(0, __('moment::messages.user_not_found'), [], 402);
+            return Common::apiResponse(0, __('moment::messages.user_not_found'), [], 404);
         }
 
         ReportMoment::create([

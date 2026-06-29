@@ -25,7 +25,7 @@ class MomentUserLikesController extends Controller
     {
         $moment = Moment::find($moment_id);
         if (! $moment) {
-            return Common::apiResponse(0, __('moment::messages.not_found'), [], 402);
+            return Common::apiResponse(0, __('moment::messages.not_found'), [], 404);
         }
 
         $paginateLikes = $this->momentLikesService->showLikes($moment);
@@ -39,7 +39,7 @@ class MomentUserLikesController extends Controller
 
         $moment = Moment::find($moment_id);
         if (! $moment) {
-            return Common::apiResponse(0, __('moment::messages.not_found'), [], 402);
+            return Common::apiResponse(0, __('moment::messages.not_found'), [], 404);
         }
 
         // Facebook-style reaction type; defaults to 'like' (back-compat with the

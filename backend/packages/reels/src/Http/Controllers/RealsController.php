@@ -121,7 +121,7 @@ class RealsController extends Controller
         $deleted = $this->realsService->delete((int) $id);
 
         if (! $deleted) {
-            return Common::apiResponse(0, __('reels::messages.not_owner'), null, 402);
+            return Common::apiResponse(0, __('reels::messages.not_owner'), null, 403);
         }
 
         return Common::apiResponse(1, __('reels::messages.success'));

@@ -111,7 +111,7 @@ class MomentService extends MomentBaseModelService
         $moment = $this->momentRepository->getMomentById($id, $userId);
 
         if (! $moment) {
-            return ['success' => false, 'message' => __('moment::messages.not_found'), 'data' => null, 'status' => 402];
+            return ['success' => false, 'message' => __('moment::messages.not_found'), 'data' => null, 'status' => 404];
         }
 
         return ['success' => true, 'message' => '', 'data' => $moment, 'status' => 200];

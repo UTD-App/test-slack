@@ -168,10 +168,10 @@ class ReelsReactionsTest extends TestCase
 
         $this->assertDatabaseHas('report_real_comments', ['comment_id' => $comment->id, 'type' => 'abuse']);
 
-        // Second report by the same user is rejected.
+        // Second report by the same user is rejected (409 Conflict — duplicate).
         $this->withHeader('Authorization', "Bearer {$token}")
             ->postJson("/api/reals/{$real->id}/comment/{$comment->id}/report", ['description' => 'again', 'type' => 'spam'])
-            ->assertStatus(402)
+            ->assertStatus(409)
             ->assertJsonPath('status', false);
     }
 

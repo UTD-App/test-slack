@@ -20,7 +20,7 @@ class RealsUserLikesController extends Controller
     {
         $real = Real::find($real_id);
         if (! $real) {
-            return Common::apiResponse(0, __('reels::messages.not_found'), [], 402);
+            return Common::apiResponse(0, __('reels::messages.not_found'), [], 404);
         }
 
         $likes = $this->realLikesService->showLikes($real);
@@ -34,7 +34,7 @@ class RealsUserLikesController extends Controller
 
         $real = Real::find($real_id);
         if (! $real) {
-            return Common::apiResponse(0, __('reels::messages.not_found'), [], 402);
+            return Common::apiResponse(0, __('reels::messages.not_found'), [], 404);
         }
 
         // Facebook-style reaction type; defaults to 'like' (back-compat with the
@@ -57,7 +57,7 @@ class RealsUserLikesController extends Controller
     {
         $real = Real::find($real_id);
         if (! $real) {
-            return Common::apiResponse(0, __('reels::messages.not_found'), [], 402);
+            return Common::apiResponse(0, __('reels::messages.not_found'), [], 404);
         }
 
         // Scope to the caller so a user can only remove THEIR OWN like.

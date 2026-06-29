@@ -15,7 +15,7 @@ class RealsUserViewsController extends Controller
         // Atomic counter increment (no model load, no row insert) — survives the
         // view write storm at high concurrency. False => reel doesn't exist.
         if (! $this->realViewsService->add((int) $real_id)) {
-            return Common::apiResponse(0, __('reels::messages.not_found'), [], 402);
+            return Common::apiResponse(0, __('reels::messages.not_found'), [], 404);
         }
 
         return Common::apiResponse(1, __('reels::messages.success'), [], 200);

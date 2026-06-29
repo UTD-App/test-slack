@@ -27,7 +27,7 @@ class MomentUserCommentController extends Controller
     {
         $moment = Moment::find($moment_id);
         if (! $moment) {
-            return Common::apiResponse(0, __('moment::messages.not_found'), [], 402);
+            return Common::apiResponse(0, __('moment::messages.not_found'), [], 404);
         }
 
         $paginateComments = $this->momentCommentsService->showComments($moment);
@@ -39,7 +39,7 @@ class MomentUserCommentController extends Controller
     {
         $moment = Moment::find($moment_id);
         if (! $moment) {
-            return Common::apiResponse(0, __('moment::messages.not_found'), [], 402);
+            return Common::apiResponse(0, __('moment::messages.not_found'), [], 404);
         }
 
         $user = Auth::user();
@@ -76,12 +76,12 @@ class MomentUserCommentController extends Controller
     {
         $moment = Moment::find($moment_id);
         if (! $moment) {
-            return Common::apiResponse(0, __('moment::messages.not_found'), [], 402);
+            return Common::apiResponse(0, __('moment::messages.not_found'), [], 404);
         }
 
         $comment = MomentCommint::where('id', $id)->where('moment_id', $moment_id)->first();
         if (! $comment) {
-            return Common::apiResponse(0, __('moment::messages.not_found'), [], 402);
+            return Common::apiResponse(0, __('moment::messages.not_found'), [], 404);
         }
 
         $user = Auth::user();
@@ -107,12 +107,12 @@ class MomentUserCommentController extends Controller
     {
         $moment = Moment::find($moment_id);
         if (! $moment) {
-            return Common::apiResponse(0, __('moment::messages.not_found'), [], 402);
+            return Common::apiResponse(0, __('moment::messages.not_found'), [], 404);
         }
 
         $comment = MomentCommint::where('id', $id)->where('moment_id', $moment_id)->first();
         if (! $comment) {
-            return Common::apiResponse(0, __('moment::messages.not_found'), [], 402);
+            return Common::apiResponse(0, __('moment::messages.not_found'), [], 404);
         }
 
         if (! $request->input('description')) {
@@ -125,7 +125,7 @@ class MomentUserCommentController extends Controller
         $userId = Auth::id();
         $already = ReportMomentComment::where('comment_id', $id)->where('Reporter_id', $userId)->first();
         if ($already) {
-            return Common::apiResponse(0, __('moment::messages.already_reported_comment'), [], 402);
+            return Common::apiResponse(0, __('moment::messages.already_reported_comment'), [], 409);
         }
 
         ReportMomentComment::create([
@@ -144,12 +144,12 @@ class MomentUserCommentController extends Controller
     {
         $moment = Moment::find($momentId);
         if (! $moment) {
-            return Common::apiResponse(0, __('moment::messages.not_found'), [], 402);
+            return Common::apiResponse(0, __('moment::messages.not_found'), [], 404);
         }
 
         $comment = MomentCommint::where('id', $id)->where('moment_id', $momentId)->first();
         if (! $comment) {
-            return Common::apiResponse(0, __('moment::messages.not_found'), [], 402);
+            return Common::apiResponse(0, __('moment::messages.not_found'), [], 404);
         }
 
         // Authorization: only the comment's author OR the moment owner may delete.
@@ -163,7 +163,7 @@ class MomentUserCommentController extends Controller
 
             return Common::apiResponse(1, __('moment::messages.success'), [], 200);
         } catch (\Throwable) {
-            return Common::apiResponse(0, __('moment::messages.try_again'), [], 402);
+            return Common::apiResponse(0, __('moment::messages.try_again'), [], 422);
         }
     }
 

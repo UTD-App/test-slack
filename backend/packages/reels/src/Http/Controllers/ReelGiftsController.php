@@ -27,13 +27,13 @@ class ReelGiftsController extends Controller
 
         $real = Real::find($real_id);
         if (! $real) {
-            return Common::apiResponse(0, __('reels::messages.not_found'), [], 402);
+            return Common::apiResponse(0, __('reels::messages.not_found'), [], 404);
         }
 
         $sender = Auth::user();
         $receiver = User::find($real->user_id);
         if (! $receiver) {
-            return Common::apiResponse(0, __('reels::messages.user_not_found'), [], 402);
+            return Common::apiResponse(0, __('reels::messages.user_not_found'), [], 404);
         }
 
         $result = app(GiftSender::class)->send(

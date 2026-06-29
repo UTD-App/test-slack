@@ -25,7 +25,7 @@ class ReportController extends Controller
 
         $real = Real::find($realId);
         if (! $real) {
-            return Common::apiResponse(0, __('reels::messages.not_found'), [], 402);
+            return Common::apiResponse(0, __('reels::messages.not_found'), [], 404);
         }
 
         $reportedId = $real->user_id;
@@ -35,12 +35,12 @@ class ReportController extends Controller
             ->where('Reporter_id', $userId)
             ->first();
         if ($alreadyReported) {
-            return Common::apiResponse(0, __('reels::messages.already_reported'), [], 402);
+            return Common::apiResponse(0, __('reels::messages.already_reported'), [], 409);
         }
 
         $user = User::find($reportedId);
         if (! $user) {
-            return Common::apiResponse(0, __('reels::messages.user_not_found'), [], 402);
+            return Common::apiResponse(0, __('reels::messages.user_not_found'), [], 404);
         }
 
         ReportReals::create([

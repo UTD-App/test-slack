@@ -29,13 +29,13 @@ class MomentUserGiftsController extends Controller
 
         $moment = Moment::find($moment_id);
         if (! $moment) {
-            return Common::apiResponse(0, __('moment::messages.not_found'), [], 402);
+            return Common::apiResponse(0, __('moment::messages.not_found'), [], 404);
         }
 
         $sender = Auth::user();
         $receiver = User::find($moment->user_id);
         if (! $receiver) {
-            return Common::apiResponse(0, __('moment::messages.user_not_found'), [], 402);
+            return Common::apiResponse(0, __('moment::messages.user_not_found'), [], 404);
         }
 
         $result = app(GiftSender::class)->send(

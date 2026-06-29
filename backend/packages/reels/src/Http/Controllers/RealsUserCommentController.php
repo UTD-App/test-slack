@@ -22,7 +22,7 @@ class RealsUserCommentController extends Controller
     {
         $real = Real::find($real_id);
         if (! $real) {
-            return Common::apiResponse(0, __('reels::messages.not_found'), [], 402);
+            return Common::apiResponse(0, __('reels::messages.not_found'), [], 404);
         }
 
         $comments = $this->realCommentsService->showComments($real);
@@ -34,7 +34,7 @@ class RealsUserCommentController extends Controller
     {
         $real = Real::find($real_id);
         if (! $real) {
-            return Common::apiResponse(0, __('reels::messages.not_found'), [], 402);
+            return Common::apiResponse(0, __('reels::messages.not_found'), [], 404);
         }
 
         $comment = trim((string) $request->input('comment'));
@@ -73,12 +73,12 @@ class RealsUserCommentController extends Controller
     {
         $real = Real::find($real_id);
         if (! $real) {
-            return Common::apiResponse(0, __('reels::messages.not_found'), [], 402);
+            return Common::apiResponse(0, __('reels::messages.not_found'), [], 404);
         }
 
         $comment = RealUserComment::where('id', $id)->where('real_id', $real_id)->first();
         if (! $comment) {
-            return Common::apiResponse(0, __('reels::messages.not_found'), [], 402);
+            return Common::apiResponse(0, __('reels::messages.not_found'), [], 404);
         }
 
         $user = Auth::user();
@@ -104,12 +104,12 @@ class RealsUserCommentController extends Controller
     {
         $real = Real::find($real_id);
         if (! $real) {
-            return Common::apiResponse(0, __('reels::messages.not_found'), [], 402);
+            return Common::apiResponse(0, __('reels::messages.not_found'), [], 404);
         }
 
         $comment = RealUserComment::where('id', $id)->where('real_id', $real_id)->first();
         if (! $comment) {
-            return Common::apiResponse(0, __('reels::messages.not_found'), [], 402);
+            return Common::apiResponse(0, __('reels::messages.not_found'), [], 404);
         }
 
         if (! $request->input('description')) {
@@ -122,7 +122,7 @@ class RealsUserCommentController extends Controller
         $userId = Auth::id();
         $already = ReportRealComment::where('comment_id', $id)->where('Reporter_id', $userId)->first();
         if ($already) {
-            return Common::apiResponse(0, __('reels::messages.already_reported_comment'), [], 402);
+            return Common::apiResponse(0, __('reels::messages.already_reported_comment'), [], 409);
         }
 
         ReportRealComment::create([
@@ -141,12 +141,12 @@ class RealsUserCommentController extends Controller
     {
         $real = Real::find($real_id);
         if (! $real) {
-            return Common::apiResponse(0, __('reels::messages.not_found'), [], 402);
+            return Common::apiResponse(0, __('reels::messages.not_found'), [], 404);
         }
 
         $comment = RealUserComment::where('id', $id)->where('real_id', $real_id)->first();
         if (! $comment) {
-            return Common::apiResponse(0, __('reels::messages.not_found'), [], 402);
+            return Common::apiResponse(0, __('reels::messages.not_found'), [], 404);
         }
 
         // Authorization: only the comment's author OR the reel owner may delete.
@@ -160,7 +160,7 @@ class RealsUserCommentController extends Controller
 
             return Common::apiResponse(1, __('reels::messages.success'), [], 200);
         } catch (\Throwable) {
-            return Common::apiResponse(0, __('reels::messages.try_again'), [], 402);
+            return Common::apiResponse(0, __('reels::messages.try_again'), [], 422);
         }
     }
 
