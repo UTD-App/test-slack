@@ -7,63 +7,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Services\EmailOtp;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class ForgotPasswordController extends Controller
 {
-    public function sendResetToken(Request $request)
-    {
-        $request->validate(['email' => 'required|email']);
-
-        $user = User::where('email', $request->email)->first();
-
-        if (!$user) {
-            return Common::apiResponse(false, __('user-not-found'), null, 422);
-        }
-
-        $token = Str::random(64);
-
-        DB::table('password_reset_tokens')->updateOrInsert(
-            ['email' => $request->email],
-            ['token' => $token, 'created_at' => now()],
-        );
-
-        return Common::apiResponse(true, 'reset-token-generated', ['token' => $token]);
-    }
-
-    public function reset(Request $request)
-    {
-        $request->validate([
-            'email' => 'required|email',
-            'token' => 'required|string',
-            'password' => 'required|string|min:6',
-        ]);
-
-        $record = DB::table('password_reset_tokens')
-            ->where('email', $request->email)
-            ->where('token', $request->token)
-            ->where('created_at', '>', now()->subHour())
-            ->first();
-
-        if (!$record) {
-            return Common::apiResponse(false, __('invalid-or-expired-token'), null, 422);
-        }
-
-        $user = User::where('email', $request->email)->first();
-
-        if (!$user) {
-            return Common::apiResponse(false, __('user-not-found'), null, 422);
-        }
-
-        $user->password = $request->password;
-        $user->save();
-
-        DB::table('password_reset_tokens')->where('email', $request->email)->delete();
-
-        return Common::apiResponse(true, 'password-reset-successful');
-    }
-
     // ──────────────────────────────────────────────────────────────────────────
     // Email-OTP recovery. send-otp → verify-code → reset-otp. A 6-digit code is
     // emailed to the address on the account (see EmailOtp + OtpCodeMail); the code
@@ -94,6 +40,7 @@ class ForgotPasswordController extends Controller
 
     /**
      * Step 2: check an OTP without consuming it (lets the UI advance to step 3).
+     * Wrong codes are rate-limited per email (see EmailOtp::attemptValidate).
      */
     public function verifyOtp(Request $request)
     {
@@ -102,7 +49,13 @@ class ForgotPasswordController extends Controller
             'code' => 'required|string',
         ]);
 
-        if (!(new EmailOtp())->isValidate($request->email, $request->code)) {
+        try {
+            $valid = (new EmailOtp())->attemptValidate($request->email, $request->code);
+        } catch (\Exception $e) {
+            return Common::apiResponse(false, $e->getMessage(), null, 429);
+        }
+
+        if (!$valid) {
             return Common::apiResponse(false, __('invalid-code'), null, 422);
         }
 
@@ -121,7 +74,14 @@ class ForgotPasswordController extends Controller
         ]);
 
         $otp = new EmailOtp();
-        if (!$otp->isValidate($request->email, $request->code)) {
+
+        try {
+            $valid = $otp->attemptValidate($request->email, $request->code);
+        } catch (\Exception $e) {
+            return Common::apiResponse(false, $e->getMessage(), null, 429);
+        }
+
+        if (!$valid) {
             return Common::apiResponse(false, __('invalid-code'), null, 422);
         }
 
@@ -132,6 +92,12 @@ class ForgotPasswordController extends Controller
 
         $user->password = $request->password; // auto-hashed by User::setPasswordAttribute
         $user->save();
+
+        // Revoke every existing session so a thief who reset the password (or an
+        // attacker already holding a stolen token) is logged out everywhere.
+        if (method_exists($user, 'tokens')) {
+            $user->tokens()->delete();
+        }
 
         $otp->resetCodes($request->email);
 

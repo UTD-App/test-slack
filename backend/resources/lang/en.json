@@ -2,6 +2,7 @@
     "code-sent": "A verification code has been sent to your email",
     "invalid-code": "Invalid or expired code",
     "valid-code": "Code verified",
+    "too-many-attempts": "Too many incorrect attempts. Please request a new code",
     "you-spent-all-chances": "You have reached the daily limit. Please try again later",
     "user-not-found": "No account is registered with this email",
     "password-reset-successful": "Your password has been reset successfully",

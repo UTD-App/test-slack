@@ -116,10 +116,10 @@ Route::prefix(config('app.api_prefix'))->group(function () {
         Route::get('all-countries', [RegisterController::class, 'countries']);
         Route::post('register', [AuthController::class, 'register'])->middleware('auth.rate.limit:5,1');
         Route::post('login', [AuthController::class, 'login'])->middleware('auth.rate.limit:5,1');
-        Route::post('forgot-password', [ForgotPasswordController::class, 'sendResetToken'])->middleware('auth.rate.limit:3,5');
-        Route::post('reset-password', [ForgotPasswordController::class, 'reset'])->middleware('auth.rate.limit:3,5');
 
-        // WhatsApp-OTP recovery (phone based) — mirrors the Eagle flow.
+        // Password recovery = email OTP only. The legacy token flow
+        // (forgot-password / reset-password) was removed because it returned the
+        // reset token in the API response (account-takeover risk).
         Route::post('forgot-password/send-otp', [ForgotPasswordController::class, 'sendOtp'])->middleware('auth.rate.limit:3,5');
         Route::post('forgot-password/verify-code', [ForgotPasswordController::class, 'verifyOtp'])->middleware('auth.rate.limit:5,1');
         Route::post('forgot-password/reset-otp', [ForgotPasswordController::class, 'resetWithOtp'])->middleware('auth.rate.limit:3,5');

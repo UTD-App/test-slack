@@ -45,7 +45,10 @@ return [
     |
     */
 
-    'expiration' => null,
+    // Set SANCTUM_EXPIRATION in production (e.g. 43200 = 30 days) so leaked
+    // tokens cannot live forever. null = no expiry (kept as the default to avoid
+    // logging out existing sessions on deploy until ops opts in).
+    'expiration' => env('SANCTUM_EXPIRATION', null),
 
     /*
     |--------------------------------------------------------------------------
