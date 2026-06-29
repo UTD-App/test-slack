@@ -3,6 +3,7 @@
 namespace Utd\Gifts\Tests\Feature;
 
 use App\Contracts\LuckyGiftResolver;
+use App\Contracts\RoomOwnerResolver;
 use App\Facades\Wallet;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -136,15 +137,31 @@ class GiftSendApiTest extends TestCase
         Wallet::credit($sender, 'coins', 1000, 'admin_charge');
         $gift = $this->gift(100);
 
+        // The cut goes to the owner resolved from the room (the seam), NEVER the
+        // client-supplied owner_id. Bind a fake resolver so this gifts test stays
+        // independent of any room package, and pass a SPOOFED owner_id to prove
+        // it is ignored.
+        app()->bind(RoomOwnerResolver::class, fn () => new class ($owner->id) implements RoomOwnerResolver {
+            public function __construct(private int $ownerId)
+            {
+            }
+
+            public function ownerId(int $roomId): ?int
+            {
+                return $roomId === 42 ? $this->ownerId : null;
+            }
+        });
+
         $this->authed($sender)->postJson('/api/gifts/send', [
             'id'       => $gift->id,
             'toUid'    => (string) $receiver->id,
             'num'      => 2,
             'room_id'  => 42,
-            'owner_id' => $owner->id,
+            'owner_id' => 999999, // spoofed — must be ignored
         ])->assertStatus(200)->assertJsonPath('status', true);
 
-        // value = 100 * 2 = 200; owner cut = 3% = 6 diamonds.
+        // value = 100 * 2 = 200; owner cut = 3% = 6 diamonds, to the RESOLVED owner
+        // (the spoofed owner_id=999999 was ignored, else $owner would have 0).
         $this->assertEquals(6.0, Wallet::getBalance($owner, 'diamonds'));
         // receiver still earns the full value; sender pays the gift price only.
         $this->assertEquals(200.0, Wallet::getBalance($receiver, 'diamonds'));
