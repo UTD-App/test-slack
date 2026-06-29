@@ -113,10 +113,11 @@ writing the tests.
 
 ## Flutter unit tests (comprehensive)
 
-The Flutter app (`flutter/`) had **no `test/` directory**. Added **416 fast, pure-Dart
-unit tests** across **32 files** (no widgets / no network / no platform channels) —
-run with `cd flutter && flutter test`. Tooling note: only `flutter_test` is used; no
-`bloc_test`/`mocktail` were added (the dep tree has many fragile `dependency_overrides`).
+The Flutter app (`flutter/`) had **no `test/` directory**. Added **494 tests
+(1 skipped)** across **46 files** — run with `cd flutter && flutter test`. Tooling
+note: only `flutter_test` is used; no `bloc_test`/`mocktail` were added (the dep tree
+has many fragile `dependency_overrides`). A shared widget pump harness lives at
+`test/support/widget_harness.dart` (`ScreenUtilInit` + `MaterialApp`).
 
 Coverage by area:
 - **Utils** — `validators` (email/phone/url/password + field validators), `formatters`
@@ -137,22 +138,28 @@ Coverage by area:
 - **Registries** — `feature_registry` (enable/disable gating, routes, contributions,
   ordering, validateAll/initializeAll), `role`/`settings`/`widget`/`ui_contribution`,
   and the stac `field`/`stac_data`/`studio_slot` registries.
+- **Widgets** (`test/shared/widgets/`, via the pump harness) — all 10 reusable widgets:
+  `text`, `loading`, `button` (tap/`isLoading`/disabled), `text_button`, `text_input`
+  (validator wiring, obscureText, onChanged, prefix/suffix), `image`/`network_image`,
+  `app_bar`, `refresh_indicator`, `handling_data` (loading/loaded/empty/ban states).
+- **ScreenUtil/style** — `DimensionsExt`/`PaddingExt`/`TextStyleExtensions` (pumped),
+  `app_text_styles`, `system_ui_style`, `MediaUploadResult`.
 
-Result: **416 tests, all passing.**
+Result: **494 tests (1 skipped — network-SVG decode), all passing.**
 
-### Flutter bugs found (2 — real, in `lib/features/notifications/notification_models.dart`)
+### Flutter bugs found & FIXED (2 — in `lib/features/notifications/notification_models.dart`)
 
-6. **`NotificationItem.fromJson` — `id` is not null-safe** (`(json['id'] as num).toInt()`).
-   A payload missing/`null` `id` throws `TypeError` instead of defaulting (every other
-   field defaults). Fix: `(json['id'] as num?)?.toInt() ?? 0`.
+6. **`NotificationItem.fromJson` — `id` was not null-safe** (`(json['id'] as num).toInt()`).
+   A payload missing/`null` `id` threw `TypeError` instead of defaulting. **Fixed** →
+   `(json['id'] as num?)?.toInt() ?? 0`.
 
 7. **`NotificationItem.fromJson` — unsafe `data` cast** (`(json['data'] as Map?)?...`).
-   A non-map `data` value (e.g. a String) throws and crashes the whole notification
-   parse. The sibling `actor` field uses a safe `is Map` guard; `data` should too.
-   Fix: `json['data'] is Map ? (json['data'] as Map).cast<String,dynamic>() : <String,dynamic>{}`.
+   A non-map `data` value (e.g. a String) threw and crashed the whole notification
+   parse; the sibling `actor` field already used a safe `is Map` guard. **Fixed** →
+   `json['data'] is Map ? (json['data'] as Map).cast<String,dynamic>() : const {}`.
 
-(Both are locked in by tests asserting current behavior with `// BUG:` markers, so the
-suite stays green until you fix them.)
+(Both fixed in commit `b0d0615`; the two tests that documented them now assert the
+corrected behavior.)
 
 8. **Cross-stack note — envelope key `status` vs `success`.** The backend envelope uses
    `status` (see `Common::apiResponse`), but the Flutter `BaseResponse.fromJson` (and the
@@ -163,6 +170,7 @@ suite stays green until you fix them.)
 ## Conclusion
 
 All ~137 API endpoints across the core app and every package now have automated test
-coverage (**350 backend tests**), plus **416 Flutter unit tests** where there were none.
-Everything is green. No backend endpoint defects were found; the Flutter side surfaced
-2 small null-safety bugs in notification parsing (items 6–7) plus the envelope-key note.
+coverage (**350 backend tests**), plus **494 Flutter tests** (unit + widget) where there
+were none. Everything is green. No backend endpoint defects were found; the Flutter side
+surfaced 2 small null-safety bugs in notification parsing — **both now fixed** (items 6–7)
+— plus the envelope-key note (item 8) left for your review.
