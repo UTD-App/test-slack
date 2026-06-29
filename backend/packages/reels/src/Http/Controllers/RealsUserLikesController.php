@@ -60,7 +60,8 @@ class RealsUserLikesController extends Controller
             return Common::apiResponse(0, __('reels::messages.not_found'), [], 402);
         }
 
-        $this->realLikesService->delete($id, $real);
+        // Scope to the caller so a user can only remove THEIR OWN like.
+        $this->realLikesService->delete($id, $real, Auth::id());
 
         return Common::apiResponse(1, __('reels::messages.success'), [], 200);
     }

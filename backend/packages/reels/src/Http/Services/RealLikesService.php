@@ -3,6 +3,7 @@
 namespace Utd\Reels\Http\Services;
 
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Utd\Reels\Entities\Real;
 
 class RealLikesService extends ReelsBaseModelService
@@ -71,15 +72,29 @@ class RealLikesService extends ReelsBaseModelService
             return 'updated';
         }
 
-        $real->likes()->create(['user_id' => $user->id, 'reaction_type' => $type]);
+        // The unique(real_id,user_id) index makes this race-safe: if a concurrent
+        // request created the like first, the duplicate insert throws and we treat
+        // it as already-reacted instead of inflating like_num with a second row.
+        try {
+            $real->likes()->create(['user_id' => $user->id, 'reaction_type' => $type]);
+        } catch (QueryException $e) {
+            return 'updated';
+        }
         $real->increment('like_num');
 
         return 'reacted';
     }
 
-    public function delete($like_id, Real $real)
+    public function delete($like_id, Real $real, ?int $userId = null)
     {
-        if ($real->likes()->where('id', $like_id)->delete()) {
+        $query = $real->likes()->where('id', $like_id);
+
+        // Ownership scope: a user may only delete their own like.
+        if ($userId !== null) {
+            $query->where('user_id', $userId);
+        }
+
+        if ($query->delete()) {
             $this->decrementCounter($real);
         }
     }
