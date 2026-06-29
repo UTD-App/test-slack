@@ -8,6 +8,7 @@ on:
   pull_request:
     paths:
       - 'backend/**'
+  workflow_dispatch:
 
 jobs:
   test:
@@ -30,9 +31,15 @@ jobs:
         run: composer install --no-interaction --prefer-dist
 
       - name: Prepare test env
-        # Tests run against in-memory sqlite (see phpunit.xml); only APP_KEY is needed.
+        # Tests run against in-memory sqlite (see phpunit.xml); only APP_KEY is
+        # needed. Force non-Redis drivers so artisan can boot without a Redis
+        # service on the runner.
         run: |
           cp .env.example .env
+          sed -i 's/^CACHE_DRIVER=.*/CACHE_DRIVER=array/' .env
+          sed -i 's/^QUEUE_CONNECTION=.*/QUEUE_CONNECTION=sync/' .env
+          sed -i 's/^SESSION_DRIVER=.*/SESSION_DRIVER=array/' .env
+          sed -i 's/^BROADCAST_DRIVER=.*/BROADCAST_DRIVER=log/' .env
           php artisan key:generate
 
       - name: Package test suite
