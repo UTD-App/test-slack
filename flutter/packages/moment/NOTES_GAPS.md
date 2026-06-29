@@ -11,7 +11,7 @@ The items below are intentionally deferred until the backend supports them.
 | 3 | **Feed tabs (recommend/latest/follow/my)** | `follow` needs the Follow graph | single feed (`type=4` all) | Follow graph in Base |
 | 4 | **Unread chat counts on cards** | from Chat package | omitted | Chat package |
 | 5 | ~~Delete ownership~~ ✅ | — | moment delete is author-only (server-enforced); comment delete = author **or** post owner | done |
-| 6 | **Pagination meta** | backend returns a plain array (no last_page) | `hasMore` inferred from empty page — feed, comments & likes all load-more this way | backend pagination meta |
+| 6 | **Pagination meta** | partial — feed reads it, comments & likes don't yet | feed now consumes `meta.has_more`/`last_page` from `Common::apiResponse` (falls back to empty-page inference when meta is absent); comments & likes still infer `hasMore` from an empty page | thread `meta` into comments & likes endpoints/cubits |
 | 7 | **Image upload URLs in dev** | depends on storage disk + `storage:link` | full http URLs (e.g. seeded picsum) work; local-disk paths resolved via `${domain}/storage/...` | finalize storage config |
 
 ## Added since the port

@@ -95,7 +95,11 @@ class _AddMomentPageState extends State<AddMomentPage> {
         if (state.error == null) {
           if (context.canPop()) context.pop();
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(state.error!)));
+          // The create flow emits a MomentStrings.* key as the error; resolve it
+          // to the active locale here (admin/server overrides win via context.tr).
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(context.tr(state.error!))),
+          );
         }
       },
       child: Scaffold(

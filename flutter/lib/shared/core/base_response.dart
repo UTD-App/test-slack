@@ -33,7 +33,7 @@ class BaseResponse<T> extends Equatable {
     }
 
     return BaseResponse(
-      success: json.containsKey('success') ? json['success'] as bool : null,
+      success: json['status'] as bool? ?? (json['success'] as bool?),
       message: json['message'] as String,
       paginates: json['paginates'] == null
           ? null

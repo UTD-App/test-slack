@@ -49,7 +49,7 @@ class ApiResponse<T> {
     Map<String, dynamic> json, {
     T Function(dynamic)? fromJsonT,
   }) {
-    final success = json['success'] as bool? ?? true;
+    final success = json['status'] as bool? ?? json['success'] as bool? ?? true;
     final message = json['message'] as String?;
     final statusCode = json['status_code'] as int?;
     final meta = json['meta'] as Map<String, dynamic>?;

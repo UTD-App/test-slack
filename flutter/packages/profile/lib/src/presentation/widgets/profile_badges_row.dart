@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:utd_app/localization/localization.dart';
 
 import '../../domain/user_profile_model.dart';
 
@@ -9,14 +10,20 @@ class ProfileBadgesRow extends StatelessWidget {
 
   const ProfileBadgesRow({super.key, required this.profile});
 
-  // Per-badge accent colors; unknown badges fall back to a neutral purple.
+  // Per-badge accent colors, keyed on the canonical badge id (not display
+  // text); unknown badges fall back to a neutral purple.
   static const Map<String, List<Color>> _palette = {
-    'Agency': [Color(0xFF7C4DFF), Color(0xFF5E35B1)],
-    'Tasks': [Color(0xFF26C6DA), Color(0xFF00838F)],
-    'VIP': [Color(0xFFFFB300), Color(0xFFFF6F00)],
-    'BD': [Color(0xFF66BB6A), Color(0xFF2E7D32)],
-    'Verified': [Color(0xFF42A5F5), Color(0xFF1565C0)],
+    'agency': [Color(0xFF7C4DFF), Color(0xFF5E35B1)],
+    'tasks': [Color(0xFF26C6DA), Color(0xFF00838F)],
+    'vip': [Color(0xFFFFB300), Color(0xFFFF6F00)],
+    'bd': [Color(0xFF66BB6A), Color(0xFF2E7D32)],
+    'verified': [Color(0xFF42A5F5), Color(0xFF1565C0)],
   };
+
+  /// Canonical id for a raw backend badge string. Maps known display variants
+  /// (case-insensitive) onto stable ids used by [_palette] and the
+  /// `profile.badge_<id>` translation keys.
+  static String _canonicalId(String raw) => raw.trim().toLowerCase();
 
   @override
   Widget build(BuildContext context) {
@@ -31,14 +38,21 @@ class ProfileBadgesRow extends StatelessWidget {
         padding: EdgeInsets.symmetric(horizontal: 16.w),
         itemCount: badges.length,
         separatorBuilder: (_, __) => SizedBox(width: 6.w),
-        itemBuilder: (context, index) => _chip(badges[index]),
+        itemBuilder: (context, index) => _chip(context, badges[index]),
       ),
     );
   }
 
-  Widget _chip(String label) {
+  Widget _chip(BuildContext context, String raw) {
+    final id = _canonicalId(raw);
     final colors =
-        _palette[label] ?? const [Color(0xFFB44AFF), Color(0xFF8B2FC9)];
+        _palette[id] ?? const [Color(0xFFB44AFF), Color(0xFF8B2FC9)];
+    // Localized label; falls back to the raw backend string when no
+    // translation exists for this badge id (context.tr returns the key, so we
+    // detect that and show the original text instead).
+    final key = 'profile.badge_$id';
+    final translated = context.tr(key);
+    final label = translated == key ? raw : translated;
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10.w),
       alignment: Alignment.center,

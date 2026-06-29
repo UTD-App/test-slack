@@ -71,16 +71,17 @@ class EndpointCoverageTest extends TestCase
         $this->authed($user)->getJson('/api/gifts/history')
             ->assertStatus(200)
             ->assertJsonPath('status', true)
-            ->assertJsonCount(1, 'data.data')                 // paginator → data.data
-            ->assertJsonPath('data.data.0.direction', 'received')
-            ->assertJsonPath('data.data.0.gift_id', $gift->id)
-            ->assertJsonPath('data.data.0.gift_num', 3)
-            ->assertJsonPath('data.total', 1)
-            ->assertJsonPath('data.current_page', 1)
-            ->assertJsonStructure(['data' => ['data' => [[
+            ->assertJsonCount(1, 'data')                       // items flat under data
+            ->assertJsonPath('data.0.direction', 'received')
+            ->assertJsonPath('data.0.gift_id', $gift->id)
+            ->assertJsonPath('data.0.gift_num', 3)
+            ->assertJsonPath('meta.total', 1)                 // pagination at envelope-level meta
+            ->assertJsonPath('meta.current_page', 1)
+            ->assertJsonPath('meta.has_more', false)
+            ->assertJsonStructure(['data' => [[
                 'id', 'gift_id', 'gift_name', 'gift_num', 'total_price',
                 'earned', 'direction', 'context_type', 'context_id', 'created_at',
-            ]]]]);
+            ]]]);
     }
 
     public function test_history_type_sent_returns_only_sent(): void
@@ -96,8 +97,8 @@ class EndpointCoverageTest extends TestCase
 
         $this->authed($user)->getJson('/api/gifts/history?type=sent')
             ->assertStatus(200)
-            ->assertJsonCount(1, 'data.data')
-            ->assertJsonPath('data.data.0.direction', 'sent');
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.direction', 'sent');
     }
 
     public function test_history_respects_per_page(): void
@@ -112,10 +113,11 @@ class EndpointCoverageTest extends TestCase
 
         $this->authed($user)->getJson('/api/gifts/history?per_page=2')
             ->assertStatus(200)
-            ->assertJsonCount(2, 'data.data')
-            ->assertJsonPath('data.per_page', 2)
-            ->assertJsonPath('data.total', 3)
-            ->assertJsonPath('data.last_page', 2);
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('meta.per_page', 2)
+            ->assertJsonPath('meta.total', 3)
+            ->assertJsonPath('meta.last_page', 2)
+            ->assertJsonPath('meta.has_more', true);
     }
 
     // ----- GET /api/gifts/context/{type}/{id} -----

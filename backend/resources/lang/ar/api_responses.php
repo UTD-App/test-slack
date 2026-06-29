@@ -1,5 +1,11 @@
 <?php
 
+// LEGACY / TYPO'D KEYS: several keys here are misspelled or package-specific
+// (e.g. 'try_agane_leter', 'sases_mute', 'sases_un_mute', 'u_not_in_fund',
+// 'you_dont_have_ermission', 'The_ser_is_lready_muted...'). They are kept in
+// place because packages may still reference them; they should eventually be
+// migrated to their owning packages' own lang files. Do NOT delete here.
+
 return [
     'something_went_wrong'                                      => 'حدث خطأ ما, الرجاء المحاولة لاحقا',
     'invalid_credentials'                                       => 'بيانات اعتماد غير صحيحة',
@@ -193,5 +199,14 @@ return [
     'min_withdrawal_amount' => 'لا يمكنك التحويل بأقل من :amount',
     'image_too_large' => 'يجب ألا يتجاوز حجم الصورة 5 ميجابايت',
     'gif_too_large' => 'يجب ألا يتجاوز حجم صورة GIF 8 ميجابايت',
+
+    // أُضيفت لتحقيق التطابق بين AR و EN (هذه المفاتيح كانت موجودة في en/ فقط).
+    'already_have_room'              => 'لديك غرفة بالفعل',
+    'charge_user_to_user_disabled'  => 'الشحن من مستخدم إلى مستخدم معطّل حاليًا',
+    'charge_user_to_agent_disabled' => 'الشحن من مستخدم إلى وكيل شحن معطّل حاليًا',
+    'charge_to_self_disabled'       => 'الشحن إلى نفسك معطّل حاليًا',
+    'charge_agent_to_user_disabled' => 'الشحن من وكيل الشحن إلى مستخدم معطّل حاليًا',
+    'charge_agent_to_agent_disabled' => 'الشحن من وكيل شحن إلى وكيل شحن آخر معطّل حاليًا',
+    'create_done'                   => 'تم الإنشاء بنجاح',
 
 ];

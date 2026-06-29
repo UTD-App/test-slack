@@ -29,10 +29,11 @@ class UserGiftsApiTest extends TestCase
         $this->authed($user)->getJson('/api/user-gifts')
             ->assertStatus(200)
             ->assertJsonPath('status', true)
-            ->assertJsonCount(1, 'data.data')          // paginator → data.data
-            ->assertJsonPath('data.data.0.name', 'Cheap')
-            ->assertJsonPath('data.total', 1)
-            ->assertJsonPath('data.current_page', 1);
+            ->assertJsonCount(1, 'data')               // items flat under data
+            ->assertJsonPath('data.0.name', 'Cheap')
+            ->assertJsonPath('meta.total', 1)          // pagination at envelope-level meta
+            ->assertJsonPath('meta.current_page', 1)
+            ->assertJsonPath('meta.has_more', false);
     }
 
     public function test_user_gifts_with_no_balance_returns_only_free_gifts(): void
@@ -43,8 +44,8 @@ class UserGiftsApiTest extends TestCase
 
         $this->authed($user)->getJson('/api/user-gifts')
             ->assertStatus(200)
-            ->assertJsonCount(1, 'data.data')
-            ->assertJsonPath('data.data.0.name', 'Free');
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.name', 'Free');
     }
 
     public function test_user_gifts_is_safe_when_new_gift_column_absent(): void

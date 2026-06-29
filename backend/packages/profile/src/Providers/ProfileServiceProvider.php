@@ -31,7 +31,7 @@ class ProfileServiceProvider extends BaseModuleServiceProvider implements MenuCo
         // /api/translations + editable from the dashboard. Guarded for older bases.
         if (class_exists(\App\Services\TranslationGroupRegistry::class)) {
             app(\App\Services\TranslationGroupRegistry::class)
-                ->register('profile', $this->packagePath() . '/resources/lang');
+                ->register('profile', $this->packagePath() . '/Resources/lang');
         }
 
         // Register this package's UTD Studio manifest (the user_profile default

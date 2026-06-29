@@ -25,7 +25,7 @@ class MediaController extends Controller
 
         $result = Media::upload($request->file('file'), $request->input('folder', 'uploads'));
 
-        return Common::apiResponse(true, 'Uploaded', [
+        return Common::apiResponse(true, __('messages.uploaded'), [
             'path' => $result->path,
             'url'  => $result->url,
         ]);

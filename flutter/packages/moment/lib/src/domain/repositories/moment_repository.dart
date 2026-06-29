@@ -5,11 +5,15 @@ import 'package:utd_app/network/models/api_response.dart';
 import '../entities/moment_comment_entity.dart';
 import '../entities/moment_entity.dart';
 import '../entities/moment_like_entity.dart';
+import '../entities/moment_page.dart';
 
 /// Moment data operations. Implementations wrap the API and return [Result].
 abstract class MomentRepository {
   /// type: 1=mine, 4=all, 5=new, 6=followed (backend maps these).
-  Future<Result<List<MomentEntity>>> fetchMoments({
+  ///
+  /// Returns a [MomentPage] carrying the items plus the backend's `has_more`
+  /// pagination flag (`null` when the response had no meta).
+  Future<Result<MomentPage<MomentEntity>>> fetchMoments({
     int type = 4,
     int page = 1,
     int? userId,

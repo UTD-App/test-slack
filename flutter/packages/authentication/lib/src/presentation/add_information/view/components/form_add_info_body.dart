@@ -191,7 +191,7 @@ class _FormAddInfoBody extends StatelessWidget {
                     context,
                     message:
                         '${context.tr(AuthStrings.completeMissing)} '
-                        '${missing.join('، ')}',
+                        '${missing.join(context.tr(AuthStrings.listSeparator))}',
                     isError: true,
                   );
                   return;

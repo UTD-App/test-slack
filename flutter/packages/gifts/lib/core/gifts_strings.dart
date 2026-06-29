@@ -14,6 +14,7 @@ class GiftsStrings {
   static const empty = 'gifts.empty';
   static const retry = 'gifts.retry';
   static const somethingWrong = 'gifts.something_wrong';
+  static const unsupportedContext = 'gifts.unsupported_context';
   static const history = 'gifts.history';
   static const received = 'gifts.received';
   static const sentTab = 'gifts.sent_tab';
@@ -36,6 +37,7 @@ class GiftsStrings {
           empty: 'No gifts available',
           retry: 'Retry',
           somethingWrong: 'Something went wrong',
+          unsupportedContext: 'This gift context is not supported',
           history: 'Gifts',
           received: 'Received',
           sentTab: 'Sent',
@@ -57,6 +59,7 @@ class GiftsStrings {
           empty: 'لا توجد هدايا',
           retry: 'إعادة المحاولة',
           somethingWrong: 'حدث خطأ ما',
+          unsupportedContext: 'سياق الهدية هذا غير مدعوم',
           history: 'الهدايا',
           received: 'المستلمة',
           sentTab: 'المُرسلة',

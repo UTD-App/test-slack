@@ -19,7 +19,7 @@ class StacController extends Controller
             ->first();
 
         if (!$screen) {
-            return Common::apiResponse(false, 'Screen not found', null, 404);
+            return Common::apiResponse(false, __('messages.screen_not_found'), null, 404);
         }
 
         return Common::apiResponse(true, '', [
@@ -39,7 +39,7 @@ class StacController extends Controller
             ->first();
 
         if (!$screen) {
-            return Common::apiResponse(false, 'Screen not found', null, 404);
+            return Common::apiResponse(false, __('messages.screen_not_found'), null, 404);
         }
 
         return Common::apiResponse(true, '', [
@@ -56,7 +56,7 @@ class StacController extends Controller
         $stacKey = Config::where('name', 'utd_stac_key')->value('value');
 
         if (!$stacKey || $request->header('X-Stac-Key') !== $stacKey) {
-            return Common::apiResponse(false, 'Unauthorized', null, 401);
+            return Common::apiResponse(false, __('messages.unauthorized'), null, 401);
         }
 
         $screens = $request->validate([

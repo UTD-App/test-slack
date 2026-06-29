@@ -97,7 +97,7 @@ class AuthController extends Controller
     {
         $email = $request->input('email');
         if (!$email) {
-            return Common::apiResponse(false, 'Email is required', null, 422);
+            return Common::apiResponse(false, __('messages.email_required'), null, 422);
         }
 
         $exists = User::where('email', $email)->exists();
@@ -157,7 +157,7 @@ class AuthController extends Controller
             $user->save();
         }
 
-        return Common::apiResponse(true, 'Profile updated', $user->fresh()->load(['profile', 'country']));
+        return Common::apiResponse(true, __('api_responses.profile_updated'), $user->fresh()->load(['profile', 'country']));
     }
 
     /**
@@ -242,7 +242,7 @@ class AuthController extends Controller
         $path = \App\Facades\Media::upload($request->file('image'), 'avatars')->path;
         $user->profile()->updateOrCreate(['user_id' => $user->id], ['avatar' => $path]);
 
-        return Common::apiResponse(true, 'Avatar updated', [
+        return Common::apiResponse(true, __('messages.avatar_updated'), [
             'url'  => \App\Facades\Media::url($path),
             'user' => app(UserDataService::class)->aggregateUserData($user->fresh()),
         ]);
@@ -258,7 +258,7 @@ class AuthController extends Controller
     {
         $settings = $request->validate(['settings' => 'required|array']);
         app(\App\Services\UserSettingService::class)->setBulk($request->user(), $settings['settings']);
-        return Common::apiResponse(true, 'Settings updated');
+        return Common::apiResponse(true, __('messages.settings_updated'));
     }
 
     public function getRoles(Request $request)
@@ -274,7 +274,7 @@ class AuthController extends Controller
         $user->save();
         $request->user()->currentAccessToken()->delete();
 
-        return Common::apiResponse(true, 'Logged out');
+        return Common::apiResponse(true, __('messages.logged_out'));
     }
 
     /**
@@ -289,6 +289,6 @@ class AuthController extends Controller
         $user->tokens()->delete();
         $user->delete();
 
-        return Common::apiResponse(true, 'Account deleted');
+        return Common::apiResponse(true, __('messages.account_deleted'));
     }
 }

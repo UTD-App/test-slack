@@ -6,6 +6,7 @@ return [
     'gift_not_found'       => 'الهدية غير موجودة أو غير مفعّلة',
     'invalid_quantity'     => 'الكمية لازم تكون 1 على الأقل',
     'no_receivers'         => 'لا يوجد مستقبِلون محدّدون',
+    'user_not_found'       => 'المستخدم غير موجود',
     'vip_required'         => 'مطلوب مستوى VIP :level لإرسال هذه الهدية',
     'bag_not_installed'    => 'الإرسال من الجراب غير متاح',
     'lucky_not_installed'  => 'هدايا الحظ غير متاحة',

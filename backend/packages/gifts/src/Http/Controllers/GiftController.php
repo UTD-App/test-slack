@@ -67,7 +67,9 @@ class GiftController extends Controller
         $user = $request->user();
         $this->catalog->markGiftsSeen($user);
 
-        return Common::apiResponse(true, 'gifts', $this->catalog->affordableGifts($user));
+        $gifts = $this->catalog->affordableGifts($user);
+
+        return Common::apiResponse(true, 'gifts', $gifts->items(), 200, $gifts);
     }
 
     /** The user's gift history: ?type=sent|received (default received). */
@@ -94,7 +96,7 @@ class GiftController extends Controller
                 'created_at'   => optional($log->created_at)->toIso8601String(),
             ]);
 
-        return Common::apiResponse(true, 'history', $logs);
+        return Common::apiResponse(true, 'history', $logs->items(), 200, $logs);
     }
 
     /** Gifts received in a context (e.g. a moment): grouped & summed. */
@@ -126,7 +128,7 @@ class GiftController extends Controller
             : $request->user()->getKey();
 
         if ($request->filled('user_id') && ! User::whereKey($userId)->exists()) {
-            return Common::apiResponse(false, 'user not found', null, 404);
+            return Common::apiResponse(false, __('gifts::messages.user_not_found'), null, 404);
         }
 
         return Common::apiResponse(true, 'my_gifts', $directory->receivedBy($userId));

@@ -112,13 +112,32 @@ class _StacDynamicScreenState extends State<StacDynamicScreen> {
             _missing(context));
   }
 
+  /// Translation key for the "no published screen yet" placeholder. Routed
+  /// through the runtime translate port when wired; otherwise a neutral English
+  /// default is shown. The SDK never imports app code — it only asks the port.
+  static const _missingKey = 'studio.no_published_screen';
+
   Widget _missing(BuildContext context) {
+    final translate = StudioRuntime.instance.translate;
+    // Neutral English default (used when no port is wired, or the key is missing
+    // from the catalog — the port returns the key unchanged on a miss).
+    var text = 'No published screen named "${widget.screenName}" yet.';
+    if (translate != null) {
+      final value = translate(context, _missingKey);
+      if (value.isNotEmpty && value != _missingKey) {
+        // Interpolate the screen name into the localized template if it has a
+        // placeholder; otherwise use the localized string as-is.
+        text = value.contains('{name}')
+            ? value.replaceAll('{name}', widget.screenName)
+            : value;
+      }
+    }
     return Scaffold(
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            'لا توجد شاشة منشورة باسم "${widget.screenName}" بعد.',
+            text,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium,
           ),

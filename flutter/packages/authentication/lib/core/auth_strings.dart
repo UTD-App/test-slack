@@ -95,6 +95,9 @@ class AuthStrings {
   static const success = 'auth.success';
   static const next = 'auth.next';
   static const updateDesc = 'auth.update_desc';
+  static const ok = 'auth.ok';
+  static const listSeparator = 'auth.list_separator';
+  static const secondsShort = 'auth.seconds_short';
 
   static Map<String, Map<String, String>> translations(String appName) => {
         'en': {
@@ -183,6 +186,9 @@ class AuthStrings {
           success: 'Success',
           next: 'Next',
           updateDesc: 'A new version is available. Please update the app.',
+          ok: 'OK',
+          listSeparator: ', ',
+          secondsShort: 's',
         },
         'ar': {
           onBoarding1Title: 'مرحباً بك في $appName',
@@ -270,6 +276,9 @@ class AuthStrings {
           success: 'نجاح',
           next: 'التالي',
           updateDesc: 'يتوفر إصدار جديد. يرجى تحديث التطبيق.',
+          ok: 'حسناً',
+          listSeparator: '، ',
+          secondsShort: 'ث',
         },
       };
 }

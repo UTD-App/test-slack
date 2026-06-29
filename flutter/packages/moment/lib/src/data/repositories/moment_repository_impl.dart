@@ -5,6 +5,7 @@ import 'package:utd_app/network/models/api_response.dart';
 import '../../domain/entities/moment_comment_entity.dart';
 import '../../domain/entities/moment_entity.dart';
 import '../../domain/entities/moment_like_entity.dart';
+import '../../domain/entities/moment_page.dart';
 import '../../domain/repositories/moment_repository.dart';
 import '../datasources/moment_api_service.dart';
 
@@ -14,9 +15,9 @@ class MomentRepositoryImpl implements MomentRepository {
   MomentRepositoryImpl(this.api);
 
   @override
-  Future<Result<List<MomentEntity>>> fetchMoments({int type = 4, int page = 1, int? userId}) async {
+  Future<Result<MomentPage<MomentEntity>>> fetchMoments({int type = 4, int page = 1, int? userId}) async {
     final res = await api.fetchMoments(type: type, page: page, userId: userId);
-    return res.map((list) => list.cast<MomentEntity>());
+    return res.map((page) => page.map((list) => list.cast<MomentEntity>()));
   }
 
   @override

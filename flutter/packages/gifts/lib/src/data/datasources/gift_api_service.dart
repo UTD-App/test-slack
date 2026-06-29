@@ -4,6 +4,7 @@ import 'package:utd_app/cache/cache_manager.dart';
 import 'package:utd_app/network/models/api_response.dart';
 import 'package:utd_app/network/services/base_api_service.dart';
 
+import '../../../core/gifts_strings.dart';
 import '../models/gift_category_model.dart';
 import '../models/gift_history_item_model.dart';
 import '../models/gift_model.dart';
@@ -107,7 +108,12 @@ class GiftApiService extends BaseApiService {
     };
 
     if (path == null) {
-      return Future.value(Result.failure('Unsupported gift context: $contextType'));
+      // No BuildContext here; surface the translation KEY so the UI layer
+      // (which has a context) renders it localized. The unknown contextType
+      // is appended for diagnostics.
+      return Future.value(
+        Result.failure('${GiftsStrings.unsupportedContext}: $contextType'),
+      );
     }
 
     return post<bool>(

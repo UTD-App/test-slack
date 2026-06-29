@@ -39,6 +39,8 @@ class MomentStrings {
   static const share = 'moment.share';
   static const newMoments = 'moment.new_moments';
   static const imageA11y = 'moment.image_a11y';
+  static const emptyContent = 'moment.empty_content';
+  static const postFailed = 'moment.post_failed';
 
   // reaction labels (the action-button word; emoji comes from reactions.dart)
   static const like = 'moment.like';
@@ -139,6 +141,8 @@ class MomentStrings {
           share: 'Share',
           newMoments: 'New moments',
           imageA11y: 'Moment image',
+          emptyContent: 'You cannot post empty content',
+          postFailed: 'Failed to post',
           like: 'Like',
           reactLove: 'Love',
           reactHaha: 'Haha',
@@ -197,6 +201,8 @@ class MomentStrings {
           share: 'مشاركة',
           newMoments: 'لحظات جديدة',
           imageA11y: 'صورة اللحظة',
+          emptyContent: 'لا يمكنك نشر محتوى فارغ',
+          postFailed: 'فشل النشر',
           like: 'إعجاب',
           reactLove: 'أحبّه',
           reactHaha: 'هههه',

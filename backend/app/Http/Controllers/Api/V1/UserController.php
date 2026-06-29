@@ -71,7 +71,7 @@ class UserController extends Controller
         $user = User::find($id);
 
         if (!$user || !$user->status) {
-            return Common::apiResponse(false, 'User not found', null, 404);
+            return Common::apiResponse(false, __('messages.user_not_found'), null, 404);
         }
 
         $data = app(UserDataService::class)->publicData($user);

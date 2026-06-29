@@ -21,7 +21,7 @@ class PageController extends Controller
         $page = Page::where('key', $key)->first();
 
         if (! $page) {
-            return Common::apiResponse(false, 'Page not found', null, 404);
+            return Common::apiResponse(false, __('messages.page_not_found'), null, 404);
         }
 
         return Common::apiResponse(true, '', [

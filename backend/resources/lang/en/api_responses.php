@@ -1,5 +1,11 @@
 <?php
 
+// LEGACY / TYPO'D KEYS: several keys here are misspelled or package-specific
+// (e.g. 'try_agane_leter', 'sases_mute', 'sases_un_mute', 'u_not_in_fund',
+// 'you_dont_have_ermission', 'The_ser_is_lready_muted...'). They are kept in
+// place because packages may still reference them; they should eventually be
+// migrated to their owning packages' own lang files. Do NOT delete here.
+
 return [
 
 
@@ -166,5 +172,13 @@ return [
     'too_many_requests' => 'Please wait a moment before sending more gifts',
     'image_too_large' => 'The image size must not exceed 5MB',
     'gif_too_large' => 'The gif image size must not exceed 8MB',
+
+    // Added for AR<->EN parity (these keys previously existed only in ar/).
+    'created_done'                => 'Created successfully',
+    'frozenMass'                  => 'This agency wallet has been temporarily frozen',
+    'frozenMassForYou'            => 'Your agency wallet has been temporarily frozen',
+    'sases_un_mute'               => 'Unmuted successfully',
+    'validation_error'            => 'Validation error',
+    'you are already under agency' => 'You are already under an agency',
 
 ];

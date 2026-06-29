@@ -43,6 +43,12 @@ const Map<String, Map<String, String>> profileTranslations = {
     'profile.max_covers_reached': 'You can add up to 3 covers',
     // Visited-profile content tabs
     'profile.tab_general': 'General',
+    // Badge chips (keyed on canonical badge id)
+    'profile.badge_agency': 'Agency',
+    'profile.badge_tasks': 'Tasks',
+    'profile.badge_vip': 'VIP',
+    'profile.badge_bd': 'BD',
+    'profile.badge_verified': 'Verified',
   },
   'ar': {
     'profile.menu_profile': 'الملف الشخصي',
@@ -88,5 +94,11 @@ const Map<String, Map<String, String>> profileTranslations = {
     'profile.max_covers_reached': 'يمكنك إضافة 3 صور غلاف كحد أقصى',
     // Visited-profile content tabs
     'profile.tab_general': 'عام',
+    // Badge chips (keyed on canonical badge id)
+    'profile.badge_agency': 'وكالة',
+    'profile.badge_tasks': 'المهام',
+    'profile.badge_vip': 'VIP',
+    'profile.badge_bd': 'BD',
+    'profile.badge_verified': 'موثّق',
   },
 };

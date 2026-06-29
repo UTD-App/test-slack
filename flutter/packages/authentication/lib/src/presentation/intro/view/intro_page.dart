@@ -38,7 +38,7 @@ class _IntroPageState extends State<IntroPage> {
             actions: [
               TextButton(
                 onPressed: () => context.pop(),
-                child: const Text('OK'),
+                child: Text(context.tr(AuthStrings.ok)),
               ),
             ],
           ),

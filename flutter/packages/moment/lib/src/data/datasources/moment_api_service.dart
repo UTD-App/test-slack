@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:utd_app/network/models/api_response.dart';
 import 'package:utd_app/network/services/base_api_service.dart';
 
+import '../../domain/entities/moment_page.dart';
 import '../models/moment_comment_model.dart';
 import '../models/moment_like_model.dart';
 import '../models/moment_model.dart';
@@ -11,8 +12,10 @@ import 'moment_feed_cache.dart';
 
 /// Talks to the backend `utd/moment` package endpoints.
 ///
-/// Backend wraps every response as `{ status, message, data }`. The helpers
-/// below unwrap `data` / `status` from that envelope.
+/// Backend wraps every response as `{ status, message, data }` and, for
+/// paginator-backed feeds, a `meta` block (`current_page`/`last_page`/
+/// `has_more`). The helpers below unwrap `data` / `status` from that envelope
+/// and read `meta` when present.
 class MomentApiService extends BaseApiService {
   /// On-disk cache of the feed's first page (instant/offline first paint).
   final MomentFeedCache _cache = MomentFeedCache();
@@ -25,6 +28,30 @@ class MomentApiService extends BaseApiService {
     return const [];
   }
 
+  /// Reads "are there more pages?" from the backend pagination `meta` block.
+  ///
+  /// Prefers the explicit `meta.has_more` flag; otherwise derives it from
+  /// `meta.current_page < meta.last_page`. Returns `null` when no usable meta is
+  /// present so the caller can fall back to empty-page inference.
+  static bool? _hasMore(dynamic body) {
+    if (body is! Map) return null;
+    final meta = body['meta'];
+    if (meta is! Map) return null;
+
+    final hm = meta['has_more'];
+    if (hm is bool) return hm;
+    if (hm == 1 || hm == '1' || hm == 'true') return true;
+    if (hm == 0 || hm == '0' || hm == 'false') return false;
+
+    final current = _asInt(meta['current_page']);
+    final last = _asInt(meta['last_page']);
+    if (current != null && last != null) return current < last;
+
+    return null;
+  }
+
+  static int? _asInt(dynamic v) => v is int ? v : (v is String ? int.tryParse(v) : null);
+
   static bool _status(dynamic body) {
     if (body is Map) {
       final s = body['status'];
@@ -33,12 +60,12 @@ class MomentApiService extends BaseApiService {
     return true;
   }
 
-  Future<Result<List<MomentModel>>> fetchMoments({
+  Future<Result<MomentPage<MomentModel>>> fetchMoments({
     int type = 4,
     int page = 1,
     int? userId,
   }) {
-    return get<List<MomentModel>>(
+    return get<MomentPage<MomentModel>>(
       '/moment',
       queryParameters: {
         'type': type,
@@ -49,7 +76,9 @@ class MomentApiService extends BaseApiService {
         final raw = _list(body);
         // Persist the first page (the instant-paint window) for next launch.
         if (page == 1) _cache.save(type, userId, raw);
-        return raw.map(MomentModel.fromJson).toList();
+        // Prefer the backend's pagination meta (`has_more`); null falls through
+        // to empty-page inference in the bloc.
+        return MomentPage(raw.map(MomentModel.fromJson).toList(), hasMore: _hasMore(body));
       },
     );
   }

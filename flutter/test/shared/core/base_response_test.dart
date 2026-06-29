@@ -3,11 +3,10 @@ import 'package:utd_app/shared/core/base_response.dart';
 
 /// Pure-Dart tests for the envelope parser the app actually uses (BaseResponse).
 ///
-/// Also documents a cross-stack observation: the BACKEND envelope key is
-/// `status` (see backend Common::apiResponse), but BaseResponse.fromJson reads
-/// `success`. So `success` parses as null for a real backend payload — see the
-/// last test. (Harmless only if call sites rely on the HTTP status, not on
-/// `success`; worth verifying.)
+/// Cross-stack contract: the BACKEND envelope key is `status` (see backend
+/// Common::apiResponse). BaseResponse.fromJson PREFERS `status` and falls back
+/// to the legacy `success` key, so a real backend payload now parses correctly —
+/// see the last test.
 void main() {
   group('BaseResponse.fromJson', () {
     test('parses success + message + scalar data passthrough', () {
@@ -44,10 +43,10 @@ void main() {
       expect(r.paginates?.lastPage, 5);
     });
 
-    test('BACKEND envelope uses `status`, so `success` parses as null (mismatch)', () {
+    test('BACKEND envelope uses `status`, which BaseResponse now reads', () {
       // This is exactly what the backend returns: {status, message, data}.
       final r = BaseResponse<Object>.fromJson({'status': true, 'message': '', 'data': null});
-      expect(r.success, isNull, reason: 'BaseResponse reads `success`, backend sends `status`');
+      expect(r.success, isTrue, reason: 'BaseResponse prefers `status` (the backend key)');
       expect(r.message, '');
     });
   });

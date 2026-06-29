@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/moment_strings.dart';
 import '../../../domain/entities/moment_entity.dart';
 import '../../../domain/repositories/moment_repository.dart';
 import 'moment_feed_event.dart';
@@ -78,16 +79,20 @@ class MomentFeedBloc extends Bloc<MomentFeedEvent, MomentFeedState> {
     emit(state.copyWith(status: FeedStatus.loading, error: null));
     final res = await repository.fetchMoments(type: type, page: 1, userId: userId);
     res.when(
-      success: (list) => emit(state.copyWith(
-        status: FeedStatus.success,
-        // The global feed reshuffles on every pull-to-refresh so the timeline
-        // feels live; a user's own scoped posts keep their server (chronological)
-        // order. [_freshOrder] guarantees an order that differs from what's
-        // currently on screen, so a refresh is always visibly different.
-        moments: userId == null ? _freshOrder(list, state.moments) : list,
-        page: 1,
-        hasMore: list.isNotEmpty,
-      )),
+      success: (page) {
+        final list = page.items;
+        emit(state.copyWith(
+          status: FeedStatus.success,
+          // The global feed reshuffles on every pull-to-refresh so the timeline
+          // feels live; a user's own scoped posts keep their server (chronological)
+          // order. [_freshOrder] guarantees an order that differs from what's
+          // currently on screen, so a refresh is always visibly different.
+          moments: userId == null ? _freshOrder(list, state.moments) : list,
+          page: 1,
+          // Prefer the backend's `has_more` meta; fall back to empty-page inference.
+          hasMore: page.hasMore ?? list.isNotEmpty,
+        ));
+      },
       failure: (msg, _) => emit(state.copyWith(status: FeedStatus.failure, error: msg)),
     );
   }
@@ -129,11 +134,12 @@ class MomentFeedBloc extends Bloc<MomentFeedEvent, MomentFeedState> {
     final next = state.page + 1;
     final res = await repository.fetchMoments(type: type, page: next, userId: userId);
     res.when(
-      success: (list) => emit(state.copyWith(
+      success: (page) => emit(state.copyWith(
         isLoadingMore: false,
-        moments: [...state.moments, ...list],
+        moments: [...state.moments, ...page.items],
         page: next,
-        hasMore: list.isNotEmpty,
+        // Prefer the backend's `has_more` meta; fall back to empty-page inference.
+        hasMore: page.hasMore ?? page.items.isNotEmpty,
       )),
       failure: (msg, _) => emit(state.copyWith(isLoadingMore: false, error: msg)),
     );
@@ -204,7 +210,12 @@ class MomentFeedBloc extends Bloc<MomentFeedEvent, MomentFeedState> {
     if (res.isSuccess && (res.dataOrNull ?? false)) {
       add(const FeedRefreshRequested());
     } else {
-      emit(state.copyWith(error: res.dataOrNull == false ? 'Cannot post empty content' : 'Failed to post'));
+      // Emit a translation KEY (not raw English); the page resolves it via
+      // `context.tr` before showing the SnackBar. `dataOrNull == false` means the
+      // backend rejected empty content; anything else is a generic post failure.
+      emit(state.copyWith(
+        error: res.dataOrNull == false ? MomentStrings.emptyContent : MomentStrings.postFailed,
+      ));
     }
   }
 }

@@ -210,7 +210,7 @@ class _RecoverPasswordBody extends StatelessWidget {
           alignment: AlignmentDirectional.centerEnd,
           child: state.resendSeconds > 0
               ? TextWidget(
-                  '${context.tr(AuthStrings.resendIn)} ${state.resendSeconds}s',
+                  '${context.tr(AuthStrings.resendIn)} ${state.resendSeconds}${context.tr(AuthStrings.secondsShort)}',
                   style: context.bodyLarge.size(13).colorExt(
                         ColorManager.white.withValues(alpha: 0.6),
                       ),
