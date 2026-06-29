@@ -23,7 +23,7 @@ class TranslationApiTest extends TestCase
 
         $this->getJson('/api/translations/supported')
             ->assertStatus(200)
-            ->assertJsonPath('success', true);
+            ->assertJsonPath('status', true);
     }
 
     public function test_translation_version_endpoint_returns_version(): void
@@ -39,7 +39,7 @@ class TranslationApiTest extends TestCase
 
         $this->getJson('/api/translations/en/version')
             ->assertStatus(200)
-            ->assertJsonPath('success', true);
+            ->assertJsonPath('status', true);
     }
 
     public function test_translation_content_endpoint_works(): void
@@ -55,6 +55,6 @@ class TranslationApiTest extends TestCase
 
         $this->getJson('/api/translations/ar')
             ->assertStatus(200)
-            ->assertJsonStructure(['success', 'data' => ['version', 'locale', 'translations']]);
+            ->assertJsonStructure(['status', 'data' => ['version', 'locale', 'translations']]);
     }
 }

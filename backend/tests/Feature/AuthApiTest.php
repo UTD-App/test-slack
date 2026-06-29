@@ -17,20 +17,24 @@ class AuthApiTest extends TestCase
 
     public function test_login_with_valid_credentials(): void
     {
-        $user = User::factory()->create(['password' => bcrypt('password')]);
+        // UserFactory sets password => 'password' (hashed once by the model mutator).
+        $user = User::factory()->create();
 
         $this->postJson('/api/auth/login', [
             'email'    => $user->email,
             'password' => 'password',
-        ])->assertStatus(200)->assertJsonStructure(['data' => ['token']]);
+        ])->assertStatus(200)
+            ->assertJsonPath('status', true)
+            ->assertJsonStructure(['data' => ['auth_token']]);
     }
 
     public function test_login_with_invalid_credentials_fails(): void
     {
+        // The API returns the standard 422 envelope (status:false) on auth failure.
         $this->postJson('/api/auth/login', [
             'email'    => 'wrong@example.com',
             'password' => 'wrongpass',
-        ])->assertStatus(401);
+        ])->assertStatus(422)->assertJsonPath('status', false);
     }
 
     public function test_authenticated_user_can_get_own_data(): void

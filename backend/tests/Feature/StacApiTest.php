@@ -31,7 +31,7 @@ class StacApiTest extends TestCase
 
         $this->getJson('/api/stac')
             ->assertStatus(200)
-            ->assertJsonPath('success', true);
+            ->assertJsonPath('status', true);
     }
 
     public function test_stac_push_requires_valid_key(): void
@@ -52,7 +52,7 @@ class StacApiTest extends TestCase
             ]],
         ], ['X-Stac-Key' => $this->stacKey])
             ->assertStatus(200)
-            ->assertJsonPath('success', true);
+            ->assertJsonPath('status', true);
 
         $this->assertDatabaseHas('stac_screens', ['name' => 'home']);
     }

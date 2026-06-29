@@ -42,5 +42,5 @@ jobs:
           sed -i 's/^BROADCAST_DRIVER=.*/BROADCAST_DRIVER=log/' .env
           php artisan key:generate
 
-      - name: Package test suite
-        run: vendor/bin/phpunit --testsuite=Packages
+      - name: Test suite
+        run: vendor/bin/phpunit
