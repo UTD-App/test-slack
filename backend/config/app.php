@@ -6,8 +6,8 @@ return [
     'google_cloud_storage_bucket' => env('GOOGLE_CLOUD_STORAGE_BUCKET'),
     'cache' => env('CACHE_ENABLE', 'disabled'),
 
-    // Deploy webhook secret
-    'deploy_secret' => env('DEPLOY_SECRET', 'change-this-secret-token'),
+    // Deploy webhook secret — env-only, never a baked-in default.
+    'deploy_secret' => env('DEPLOY_SECRET'),
 
     'agora_app_id' => env('AGORA_APP_ID'),
     'agora_certificate' => env('AGORA_APP_CERTIFICATE'),
@@ -23,7 +23,7 @@ return [
     // 'baishun_gsp'      => env('BAISHUN_GSP', '201'),
 
     'balance_user_name'     => env('BALANCE_USER_NAME', 'superAdmin'),
-    'balance_password'      => env('BALANCE_PASSWORD', '12345678'),
+    'balance_password'      => env('BALANCE_PASSWORD'),
     'one_coins'             => env('ONE_COINS'),
 
     'appLogo' => env('APP_LOGO', 'https://demo.24hourworx.com/assets/images/BG2.jpg'),
@@ -32,8 +32,9 @@ return [
     'fileName' => env('FILE_NAME', 'firebase_credentials.json'),
     'projectName' => env('FIREBASE_PROJECT_NAME', ''),
     'senderId' => env('SENDER_ID', 'hola-chat-5554d'),
-    'zego_credential' => env('ZEGOENCRYPTtkEY', '7b5d61e6f4a8c2d3e9b7a6f8e1c3d2f4'),
-    'utd_secret_key' => env('UTDSECRTKEY', '7b5d61e6f4a8c2d3e9b7a6f8e1c3d2f4'),
+    // Secrets are env-only — no production credential is committed as a default.
+    'zego_credential' => env('ZEGOENCRYPTtkEY'),
+    'utd_secret_key' => env('UTDSECRTKEY'),
     'utd_client_id' => env('UTDCLIENTID', '3030'),
     'google_client_id' => env('GOOGLE_CLIENT_ID', '790444932875-co6ri5d8e3m59ktv73h7eana2gfqbv34.apps.googleusercontent.com'),
 

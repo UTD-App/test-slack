@@ -17,8 +17,16 @@ use App\Http\Controllers\Api\V1\TranslationController;
 use App\Http\Controllers\Api\V1\UserController;
 use Illuminate\Support\Facades\Route;
 
-// HAProxy health check — must be outside throttle middleware
+// HAProxy health check — must be outside throttle middleware. Returns 200 'ok'
+// only when the DB is reachable, so monitoring catches a dependency outage
+// (the healthy-path body is unchanged for the load balancer).
 Route::get('/health', function () {
+    try {
+        \Illuminate\Support\Facades\DB::connection()->getPdo();
+    } catch (\Throwable $e) {
+        return response('db unavailable', 503);
+    }
+
     return response('ok', 200);
 })->withoutMiddleware(['throttle:api', 'throttle']);
 
