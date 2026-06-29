@@ -111,31 +111,58 @@ writing the tests.
 
 ---
 
-## Flutter unit tests (added too)
+## Flutter unit tests (comprehensive)
 
-The Flutter app (`flutter/`) had **no `test/` directory**. Added 35 fast, pure-Dart
-unit tests (no widgets / no I/O) — run with `cd flutter && flutter test`:
+The Flutter app (`flutter/`) had **no `test/` directory**. Added **416 fast, pure-Dart
+unit tests** across **32 files** (no widgets / no network / no platform channels) —
+run with `cd flutter && flutter test`. Tooling note: only `flutter_test` is used; no
+`bloc_test`/`mocktail` were added (the dep tree has many fragile `dependency_overrides`).
 
-- `test/shared/utils/validators_test.dart` (15) — email/phone/url/password predicates
-  + form-field validators.
-- `test/shared/utils/formatters_test.dart` (10) — `relativeTime` (injected clock, all
-  branches), date/time patterns, number/compact/currency.
-- `test/network/models/api_response_test.dart` (9) — `ApiResponse`/`PaginatedResponse`
-  parsing + the `Result` sealed type (success/failure, map/fold/when).
-- `test/shared/core/base_response_test.dart` (6) — `BaseResponse` envelope parsing.
+Coverage by area:
+- **Utils** — `validators` (email/phone/url/password + field validators), `formatters`
+  (`relativeTime` with injected clock, dates, number/compact/currency).
+- **Models / serialization** — `country_model`, `my_data_model`, `profile_room_model`,
+  `public_user`, `profile_view_arguments`, `notification_models`, `search_user_model`:
+  fromJson happy-path + missing/null keys + nested parsing + Hive map coercion +
+  toJson round-trips + copyWith.
+- **Network wrappers** — `ApiResponse`/`PaginatedResponse`/`Result`, `BaseResponse`.
+- **Extensions / enums** — `extensions` (`parseValue<T>` every branch, RequestState),
+  `enums`, `color_manager`, `user_data_extension`, `notification_data_extension`,
+  localization engine (`app_translations` fallback chain + arg interpolation).
+- **Media** — `image_type.resolve()` (svg/svga/raster/http/asset, all guards).
+- **Config / gate** — `app_config`, `app_flow.resolveStart` (all branches), `app_theme`
+  (`parseHexColor` + palette), `app_layout`, `nav_icons`, and the **launch-gate decision**
+  (`LaunchGateResult.blocks`: force-update / maintenance / optional-update — mirrors the
+  backend `/app-version` gate).
+- **Registries** — `feature_registry` (enable/disable gating, routes, contributions,
+  ordering, validateAll/initializeAll), `role`/`settings`/`widget`/`ui_contribution`,
+  and the stac `field`/`stac_data`/`studio_slot` registries.
 
-Result: **35 tests, all passing.**
+Result: **416 tests, all passing.**
 
-5. **Cross-stack note — envelope key `status` vs `success`.** The backend envelope
-   uses `status` (see `Common::apiResponse`), but the Flutter `BaseResponse.fromJson`
-   (and the unused `ApiResponse.fromJson`) read `success`. So `success` parses as
-   `null` for a real backend payload (locked in by a test). Harmless **only** if call
-   sites decide success from the HTTP status code rather than `BaseResponse.success`;
-   worth a quick verify. (`ApiResponse.fromJson` itself is currently unused in `lib/`.)
+### Flutter bugs found (2 — real, in `lib/features/notifications/notification_models.dart`)
+
+6. **`NotificationItem.fromJson` — `id` is not null-safe** (`(json['id'] as num).toInt()`).
+   A payload missing/`null` `id` throws `TypeError` instead of defaulting (every other
+   field defaults). Fix: `(json['id'] as num?)?.toInt() ?? 0`.
+
+7. **`NotificationItem.fromJson` — unsafe `data` cast** (`(json['data'] as Map?)?...`).
+   A non-map `data` value (e.g. a String) throws and crashes the whole notification
+   parse. The sibling `actor` field uses a safe `is Map` guard; `data` should too.
+   Fix: `json['data'] is Map ? (json['data'] as Map).cast<String,dynamic>() : <String,dynamic>{}`.
+
+(Both are locked in by tests asserting current behavior with `// BUG:` markers, so the
+suite stays green until you fix them.)
+
+8. **Cross-stack note — envelope key `status` vs `success`.** The backend envelope uses
+   `status` (see `Common::apiResponse`), but the Flutter `BaseResponse.fromJson` (and the
+   unused `ApiResponse.fromJson`) read `success`. So `success` parses as `null` for a real
+   backend payload (locked in by a test). Harmless **only** if call sites decide success
+   from the HTTP status code rather than `BaseResponse.success`; worth a quick verify.
 
 ## Conclusion
 
-All ~137 API endpoints across the core app and every package now have automated
-test coverage (350 backend tests), plus 35 Flutter unit tests where there were none.
-Everything is green. No endpoint defects were found; the items above are optional
-polish.
+All ~137 API endpoints across the core app and every package now have automated test
+coverage (**350 backend tests**), plus **416 Flutter unit tests** where there were none.
+Everything is green. No backend endpoint defects were found; the Flutter side surfaced
+2 small null-safety bugs in notification parsing (items 6–7) plus the envelope-key note.
