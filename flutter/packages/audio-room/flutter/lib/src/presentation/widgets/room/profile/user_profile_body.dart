@@ -40,7 +40,10 @@ class UserProfileBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final isAdmin = controller.isHostOrAdmin;
     final targetRole = controller.getParticipantRole(_userId);
-    final isTargetAdmin = targetRole == 'admin' || targetRole == 'host';
+    final adminState = context.read<AdminBloc>().state;
+    final isTargetAdmin = targetRole == 'admin' ||
+        targetRole == 'host' ||
+        adminState.admins.any((a) => a.id.toString() == _userId);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),

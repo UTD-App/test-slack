@@ -301,6 +301,16 @@ class _AudioRoomPageState extends State<AudioRoomPage>
     );
   }
 
+  Widget? _buildPluginOverlays(int roomId) {
+    final overlays = AudioRoomFeature.registeredPlugins
+        .map((p) => p.buildOverlayWidget(context, roomId))
+        .where((w) => w != null)
+        .cast<Widget>()
+        .toList();
+    if (overlays.isEmpty) return null;
+    return Stack(children: overlays);
+  }
+
   List<UTDRoomMode> _buildModes() {
     return [
       const UTDRoomMode(
@@ -370,16 +380,10 @@ class _AudioRoomPageState extends State<AudioRoomPage>
     }
 
     final room = _room!;
-    final streamConfig = room.streamConfig;
     final config = AppConfigProvider.instance;
 
-    final streamAppId = streamConfig?['app_id']?.toString() ?? '';
-    final appId = streamAppId.isNotEmpty ? streamAppId : config.utdStreamAppId;
-
-    final streamAppKey = streamConfig?['app_key']?.toString() ?? '';
-    final appKey = streamAppKey.isNotEmpty
-        ? streamAppKey
-        : config.utdStreamAppKey;
+    final appId = config.utdStreamAppId;
+    final appKey = config.utdStreamAppKey;
 
     if (appId.isEmpty) {
       return Scaffold(
@@ -410,6 +414,7 @@ class _AudioRoomPageState extends State<AudioRoomPage>
       layoutMode: room.mode.toString(),
       config: UTDAudioRoomConfig(
         userInRoomAttributes: {'avatar': userAvatar, 'name': userName},
+        foregroundWidget: _buildPluginOverlays(room.id),
         backgroundWidget: RoomBackgroundWidget(
           backgroundUrl: room.roomBackground,
         ),

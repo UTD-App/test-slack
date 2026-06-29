@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:utd_app/localization/localization.dart';
+import 'package:utd_app/shared/gifts/gift_bridge.dart';
 import 'package:utd_audio_room_kit/utd_audio_room_kit.dart';
 
 import '../../../../audio_room_strings.dart';
@@ -7,6 +8,7 @@ import '../../../../domain/room_model.dart';
 import '../admin/admin_menu.dart';
 import 'exit_button.dart';
 import '../shared/exit_option.dart';
+import '../../shared/room_gift_rank_sheet.dart';
 import 'favorite_button.dart';
 import 'room_info.dart';
 import 'visitor_count.dart';
@@ -61,6 +63,13 @@ class RoomHeaderWidget extends StatelessWidget {
                 const SizedBox(width: 4),
                 if (room.isOwner != true)
                   FavoriteButton(isFavorite: isFavorite, onTap: onFavoriteTap),
+                if (GiftBridge.instance.isAvailable)
+                  IconButton(
+                    icon: const Icon(Icons.emoji_events, color: Colors.amber, size: 20),
+                    onPressed: () => RoomGiftRankSheet.show(context, roomId: room.id),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
                 if (room.isOwner == true || room.isAdmin == true)
                   AdminMenu(
                     controller: controller,

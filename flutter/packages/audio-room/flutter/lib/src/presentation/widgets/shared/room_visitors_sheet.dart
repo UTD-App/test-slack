@@ -107,22 +107,37 @@ class RoomVisitorsSheet extends StatelessWidget {
                                   onSelected: (value) {
                                     switch (value) {
                                       case 'admin':
-                                        context.read<AdminBloc>().add(
-                                          AddAdminEvent(
-                                            roomId: roomId,
-                                            userId: visitor.id,
-                                          ),
-                                        );
-                                        controller?.changeRole(
-                                          targetIdentity: visitor.id.toString(),
-                                          role: 'admin',
-                                        );
+                                        final adminState = context.read<AdminBloc>().state;
+                                        final isVisitorAdmin = adminState.admins.any((a) => a.id == visitor.id);
+                                        if (isVisitorAdmin) {
+                                          context.read<AdminBloc>().add(
+                                            RemoveAdminEvent(
+                                              roomId: roomId,
+                                              userId: visitor.id,
+                                            ),
+                                          );
+                                          controller?.changeRole(
+                                            targetIdentity: visitor.id.toString(),
+                                            role: 'audience',
+                                          );
+                                        } else {
+                                          context.read<AdminBloc>().add(
+                                            AddAdminEvent(
+                                              roomId: roomId,
+                                              userId: visitor.id,
+                                            ),
+                                          );
+                                          controller?.changeRole(
+                                            targetIdentity: visitor.id.toString(),
+                                            role: 'admin',
+                                          );
+                                        }
                                         final promoterData = CacheManager.getUserData();
                                         controller?.sendRoomMessage({
                                           'type': 'roleChange',
                                           'data': {
                                             'user_id': visitor.id.toString(),
-                                            'role': 'admin',
+                                            'role': isVisitorAdmin ? 'audience' : 'admin',
                                             'user_name': visitor.name,
                                             'promoter_name': promoterData?['name']?.toString() ?? '',
                                           },
@@ -144,21 +159,29 @@ class RoomVisitorsSheet extends StatelessWidget {
                                         controller?.banUser(visitor.id.toString());
                                     }
                                   },
-                                  itemBuilder: (_) => [
-                                    if (isOwner)
+                                  itemBuilder: (_) {
+                                    final adminState = context.read<AdminBloc>().state;
+                                    final isVisitorAdmin = adminState.admins.any((a) => a.id == visitor.id);
+                                    return [
+                                      if (isOwner)
+                                        PopupMenuItem(
+                                          value: 'admin',
+                                          child: Text(
+                                            isVisitorAdmin
+                                                ? context.tr(AudioRoomKeys.removeAdmin)
+                                                : context.tr(AudioRoomKeys.makeAdmin),
+                                          ),
+                                        ),
                                       PopupMenuItem(
-                                        value: 'admin',
-                                        child: Text(context.tr(AudioRoomKeys.makeAdmin)),
+                                        value: 'kick',
+                                        child: Text(context.tr(AudioRoomKeys.kick)),
                                       ),
-                                    PopupMenuItem(
-                                      value: 'kick',
-                                      child: Text(context.tr(AudioRoomKeys.kick)),
-                                    ),
-                                    PopupMenuItem(
-                                      value: 'ban',
-                                      child: Text(context.tr(AudioRoomKeys.ban)),
-                                    ),
-                                  ],
+                                      PopupMenuItem(
+                                        value: 'ban',
+                                        child: Text(context.tr(AudioRoomKeys.ban)),
+                                      ),
+                                    ];
+                                  },
                                 )
                               : null,
                         );
