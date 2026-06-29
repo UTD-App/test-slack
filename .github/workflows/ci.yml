@@ -44,7 +44,3 @@ jobs:
 
       - name: Package test suite
         run: vendor/bin/phpunit --testsuite=Packages
-
-      - name: Code style (Pint, informational)
-        run: vendor/bin/pint --test
-        continue-on-error: true
