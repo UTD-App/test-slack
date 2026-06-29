@@ -109,6 +109,12 @@ class GiftController extends Controller
         return Common::apiResponse(true, 'context_gifters', $directory->giftersFor($type, $id));
     }
 
+    /** Who received the most gifts in a context. */
+    public function contextReceivers(GiftDirectory $directory, string $type, int $id)
+    {
+        return Common::apiResponse(true, 'context_receivers', $directory->receiversFor($type, $id));
+    }
+
     /**
      * Gifts RECEIVED by a user, grouped & summed (Eagle's GET /my_gifts?user_id=).
      * Defaults to the authenticated user; 404 for an unknown explicit user_id.

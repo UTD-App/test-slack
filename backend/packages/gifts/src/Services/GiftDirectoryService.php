@@ -62,6 +62,36 @@ class GiftDirectoryService implements GiftDirectory
         })->all();
     }
 
+    public function receiversFor(string $type, int $id): array
+    {
+        $rows = GiftLog::query()
+            ->where('context_type', $type)
+            ->where('context_id', $id)
+            ->selectRaw('receiver_id, SUM(gift_num) as num')
+            ->groupBy('receiver_id')
+            ->orderByDesc('num')
+            ->get();
+
+        $users = User::query()
+            ->whereIn('id', $rows->pluck('receiver_id'))
+            ->with('profile')
+            ->get(['id', 'name', 'uuid'])
+            ->keyBy('id');
+
+        return $rows->map(function ($r) use ($users) {
+            $user = $users->get($r->receiver_id);
+
+            return [
+                'user' => [
+                    'id'     => (int) $r->receiver_id,
+                    'name'   => $user?->name,
+                    'avatar' => Media::url($user?->avatar),
+                ],
+                'num' => (int) $r->num,
+            ];
+        })->all();
+    }
+
     public function countFor(string $type, int $id): int
     {
         return (int) GiftLog::query()

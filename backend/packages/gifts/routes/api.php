@@ -30,4 +30,5 @@ Route::middleware(['auth:sanctum', 'package.enabled:gifts'])->group(function () 
 
     Route::get('gifts/context/{type}/{id}', [GiftController::class, 'contextGifts']);
     Route::get('gifts/context/{type}/{id}/gifters', [GiftController::class, 'contextGifters']);
+    Route::get('gifts/context/{type}/{id}/receivers', [GiftController::class, 'contextReceivers']);
 });

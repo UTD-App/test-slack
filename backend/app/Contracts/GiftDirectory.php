@@ -18,6 +18,9 @@ interface GiftDirectory
     /** Who gifted in a context: [['user' => ['id','name'], 'num' => int], …]. */
     public function giftersFor(string $type, int $id): array;
 
+    /** Who received gifts in a context: [['user' => ['id','name','avatar'], 'num' => int], …]. */
+    public function receiversFor(string $type, int $id): array;
+
     /** Total number of gifts received in a context. */
     public function countFor(string $type, int $id): int;
 
