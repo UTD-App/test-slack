@@ -26,7 +26,7 @@ class CheckLatestToken
             $latestToken = $user->tokens()->orderByDesc('id')->first();
 
             if (!$latestToken) {
-                return Common::apiResponse(false, 'Unauthenticated', [], 401);
+                return Common::apiResponse(false, __('messages.unauthenticated'), [], 401);
             }
             $lastToken = $latestToken->token;
 
@@ -36,7 +36,10 @@ class CheckLatestToken
             $token = hash('sha256', $bearerToken);
 
             if (!hash_equals($lastToken, $token)) {
-                return Common::apiResponse(0, 'Another device login with your account', null, 505);
+                // 401 Unauthorized — a newer session superseded this token. (Was 505,
+                // "HTTP Version Not Supported", which breaks clients/proxies that branch
+                // on the status class.)
+                return Common::apiResponse(0, __('messages.another_device_login'), null, 401);
             }
         }
 

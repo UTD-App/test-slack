@@ -108,6 +108,7 @@ class InternalLogicTest extends TestCase
         app()->bind(GiftDirectory::class, fn () => new class implements GiftDirectory {
             public function giftsFor(string $type, int $id): array { return []; }
             public function giftersFor(string $type, int $id): array { return []; }
+            public function receiversFor(string $type, int $id): array { return []; }
             public function countFor(string $type, int $id): int { return 0; }
             public function coinsFor(string $type, int $id): float { return 0; }
             public function receivedBy(int $userId): array { return []; }

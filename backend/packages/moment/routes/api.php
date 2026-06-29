@@ -13,11 +13,12 @@ use Utd\Moment\Http\Controllers\ReportController;
 | admin/packages (replaces Eagle's appFeatureEnable:moment).
 | `generalBan` rejects suspended users (status=0) with a distinguishable 403
 | (code=account_suspended) so the app logs them out.
-| NOTE(gap): other Eagle middleware not in the Base yet:
-|   checkLatestToken, userBan, ban.user.actions:moment, moment.allowed,
-|   update.last.seen — see NOTES_GAPS.md → "middleware".
+| Mirrors the base authed stack so a banned / superseded-token user can't reach
+| moment routes, and responses are localized + presence-tracked.
+| NOTE(gap): still pending (need their own packages/flags): ban.user.actions:moment,
+|   moment.allowed — see NOTES_GAPS.md → "middleware".
 */
-Route::middleware(['auth:sanctum', 'generalBan', 'package.enabled:moment'])->group(function () {
+Route::middleware(['auth:sanctum', 'checkLatestToken', 'generalBan', 'userBan', 'update.last.seen', 'localization', 'package.enabled:moment'])->group(function () {
     // A user's moments (profile package). Declared before the {moment} resource so "user" isn't captured as an id.
     Route::get('moment/user/{user_id}', [MomentController::class, 'userMoments'])->whereNumber('user_id');
 

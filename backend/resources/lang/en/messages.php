@@ -7,4 +7,6 @@ return [
     'comment_opened' => 'Comments are now open.',
     'comment_closed' => 'Comments are now closed.',
     'accept'         => 'Request accepted.',
+    'another_device_login' => 'Your account was logged in on another device.',
+    'unauthenticated' => 'Unauthenticated.',
 ];

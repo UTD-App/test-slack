@@ -39,10 +39,12 @@ class CheckLatestTokenTest extends TestCase
         // A second (newer) token now exists, so the old one is no longer "latest".
         $user->createToken('new')->plainTextToken;
 
+        // A superseded token now returns 401 (was 505 — a wrong status that breaks
+        // proxies/clients), with a localized message.
         $this->withHeader('Authorization', "Bearer {$oldToken}")
             ->getJson('/_t/latest-token')
-            ->assertStatus(505)
+            ->assertStatus(401)
             ->assertJsonPath('status', false)
-            ->assertJsonPath('message', 'Another device login with your account');
+            ->assertJsonPath('message', __('messages.another_device_login'));
     }
 }
