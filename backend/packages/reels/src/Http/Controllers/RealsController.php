@@ -7,11 +7,18 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 use Utd\Reels\Http\Services\RealsService;
 use Utd\Reels\Transformers\RealsResource;
 
 class RealsController extends Controller
 {
+    /** Accepted video MIME types for a reel upload. */
+    private const VIDEO_MIMES = 'video/mp4,video/quicktime,video/3gpp,video/webm,video/x-matroska';
+
+    /** Max reel video size in kilobytes (100 MB). */
+    private const VIDEO_MAX_KB = 102400;
+
     public function __construct(public RealsService $realsService) {}
 
     public function index(Request $request)
@@ -65,6 +72,15 @@ class RealsController extends Controller
             return Common::apiResponse(0, __('reels::messages.empty_content'));
         }
 
+        // Reject anything that isn't a real video, or that is oversized, before
+        // it reaches storage (content-spoofing / storage-DoS guard).
+        $validator = Validator::make($request->all(), [
+            'video' => 'file|mimetypes:' . self::VIDEO_MIMES . '|max:' . self::VIDEO_MAX_KB,
+        ]);
+        if ($validator->fails()) {
+            return Common::apiResponse(0, $validator->errors()->first());
+        }
+
         if (mb_strlen((string) $request->input('description', '')) > 500) {
             return Common::apiResponse(0, __('reels::messages.content_too_long'));
         }
@@ -115,6 +131,16 @@ class RealsController extends Controller
     {
         if (mb_strlen((string) $request->input('description', '')) > 500) {
             return Common::apiResponse(0, __('reels::messages.content_too_long'));
+        }
+
+        // Validate a replacement video if one is supplied (caption-only edits skip this).
+        if ($request->hasFile('video')) {
+            $validator = Validator::make($request->all(), [
+                'video' => 'file|mimetypes:' . self::VIDEO_MIMES . '|max:' . self::VIDEO_MAX_KB,
+            ]);
+            if ($validator->fails()) {
+                return Common::apiResponse(0, $validator->errors()->first());
+            }
         }
 
         try {

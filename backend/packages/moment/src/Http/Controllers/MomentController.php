@@ -6,11 +6,19 @@ use App\Helpers\Common;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Validator;
 use Utd\Moment\Http\Services\MomentService;
 use Utd\Moment\Transformers\MomentResource;
 
 class MomentController extends Controller
 {
+    /** Accepted image MIME types for a moment upload. */
+    private const IMAGE_MIMES = 'image/jpeg,image/png,image/webp,image/gif';
+
+    /** Max images per moment, and max size per image in kilobytes (10 MB). */
+    private const MAX_IMAGES = 9;
+    private const IMAGE_MAX_KB = 10240;
+
     public function __construct(public MomentService $momentService) {}
 
     public function index(Request $request)
@@ -47,6 +55,18 @@ class MomentController extends Controller
 
     public function store(Request $request)
     {
+        // Reject non-images / oversized / too-many uploads before storage
+        // (content-spoofing / storage-DoS guard).
+        if ($request->hasFile('multi_image')) {
+            $validator = Validator::make($request->all(), [
+                'multi_image'   => 'array|max:' . self::MAX_IMAGES,
+                'multi_image.*' => 'file|image|mimetypes:' . self::IMAGE_MIMES . '|max:' . self::IMAGE_MAX_KB,
+            ]);
+            if ($validator->fails()) {
+                return Common::apiResponse(0, $validator->errors()->first());
+            }
+        }
+
         $contacts = $request->contacts ?? '';
 
         $result = $this->momentService->createMoment($contacts, $request);
