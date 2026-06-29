@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:utd_app/cache/cache_manager.dart';
 import 'package:utd_app/network/models/api_response.dart';
 import 'package:utd_app/network/services/base_api_service.dart';
@@ -133,8 +135,17 @@ class GiftApiService extends BaseApiService {
         'num': quantity,
         'room_id': roomId,
         if (ownerId > 0) 'owner_id': ownerId,
+        // Per-send key so a network-level retry of THIS request is replayed by
+        // the backend instead of charging the sender a second time.
+        'idempotency_key': _newIdempotencyKey(),
       },
       fromJson: _status,
     );
   }
+
+  static final Random _rng = Random();
+
+  /// A short, unique per-send key (< 64 chars) for backend idempotency.
+  String _newIdempotencyKey() =>
+      'gift-${DateTime.now().microsecondsSinceEpoch}-${_rng.nextInt(1 << 32)}';
 }

@@ -143,12 +143,16 @@ class GiftController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'id'       => 'required|integer',
-            'toUid'    => 'required|string',
-            'num'      => 'required|integer|min:1',
-            'type'     => 'nullable|string',
-            'owner_id' => 'nullable|integer',
-            'room_id'  => 'nullable|integer',
+            'id'              => 'required|integer',
+            'toUid'           => 'required|string',
+            'num'             => 'required|integer|min:1',
+            'type'            => 'nullable|string',
+            'owner_id'        => 'nullable|integer',
+            'room_id'         => 'nullable|integer',
+            // Per-tap UUID from the client so a retry / double-tap does not
+            // charge the sender (or credit receivers) twice. Optional for old
+            // clients, but the app should always send one.
+            'idempotency_key' => 'nullable|string|max:64',
         ]);
 
         if ($validator->fails()) {
@@ -167,11 +171,14 @@ class GiftController extends Controller
         }
 
         $context = array_filter([
-            'type'         => 'room',
-            'id'           => $request->integer('room_id') ?: null,
-            'room_id'      => $request->integer('room_id') ?: null,
-            'roomowner_id' => $request->integer('owner_id') ?: null,
-            'source'       => $request->input('type') === 'bag' ? 'bag' : 'coins',
+            'type'            => 'room',
+            'id'              => $request->integer('room_id') ?: null,
+            'room_id'         => $request->integer('room_id') ?: null,
+            'roomowner_id'    => $request->integer('owner_id') ?: null,
+            'source'          => $request->input('type') === 'bag' ? 'bag' : 'coins',
+            'idempotency_key' => $request->filled('idempotency_key')
+                ? (string) $request->input('idempotency_key')
+                : null,
         ], fn ($v) => $v !== null);
 
         $result = app(GiftSender::class)->sendMany(

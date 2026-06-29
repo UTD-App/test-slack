@@ -130,12 +130,33 @@ class GiftSendingService implements GiftSender
                     ]);
                     $source = 'bag';
                 } else {
-                    $debit = Wallet::debit($sender, $spend, $grandTotal, 'gift_sent', [
-                        'gift_id'   => $gift->id,
-                        'receivers' => array_map(fn (User $u) => $u->getKey(), $receivers),
-                        'context'   => $context,
-                    ]);
+                    $idempotencyKey = $context['idempotency_key'] ?? null;
+
+                    $debit = Wallet::debit($sender, $spend, $grandTotal, 'gift_sent', array_filter([
+                        'gift_id'         => $gift->id,
+                        'receivers'       => array_map(fn (User $u) => $u->getKey(), $receivers),
+                        'context'         => $context,
+                        'idempotency_key' => $idempotencyKey,
+                    ], fn ($v) => $v !== null));
                     $debitTxId = $debit->transactionId;
+
+                    // Idempotent replay: if this debit already produced gift logs
+                    // (a retry, or a concurrent duplicate that lost the wallet's
+                    // idempotency-key race), return the prior batch instead of
+                    // crediting receivers / writing logs a second time.
+                    if ($idempotencyKey !== null) {
+                        $prior = GiftLog::where('wallet_debit_tx_id', $debitTxId)->get();
+                        if ($prior->isNotEmpty()) {
+                            return [
+                                'batch_id'     => $prior->first()->batch_id,
+                                'gift_log_ids' => $prior->pluck('id')->all(),
+                                'receiver_ids' => $prior->pluck('receiver_id')->all(),
+                                'total'        => (float) $prior->sum('total_price'),
+                                'earned_each'  => (float) $prior->first()->receiver_earned,
+                                'replayed'     => true,
+                            ];
+                        }
+                    }
                 }
 
                 $batchId   = (string) Str::uuid();
