@@ -46,14 +46,16 @@ class NotificationItem {
 
   factory NotificationItem.fromJson(Map<String, dynamic> json) {
     return NotificationItem(
-      id: (json['id'] as num).toInt(),
+      id: (json['id'] as num?)?.toInt() ?? 0,
       type: json['type'] as String? ?? '',
       category: json['category'] as String?,
       title: json['title'] as String? ?? '',
       body: json['body'] as String? ?? '',
       icon: json['icon'] as String?,
       route: json['route'] as String?,
-      data: (json['data'] as Map?)?.cast<String, dynamic>() ?? const {},
+      // Guard with `is Map` (like `actor` below) so a malformed non-map `data`
+      // value can't crash the whole notification parse.
+      data: json['data'] is Map ? (json['data'] as Map).cast<String, dynamic>() : const {},
       imageUrl: json['image_url'] as String?,
       actor: json['actor'] is Map
           ? NotificationActor.fromJson((json['actor'] as Map).cast<String, dynamic>())

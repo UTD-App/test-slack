@@ -61,14 +61,12 @@ void main() {
       expect(n.id, 12);
     });
 
-    // BUG: NotificationItem.fromJson does `(json['id'] as num).toInt()` with no
-    // null guard, so a payload missing `id` (or with id:null) throws instead of
-    // defaulting. All other fields are null-safe — id is the odd one out.
-    test('BUG: missing/null id throws (no null-safety on id cast)', () {
-      expect(() => NotificationItem.fromJson(<String, dynamic>{}),
-          throwsA(isA<TypeError>()));
-      expect(() => NotificationItem.fromJson(<String, dynamic>{'id': null}),
-          throwsA(isA<TypeError>()));
+    // FIXED: id is now null-safe (`(json['id'] as num?)?.toInt() ?? 0`), so a
+    // payload missing `id` (or id:null) defaults to 0 like every other field
+    // instead of throwing.
+    test('missing/null id defaults to 0 (null-safe)', () {
+      expect(NotificationItem.fromJson(<String, dynamic>{}).id, 0);
+      expect(NotificationItem.fromJson(<String, dynamic>{'id': null}).id, 0);
     });
 
     test('invalid created_at string -> null (DateTime.tryParse)', () {
@@ -81,14 +79,12 @@ void main() {
       expect(n.data, isEmpty);
     });
 
-    // BUG: `data` is parsed as `(json['data'] as Map?)?.cast(...)`. The `as Map?`
-    // cast throws on a non-null, non-map value (e.g. a String) instead of
-    // falling back to the empty-map default. Compare with `actor`, which uses an
-    // `is Map` guard and is therefore safe. A malformed `data` field (server bug
-    // or unexpected payload) crashes parsing of the whole notification.
-    test('BUG: non-map (non-null) data throws instead of defaulting', () {
-      expect(() => NotificationItem.fromJson({'id': 1, 'data': 'oops'}),
-          throwsA(isA<TypeError>()));
+    // FIXED: `data` now uses an `is Map` guard (like `actor`), so a malformed
+    // non-map value falls back to the empty-map default instead of crashing the
+    // whole notification parse.
+    test('non-map data falls back to empty map (is Map guard)', () {
+      expect(NotificationItem.fromJson({'id': 1, 'data': 'oops'}).data, isEmpty);
+      expect(NotificationItem.fromJson({'id': 1, 'data': 42}).data, isEmpty);
     });
 
     test('dynamic-keyed data + actor maps cast safely', () {
