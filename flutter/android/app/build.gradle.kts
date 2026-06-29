@@ -22,9 +22,10 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        // Distinct id so test-stack installs alongside client-test on the same emulator.
-        applicationId = "com.example.tempo_packages_version.teststack"
+        // Production application id (Play Store identity — permanent once published).
+        // namespace stays com.example.* (internal R/BuildConfig package only, not
+        // user-visible) so the Kotlin MainActivity does not need to move.
+        applicationId = "com.utdsoftware.utd"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
