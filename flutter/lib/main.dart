@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:developer' as developer;
+
 import 'package:audio_room/audio_room.dart';
 import 'package:audio_room_charisma/audio_room_charisma.dart';
 import 'package:audio_room_mode_seats12/audio_room_mode_seats12.dart';
@@ -9,6 +12,7 @@ import 'package:profile/profile.dart';
 import 'package:wallet/wallet.dart';
 import 'package:moment/moment.dart';
 import 'package:reels/reels.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -56,8 +60,39 @@ void _preloadStudioFonts() {
   ]);
 }
 
-void main() async {
+void main() {
+  // Run the whole app inside a guarded zone so async errors that escape a
+  // widget (the common cause of a silent freeze / red screen in release) are
+  // captured instead of lost.
+  runZonedGuarded<Future<void>>(_startApp, (error, stack) {
+    _reportError(error, stack, fatal: true);
+  });
+}
+
+/// Single crash sink. Logs everywhere; in release this is the one place to
+/// forward to a crash reporter (e.g. FirebaseCrashlytics.instance.recordError).
+void _reportError(Object error, StackTrace? stack, {bool fatal = false}) {
+  developer.log(
+    'Uncaught${fatal ? ' (fatal)' : ''} error: $error',
+    name: 'utd_app',
+    error: error,
+    stackTrace: stack,
+  );
+}
+
+Future<void> _startApp() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Route framework + platform-dispatcher errors through the same sink so they
+  // are never swallowed silently.
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    _reportError(details.exception, details.stack, fatal: true);
+  };
+  WidgetsBinding.instance.platformDispatcher.onError = (error, stack) {
+    _reportError(error, stack, fatal: true);
+    return true;
+  };
 
   // Edge-to-edge: draw behind both system bars and keep them transparent with
   // light icons over the dark purple gradient (re-asserted on every AppBar via
@@ -207,7 +242,8 @@ void main() async {
 
   runApp(
     DevicePreview(
-      enabled: true,
+      // Dev-only inspector chrome; must never wrap the production app.
+      enabled: !kReleaseMode,
       builder: (_) => ValueListenableBuilder<int>(
         valueListenable: _restartNotifier,
         builder: (_, restartCount, __) {

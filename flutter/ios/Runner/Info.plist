@@ -4,6 +4,14 @@
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>This app uses your microphone so you can talk in live audio rooms.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>This app uses your camera to take photos and videos for your profile and posts.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>This app needs access to your photo library so you can choose images and videos for your profile and posts.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>This app saves images and videos to your photo library when you choose to download them.</string>
 	<key>CFBundleDisplayName</key>
 	<string>Tempo Packages Version</string>
 	<key>CFBundleExecutable</key>
