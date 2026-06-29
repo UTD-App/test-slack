@@ -111,8 +111,31 @@ writing the tests.
 
 ---
 
+## Flutter unit tests (added too)
+
+The Flutter app (`flutter/`) had **no `test/` directory**. Added 35 fast, pure-Dart
+unit tests (no widgets / no I/O) — run with `cd flutter && flutter test`:
+
+- `test/shared/utils/validators_test.dart` (15) — email/phone/url/password predicates
+  + form-field validators.
+- `test/shared/utils/formatters_test.dart` (10) — `relativeTime` (injected clock, all
+  branches), date/time patterns, number/compact/currency.
+- `test/network/models/api_response_test.dart` (9) — `ApiResponse`/`PaginatedResponse`
+  parsing + the `Result` sealed type (success/failure, map/fold/when).
+- `test/shared/core/base_response_test.dart` (6) — `BaseResponse` envelope parsing.
+
+Result: **35 tests, all passing.**
+
+5. **Cross-stack note — envelope key `status` vs `success`.** The backend envelope
+   uses `status` (see `Common::apiResponse`), but the Flutter `BaseResponse.fromJson`
+   (and the unused `ApiResponse.fromJson`) read `success`. So `success` parses as
+   `null` for a real backend payload (locked in by a test). Harmless **only** if call
+   sites decide success from the HTTP status code rather than `BaseResponse.success`;
+   worth a quick verify. (`ApiResponse.fromJson` itself is currently unused in `lib/`.)
+
 ## Conclusion
 
 All ~137 API endpoints across the core app and every package now have automated
-test coverage, and the full suite is green. No endpoint defects were found; the
-items above are optional polish.
+test coverage (350 backend tests), plus 35 Flutter unit tests where there were none.
+Everything is green. No endpoint defects were found; the items above are optional
+polish.
