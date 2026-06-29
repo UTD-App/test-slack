@@ -2,11 +2,13 @@
 
 namespace Utd\AudioRoom\Providers;
 
+use App\Contracts\RoomOwnerResolver;
 use App\Services\PackageRegistry;
 use App\Services\UserDataService;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Utd\AudioRoom\Contracts\AudioRoomDataContributor;
+use Utd\AudioRoom\Entities\Room;
 
 class AudioRoomServiceProvider extends ServiceProvider
 {
@@ -15,6 +17,20 @@ class AudioRoomServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(self::PACKAGE_ROOT . '/config/audio-room.php', 'audio-room');
+
+        // Trusted room-owner lookup for the Gifts room-owner cut. Resolving the
+        // owner from our own table (not the client request) closes the IDOR where
+        // a sender could redirect another room's cut to themselves.
+        $this->app->bind(RoomOwnerResolver::class, function () {
+            return new class implements RoomOwnerResolver {
+                public function ownerId(int $roomId): ?int
+                {
+                    $ownerId = Room::query()->whereKey($roomId)->value('user_id');
+
+                    return $ownerId ? (int) $ownerId : null;
+                }
+            };
+        });
     }
 
     public function boot(): void

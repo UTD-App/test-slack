@@ -2,6 +2,7 @@
 
 namespace Utd\Gifts\Listeners;
 
+use App\Contracts\RoomOwnerResolver;
 use App\Events\Gifts\GiftSent;
 use App\Facades\Wallet;
 use App\Models\User;
@@ -23,9 +24,21 @@ class CreditRoomOwnerOnGiftSent
 {
     public function handle(GiftSent $event): void
     {
-        $ownerId = (int) ($event->context['roomowner_id'] ?? 0);
+        $roomId = (int) ($event->context['room_id'] ?? 0);
+        if ($roomId <= 0) {
+            return; // not a room gift → nothing to do
+        }
+
+        // Resolve the owner from the room itself, NEVER the client-supplied
+        // roomowner_id (which a sender could spoof to steal the cut). Without a
+        // room package bound to resolve it, pay nobody.
+        if (! app()->bound(RoomOwnerResolver::class)) {
+            return;
+        }
+
+        $ownerId = (int) (app(RoomOwnerResolver::class)->ownerId($roomId) ?? 0);
         if ($ownerId <= 0) {
-            return; // not a room gift (or no owner) → nothing to do
+            return;
         }
 
         // Don't pay the owner for gifting themselves or receiving the gift.
