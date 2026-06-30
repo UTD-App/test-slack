@@ -5,7 +5,7 @@ namespace Utd\Moment\Entities;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 
-class MomentCommint extends Model
+class MomentComment extends Model
 {
     protected $table = 'moment_user_comments';
 
@@ -26,13 +26,13 @@ class MomentCommint extends Model
     /** The comment this one replies to (null = top-level). */
     public function parent()
     {
-        return $this->belongsTo(MomentCommint::class, 'parent_id', 'id');
+        return $this->belongsTo(MomentComment::class, 'parent_id', 'id');
     }
 
     /** Direct replies to this comment (one level). */
     public function replies()
     {
-        return $this->hasMany(MomentCommint::class, 'parent_id', 'id');
+        return $this->hasMany(MomentComment::class, 'parent_id', 'id');
     }
 
     /** Facebook-style reactions on this comment (one per user). */

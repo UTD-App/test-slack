@@ -111,6 +111,7 @@ class InternalLogicTest extends TestCase
             public function receiversFor(string $type, int $id): array { return []; }
             public function countFor(string $type, int $id): int { return 0; }
             public function coinsFor(string $type, int $id): float { return 0; }
+            public function statsFor(string $type, array $ids): array { return []; }
             public function receivedBy(int $userId): array { return []; }
             public function sentBy(int $userId): array { return []; }
             public function topSupporters(int $userId, int $limit = 6): array

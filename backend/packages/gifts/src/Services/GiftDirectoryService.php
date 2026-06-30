@@ -108,6 +108,34 @@ class GiftDirectoryService implements GiftDirectory
             ->sum('total_price');
     }
 
+    /**
+     * Batched count+coins for many context ids in ONE grouped query (the feed
+     * path; replaces 2 queries per moment in MomentResource).
+     *
+     * @param  array<int>  $ids
+     * @return array<int,array{count:int,coins:float}>
+     */
+    public function statsFor(string $type, array $ids): array
+    {
+        if (empty($ids)) {
+            return [];
+        }
+
+        return GiftLog::query()
+            ->where('context_type', $type)
+            ->whereIn('context_id', $ids)
+            ->selectRaw('context_id, SUM(gift_num) as num, SUM(total_price) as coins')
+            ->groupBy('context_id')
+            ->get()
+            ->mapWithKeys(fn ($r) => [
+                (int) $r->context_id => [
+                    'count' => (int) $r->num,
+                    'coins' => (float) $r->coins,
+                ],
+            ])
+            ->all();
+    }
+
     public function receivedBy(int $userId): array
     {
         return $this->groupedGiftsByColumn('receiver_id', $userId);

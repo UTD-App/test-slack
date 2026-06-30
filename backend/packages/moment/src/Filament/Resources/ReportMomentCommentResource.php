@@ -10,7 +10,7 @@ use Filament\Tables\Actions\Action;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
-use Utd\Moment\Entities\MomentCommint;
+use Utd\Moment\Entities\MomentComment;
 use Utd\Moment\Entities\ReportMomentComment;
 use Utd\Moment\Filament\Resources\ReportMomentCommentResource\Pages;
 
@@ -107,8 +107,8 @@ class ReportMomentCommentResource extends BaseResource
                     ->action(function (ReportMomentComment $record) {
                         // Remove the comment and its replies; the report row
                         // cascades away with the comment (FK cascadeOnDelete).
-                        MomentCommint::where('parent_id', $record->comment_id)->delete();
-                        MomentCommint::where('id', $record->comment_id)->delete();
+                        MomentComment::where('parent_id', $record->comment_id)->delete();
+                        MomentComment::where('id', $record->comment_id)->delete();
                         $record->delete();
                     }),
                 Action::make('dismiss')

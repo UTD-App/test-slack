@@ -24,16 +24,22 @@ class MomentResource extends JsonResource
             'description' => $this->description ?? '',
             'comment_num' => (int) ($this->comments_count ?? 0),
             'like_num'    => (int) ($this->likes_count ?? 0),
-            // Real count when the Gifts package is installed (binds GiftDirectory),
-            // else 0. NOTE: one small query per moment — fine for paginated feeds.
-            'gifts_count' => app()->bound(GiftDirectory::class)
-                ? app(GiftDirectory::class)->countFor('moment', (int) ($this->id ?? 0))
-                : 0,
+            // Gift count: feeds pre-compute this once per page (MomentRepository
+            // ::hydrateReactions → `gifts_count_pre`, one batched query). Only the
+            // single-moment show path (no pre-compute) falls back to a per-moment
+            // query; 0 when the Gifts package is absent.
+            'gifts_count' => array_key_exists('gifts_count_pre', $attrs)
+                ? (int) $attrs['gifts_count_pre']
+                : (app()->bound(GiftDirectory::class)
+                    ? app(GiftDirectory::class)->countFor('moment', (int) ($this->id ?? 0))
+                    : 0),
             // Sum of coins spent on gifts for this moment (drives the mobile gift
-            // counter, shown K-formatted). 0 when the Gifts package is absent.
-            'gifts_coins' => app()->bound(GiftDirectory::class)
-                ? (float) app(GiftDirectory::class)->coinsFor('moment', (int) ($this->id ?? 0))
-                : 0,
+            // counter, shown K-formatted). Pre-computed per page like gifts_count.
+            'gifts_coins' => array_key_exists('gifts_coins_pre', $attrs)
+                ? (float) $attrs['gifts_coins_pre']
+                : (app()->bound(GiftDirectory::class)
+                    ? (float) app(GiftDirectory::class)->coinsFor('moment', (int) ($this->id ?? 0))
+                    : 0),
             'created_at'  => $this->created_at,
             'updated_at'  => $this->updated_at ?? '',
             'img'         => $this->mediaUrl($this->img),

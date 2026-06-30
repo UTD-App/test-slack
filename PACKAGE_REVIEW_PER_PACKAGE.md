@@ -137,3 +137,27 @@ To gain confidence beyond the test counts, I ran **4 parallel read-only adversar
 **Still NOT changed (unchanged rationale):** the deliberately-left items table above (moment N+1, `MomentCommint` typo, legacy `api_responses` keys, `UtdManifest` envelope, CI guards) and **all of audio-room**.
 
 **Verified:** backend **834** tests / Flutter **990** (+1 skip), 0 failures · `dart analyze` clean on all changed files.
+
+---
+
+## Verification pass #3 — 2026-06-30 (closing the deliberately-left items)
+
+Went back through the "deliberately left" table and **did the ones that are genuine improvements**, while consciously **keeping** the ones whose change is riskier than the (zero) functional benefit.
+
+**Done:**
+| Item | What changed | Verified |
+|---|---|---|
+| moment **N+1** | Added `GiftDirectory::statsFor(type, ids)` (one grouped query for a whole page) + `GiftDirectoryService` impl + base-seam contract sync (+`receiversFor`). `MomentRepository::hydrateReactions` now pre-computes `gifts_count_pre`/`gifts_coins_pre` per page (mirrors the reactions batch); `MomentResource` reads them, single-moment show still falls back. **2 queries/moment → 1 query/page.** | +1 feed test |
+| **`MomentCommint`** typo | Renamed class → `MomentComment` (+ file) and the related `MomentCommmintResource` → `MomentCommentResource` (+ file), 14 files. Table name unchanged (`$table` explicit) → **no DB migration, no schema risk.** | 183 pkg tests |
+| translation **key-drift** (was CI/⏳) | Added `TranslationParityTest` (Unit suite): asserts EN↔AR key parity across **every** lang group (base + each package). **It immediately caught real cruft** — a stray `app.hello` key in AR `app.php` not present in EN — now removed. | +1, green |
+| `api_responses` legacy keys | Audited: **0 missing** referenced keys (no raw-key leaks) and **no dynamic refs**; EN↔AR parity now enforced by the test above. | (see below) |
+
+**Kept on purpose (change riskier than the nil benefit):**
+| Item | Why kept |
+|---|---|
+| `Reporter_id`/`Reported_id` column casing | Pure casing; renaming = an irreversible migration on deployed moderation tables (4 tables) for **zero** functional gain. DBAL is present so it's *possible*, but not worth the prod risk. |
+| 158 legacy `api_responses` keys | Harmless when present; they belong to **Eagle-ecosystem packages not installed here** (families/agencies/mic) that consume them on assembly. Deleting risks the broader platform; the audit explicitly flagged "packages may reference them." |
+| `UtdManifestController` raw envelope | Confirmed **by-design**: it implements the UTD Studio integration contract (`INTEGRATION.md §2–3`) — wrapping it in `Common::apiResponse` would break Studio. |
+| **audio-room** (everything) | Excluded by request. |
+
+**Verified:** backend **836** tests / Flutter **990** (+1 skip), 0 failures. Line-ending noise from the bulk rename (`sed -i` flips CRLF→LF on every file it touches) was cleaned up — the commit carries **only** real content changes.

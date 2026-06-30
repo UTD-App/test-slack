@@ -10,11 +10,11 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Utd\Moment\Entities\Moment;
-use Utd\Moment\Entities\MomentCommint;
+use Utd\Moment\Entities\MomentComment;
 use Utd\Moment\Entities\ReportMomentComment;
 use Utd\Moment\Http\Services\MomentCommentsService;
 use Utd\Moment\Http\Services\MomentService;
-use Utd\Moment\Transformers\MomentCommmintResource;
+use Utd\Moment\Transformers\MomentCommentResource;
 
 class MomentUserCommentController extends Controller
 {
@@ -32,7 +32,7 @@ class MomentUserCommentController extends Controller
 
         $paginateComments = $this->momentCommentsService->showComments($moment);
 
-        return Common::apiResponse(1, __('moment::messages.success'), MomentCommmintResource::collection($paginateComments), 200);
+        return Common::apiResponse(1, __('moment::messages.success'), MomentCommentResource::collection($paginateComments), 200);
     }
 
     public function store($moment_id, Request $request)
@@ -59,11 +59,11 @@ class MomentUserCommentController extends Controller
         // (and is itself top-level — replies stay one level deep).
         $parentId = $request->input('parent_id');
         if ($parentId) {
-            $parent = MomentCommint::where('id', $parentId)->where('moment_id', $moment_id)->first();
+            $parent = MomentComment::where('id', $parentId)->where('moment_id', $moment_id)->first();
             $parentId = $parent ? ($parent->parent_id ?? $parent->id) : null;
         }
 
-        $created = MomentCommint::create([
+        $created = MomentComment::create([
             'user_id'   => $user->id,
             'comment'   => $comment,
             'moment_id' => $moment_id,
@@ -90,7 +90,7 @@ class MomentUserCommentController extends Controller
             return Common::apiResponse(0, __('moment::messages.not_found'), [], 404);
         }
 
-        $comment = MomentCommint::where('id', $id)->where('moment_id', $moment_id)->first();
+        $comment = MomentComment::where('id', $id)->where('moment_id', $moment_id)->first();
         if (! $comment) {
             return Common::apiResponse(0, __('moment::messages.not_found'), [], 404);
         }
@@ -121,7 +121,7 @@ class MomentUserCommentController extends Controller
             return Common::apiResponse(0, __('moment::messages.not_found'), [], 404);
         }
 
-        $comment = MomentCommint::where('id', $id)->where('moment_id', $moment_id)->first();
+        $comment = MomentComment::where('id', $id)->where('moment_id', $moment_id)->first();
         if (! $comment) {
             return Common::apiResponse(0, __('moment::messages.not_found'), [], 404);
         }
@@ -162,7 +162,7 @@ class MomentUserCommentController extends Controller
             return Common::apiResponse(0, __('moment::messages.not_found'), [], 404);
         }
 
-        $comment = MomentCommint::where('id', $id)->where('moment_id', $momentId)->first();
+        $comment = MomentComment::where('id', $id)->where('moment_id', $momentId)->first();
         if (! $comment) {
             return Common::apiResponse(0, __('moment::messages.not_found'), [], 404);
         }

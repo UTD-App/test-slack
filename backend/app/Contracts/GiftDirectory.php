@@ -27,6 +27,15 @@ interface GiftDirectory
     /** Total coins spent on gifts in a context (sum of gift_logs.total_price). */
     public function coinsFor(string $type, int $id): float;
 
+    /**
+     * Batched {@see countFor}+{@see coinsFor} for a whole page of context ids in
+     * ONE query — lets a feed avoid 2 queries per item (the MomentResource N+1).
+     *
+     * @param  array<int>  $ids
+     * @return array<int,array{count:int,coins:float}>  keyed by context id; ids with no gifts are omitted
+     */
+    public function statsFor(string $type, array $ids): array;
+
     /** Gifts a user has received (any context), grouped & summed: [['gift_id','name','img','num'], …]. */
     public function receivedBy(int $userId): array;
 

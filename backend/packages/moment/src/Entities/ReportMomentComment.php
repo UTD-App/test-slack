@@ -15,7 +15,7 @@ class ReportMomentComment extends Model
 
     public function comment()
     {
-        return $this->belongsTo(MomentCommint::class, 'comment_id');
+        return $this->belongsTo(MomentComment::class, 'comment_id');
     }
 
     public function moment()

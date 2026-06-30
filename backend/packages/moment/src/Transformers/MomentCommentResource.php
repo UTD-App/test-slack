@@ -5,7 +5,7 @@ namespace Utd\Moment\Transformers;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Auth;
 
-class MomentCommmintResource extends JsonResource
+class MomentCommentResource extends JsonResource
 {
     public function toArray($request)
     {
@@ -43,7 +43,7 @@ class MomentCommmintResource extends JsonResource
             'my_reaction' => $myReaction,
             'reactions'   => $reactions,
             'user'        => $this->whenLoaded('user') ? new UserResource($this->whenLoaded('user')) : null,
-            'replies'     => MomentCommmintResource::collection($this->whenLoaded('replies')),
+            'replies'     => MomentCommentResource::collection($this->whenLoaded('replies')),
         ];
     }
 }

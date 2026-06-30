@@ -25,6 +25,6 @@ class MomentLikes extends Model
 
     public function comments()
     {
-        return $this->hasMany(MomentCommint::class, 'moment_id', 'moment_id');
+        return $this->hasMany(MomentComment::class, 'moment_id', 'moment_id');
     }
 }

@@ -7,7 +7,7 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Utd\Moment\Entities\Moment;
-use Utd\Moment\Entities\MomentCommint;
+use Utd\Moment\Entities\MomentComment;
 use Utd\Moment\Entities\MomentGallery;
 use Utd\Moment\Entities\MomentLikes;
 
@@ -109,7 +109,7 @@ class MomentBulkSeeder extends Seeder
             // 0–4 comments from random users.
             $commentCount = random_int(0, 4);
             for ($c = 0; $c < $commentCount; $c++) {
-                MomentCommint::create([
+                MomentComment::create([
                     'moment_id'  => $moment->id,
                     'user_id'    => $userIds[array_rand($userIds)],
                     'comment'    => $comments[array_rand($comments)],

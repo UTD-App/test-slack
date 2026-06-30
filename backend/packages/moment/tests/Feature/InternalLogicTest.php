@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Tests\TestCase;
 use Utd\Moment\Entities\Moment;
 use Utd\Moment\Entities\MomentCommentLikes;
-use Utd\Moment\Entities\MomentCommint;
+use Utd\Moment\Entities\MomentComment;
 use Utd\Moment\Entities\MomentGallery;
 use Utd\Moment\Entities\MomentLikes;
 use Utd\Moment\Entities\ReportMoment;
@@ -313,8 +313,8 @@ class InternalLogicTest extends TestCase
         $owner = User::factory()->create();
         $moment = Moment::create(['user_id' => $owner->id, 'description' => 'm']);
 
-        $parent = MomentCommint::create(['user_id' => $owner->id, 'moment_id' => $moment->id, 'comment' => 'parent']);
-        $reply  = MomentCommint::create([
+        $parent = MomentComment::create(['user_id' => $owner->id, 'moment_id' => $moment->id, 'comment' => 'parent']);
+        $reply  = MomentComment::create([
             'user_id' => $owner->id, 'moment_id' => $moment->id, 'comment' => 'reply', 'parent_id' => $parent->id,
         ]);
 
@@ -340,7 +340,7 @@ class InternalLogicTest extends TestCase
         $owner = User::factory()->create();
         $user = User::factory()->create();
         $moment = Moment::create(['user_id' => $owner->id, 'description' => 'm']);
-        $comment = MomentCommint::create(['user_id' => $owner->id, 'moment_id' => $moment->id, 'comment' => 'c']);
+        $comment = MomentComment::create(['user_id' => $owner->id, 'moment_id' => $moment->id, 'comment' => 'c']);
 
         $this->assertSame('reacted', $svc->reactToComment($comment, $user, 'love'));
         $this->assertSame('updated', $svc->reactToComment($comment, $user, 'wow'));
@@ -357,8 +357,8 @@ class InternalLogicTest extends TestCase
         $owner = User::factory()->create();
         $moment = Moment::create(['user_id' => $owner->id, 'description' => 'm']);
 
-        $parent = MomentCommint::create(['user_id' => $owner->id, 'moment_id' => $moment->id, 'comment' => 'top']);
-        MomentCommint::create([
+        $parent = MomentComment::create(['user_id' => $owner->id, 'moment_id' => $moment->id, 'comment' => 'top']);
+        MomentComment::create([
             'user_id' => $owner->id, 'moment_id' => $moment->id, 'comment' => 'reply', 'parent_id' => $parent->id,
         ]);
 
@@ -509,7 +509,7 @@ class InternalLogicTest extends TestCase
     {
         $owner = User::factory()->create();
         $moment = Moment::create(['user_id' => $owner->id, 'description' => 'rel']);
-        $comment = MomentCommint::create(['user_id' => $owner->id, 'moment_id' => $moment->id, 'comment' => 'c']);
+        $comment = MomentComment::create(['user_id' => $owner->id, 'moment_id' => $moment->id, 'comment' => 'c']);
         $moment->likes()->create(['user_id' => $owner->id]);
         MomentGallery::create(['moment_id' => $moment->id, 'image' => 'a.jpg']);
         ReportMoment::create([
@@ -545,8 +545,8 @@ class InternalLogicTest extends TestCase
     {
         $owner = User::factory()->create();
         $moment = Moment::create(['user_id' => $owner->id, 'description' => 'm']);
-        $parent = MomentCommint::create(['user_id' => $owner->id, 'moment_id' => $moment->id, 'comment' => 'p']);
-        $reply = MomentCommint::create([
+        $parent = MomentComment::create(['user_id' => $owner->id, 'moment_id' => $moment->id, 'comment' => 'p']);
+        $reply = MomentComment::create([
             'user_id' => $owner->id, 'moment_id' => $moment->id, 'comment' => 'r', 'parent_id' => $parent->id,
         ]);
 
@@ -559,7 +559,7 @@ class InternalLogicTest extends TestCase
         $owner = User::factory()->create();
         $user = User::factory()->create();
         $moment = Moment::create(['user_id' => $owner->id, 'description' => 'm']);
-        $comment = MomentCommint::create(['user_id' => $owner->id, 'moment_id' => $moment->id, 'comment' => 'c']);
+        $comment = MomentComment::create(['user_id' => $owner->id, 'moment_id' => $moment->id, 'comment' => 'c']);
         $like = MomentCommentLikes::create(['comment_id' => $comment->id, 'user_id' => $user->id, 'reaction_type' => 'love']);
 
         $this->assertCount(1, $comment->likes);

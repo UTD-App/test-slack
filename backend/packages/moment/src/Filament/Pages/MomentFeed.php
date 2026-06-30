@@ -10,7 +10,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Utd\Moment\Entities\Moment;
-use Utd\Moment\Entities\MomentCommint;
+use Utd\Moment\Entities\MomentComment;
 use Utd\Moment\Entities\MomentLikes;
 
 /**
@@ -286,7 +286,7 @@ class MomentFeed extends Page
 
         return [
             'likes' => MomentLikes::where('moment_id', $id)->count(),
-            'comments' => MomentCommint::where('moment_id', $id)->count(),
+            'comments' => MomentComment::where('moment_id', $id)->count(),
             'gifts' => $this->giftsAvailable()
                 ? (int) DB::table('gift_logs')->where('context_type', 'moment')->where('context_id', $id)->count()
                 : 0,
@@ -319,7 +319,7 @@ class MomentFeed extends Page
             return collect();
         }
 
-        $all = MomentCommint::where('moment_id', $this->commentsFor)
+        $all = MomentComment::where('moment_id', $this->commentsFor)
             ->with('user:id,name,uuid,avatar,status')
             ->orderBy('id')
             ->get();
@@ -418,7 +418,7 @@ class MomentFeed extends Page
     /** Delete a single comment and keep the moment's cached comment_num in sync. */
     public function deleteComment(int $commentId): void
     {
-        $comment = MomentCommint::find($commentId);
+        $comment = MomentComment::find($commentId);
 
         if (! $comment) {
             return;

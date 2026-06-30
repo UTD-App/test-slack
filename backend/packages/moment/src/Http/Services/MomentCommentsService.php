@@ -4,7 +4,7 @@ namespace Utd\Moment\Http\Services;
 
 use App\Models\User;
 use Utd\Moment\Entities\Moment;
-use Utd\Moment\Entities\MomentCommint;
+use Utd\Moment\Entities\MomentComment;
 
 class MomentCommentsService
 {
@@ -20,14 +20,14 @@ class MomentCommentsService
 
     public function delete($comment_id, Moment $moment)
     {
-        $commint = MomentCommint::find($comment_id);
+        $commint = MomentComment::find($comment_id);
         if (! $commint) {
             return 'false';
         }
 
         // Remove this comment's replies too (otherwise the parent_id FK nulls them
         // out and they'd resurface as top-level). Comment reactions cascade via FK.
-        MomentCommint::where('parent_id', $comment_id)->delete();
+        MomentComment::where('parent_id', $comment_id)->delete();
         $moment->comments()->where('moment_user_comments.id', $comment_id)->delete();
     }
 
@@ -37,7 +37,7 @@ class MomentCommentsService
      *  - different type   → switch to the new type → 'updated'
      *  - none yet         → add it                 → 'reacted'
      */
-    public function reactToComment(MomentCommint $comment, User $user, string $type): string
+    public function reactToComment(MomentComment $comment, User $user, string $type): string
     {
         $existing = $comment->likes()->where('user_id', $user->id)->first();
 

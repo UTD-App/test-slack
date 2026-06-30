@@ -24,6 +24,6 @@ class MomentCommentLikes extends Model
 
     public function comment()
     {
-        return $this->belongsTo(MomentCommint::class, 'comment_id', 'id');
+        return $this->belongsTo(MomentComment::class, 'comment_id', 'id');
     }
 }

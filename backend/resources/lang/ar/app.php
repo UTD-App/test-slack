@@ -91,5 +91,4 @@ return [
     'female'                 => 'أنثى',
     'your_age'               => 'عمرك',
     'submit'                 => 'إرسال',
-    'app.hello'              => 'مرحباً'
 ];

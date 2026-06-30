@@ -6,7 +6,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 use Utd\Moment\Entities\Moment;
-use Utd\Moment\Entities\MomentCommint;
+use Utd\Moment\Entities\MomentComment;
 
 /**
  * Endpoint coverage for the moment package: every route NOT already exercised by
@@ -138,7 +138,7 @@ class EndpointCoverageTest extends TestCase
         $moment = Moment::create(['user_id' => $owner->id, 'description' => 'has comments']);
 
         [$commenter, $token] = $this->actingUser();
-        MomentCommint::create([
+        MomentComment::create([
             'user_id'   => $commenter->id,
             'moment_id' => $moment->id,
             'comment'   => 'top level',
@@ -172,7 +172,7 @@ class EndpointCoverageTest extends TestCase
     {
         [$owner] = $this->actingUser();
         $moment = Moment::create(['user_id' => $owner->id, 'description' => 'reactable']);
-        $comment = MomentCommint::create([
+        $comment = MomentComment::create([
             'user_id'   => $owner->id,
             'moment_id' => $moment->id,
             'comment'   => 'react to me',
@@ -195,7 +195,7 @@ class EndpointCoverageTest extends TestCase
     {
         [$owner] = $this->actingUser();
         $moment = Moment::create(['user_id' => $owner->id, 'description' => 'toggle']);
-        $comment = MomentCommint::create([
+        $comment = MomentComment::create([
             'user_id'   => $owner->id,
             'moment_id' => $moment->id,
             'comment'   => 'toggle me',
@@ -235,7 +235,7 @@ class EndpointCoverageTest extends TestCase
     {
         [$author] = $this->actingUser();
         $moment = Moment::create(['user_id' => $author->id, 'description' => 'reportable']);
-        $comment = MomentCommint::create([
+        $comment = MomentComment::create([
             'user_id'   => $author->id,
             'moment_id' => $moment->id,
             'comment'   => 'offensive',
@@ -262,7 +262,7 @@ class EndpointCoverageTest extends TestCase
     {
         [$author] = $this->actingUser();
         $moment = Moment::create(['user_id' => $author->id, 'description' => 'm']);
-        $comment = MomentCommint::create([
+        $comment = MomentComment::create([
             'user_id'   => $author->id,
             'moment_id' => $moment->id,
             'comment'   => 'c',
@@ -280,7 +280,7 @@ class EndpointCoverageTest extends TestCase
     {
         [$author] = $this->actingUser();
         $moment = Moment::create(['user_id' => $author->id, 'description' => 'm']);
-        $comment = MomentCommint::create([
+        $comment = MomentComment::create([
             'user_id'   => $author->id,
             'moment_id' => $moment->id,
             'comment'   => 'c',
@@ -309,7 +309,7 @@ class EndpointCoverageTest extends TestCase
         $moment = Moment::create(['user_id' => $owner->id, 'description' => 'm']);
 
         [$commenter, $token] = $this->actingUser();
-        $comment = MomentCommint::create([
+        $comment = MomentComment::create([
             'user_id'   => $commenter->id,
             'moment_id' => $moment->id,
             'comment'   => 'mine to delete',
@@ -329,7 +329,7 @@ class EndpointCoverageTest extends TestCase
         $moment = Moment::create(['user_id' => $owner->id, 'description' => 'm']);
 
         [$commenter] = $this->actingUser();
-        $comment = MomentCommint::create([
+        $comment = MomentComment::create([
             'user_id'   => $commenter->id,
             'moment_id' => $moment->id,
             'comment'   => 'on my moment',
@@ -349,7 +349,7 @@ class EndpointCoverageTest extends TestCase
         $moment = Moment::create(['user_id' => $owner->id, 'description' => 'm']);
 
         [$commenter] = $this->actingUser();
-        $comment = MomentCommint::create([
+        $comment = MomentComment::create([
             'user_id'   => $commenter->id,
             'moment_id' => $moment->id,
             'comment'   => 'not yours',

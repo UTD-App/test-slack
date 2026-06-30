@@ -6,7 +6,7 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 use Utd\Moment\Entities\Moment;
-use Utd\Moment\Entities\MomentCommint;
+use Utd\Moment\Entities\MomentComment;
 use Utd\Moment\Entities\MomentGallery;
 use Utd\Moment\Entities\MomentLikes;
 
@@ -62,7 +62,7 @@ class MomentDemoSeeder extends Seeder
 
             // a comment or two
             $commenter = $users[($i + 1) % $users->count()];
-            MomentCommint::create([
+            MomentComment::create([
                 'moment_id' => $moment->id,
                 'user_id'   => $commenter->id,
                 'comment'   => 'تعليق تجريبي على المنشور 👍',

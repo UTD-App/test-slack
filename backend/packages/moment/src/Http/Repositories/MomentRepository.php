@@ -3,6 +3,7 @@
 namespace Utd\Moment\Http\Repositories;
 
 use App\Contracts\FollowProvider;
+use App\Contracts\GiftDirectory;
 use Illuminate\Support\Facades\Auth;
 use Utd\Moment\Entities\Moment;
 use Utd\Moment\Entities\MomentLikes;
@@ -59,9 +60,22 @@ class MomentRepository
             $breakdown[$r->moment_id][$r->reaction_type] = (int) $r->c;
         }
 
+        // Batch the gift count + coins for the whole page in ONE query when the
+        // Gifts package is installed (replaces 2 queries per moment in
+        // MomentResource). Only set the `*_pre` attrs when bound, so MomentResource
+        // still resolves 0 for an un-gifted/absent-package moment via its fallback.
+        $giftStats = app()->bound(GiftDirectory::class)
+            ? app(GiftDirectory::class)->statsFor('moment', $ids)
+            : null;
+
         foreach ($moments as $m) {
             $m->setAttribute('my_reaction_pre', $mine[$m->id] ?? null);
             $m->setAttribute('reactions_pre', $breakdown[$m->id] ?? []);
+
+            if ($giftStats !== null) {
+                $m->setAttribute('gifts_count_pre', $giftStats[$m->id]['count'] ?? 0);
+                $m->setAttribute('gifts_coins_pre', $giftStats[$m->id]['coins'] ?? 0.0);
+            }
         }
 
         return $paginator;
