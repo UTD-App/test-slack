@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Events\Gifts\GiftSent;
+use App\Listeners\UpdateCharismaOnGiftSent;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
 
 class CharismaServiceProvider extends ServiceProvider
@@ -15,5 +18,7 @@ class CharismaServiceProvider extends ServiceProvider
     {
         $this->loadRoutesFrom(__DIR__ . '/../../routes/api.php');
         $this->loadMigrationsFrom(__DIR__ . '/../../database/migrations');
+
+        Event::listen(GiftSent::class, UpdateCharismaOnGiftSent::class);
     }
 }

@@ -3,12 +3,15 @@
 namespace Utd\AudioRoom\Providers;
 
 use App\Contracts\RoomOwnerResolver;
+use App\Events\Gifts\GiftSent;
 use App\Services\PackageRegistry;
 use App\Services\UserDataService;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Utd\AudioRoom\Contracts\AudioRoomDataContributor;
 use Utd\AudioRoom\Entities\Room;
+use Utd\AudioRoom\Listeners\UpdateCharismaOnGiftSent;
 
 class AudioRoomServiceProvider extends ServiceProvider
 {
@@ -47,6 +50,8 @@ class AudioRoomServiceProvider extends ServiceProvider
         $this->loadRoutes();
 
         $this->app->make(UserDataService::class)->register(new AudioRoomDataContributor());
+
+        Event::listen(GiftSent::class, UpdateCharismaOnGiftSent::class);
     }
 
     protected function loadRoutes(): void

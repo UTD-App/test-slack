@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:audio_room/audio_room.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -17,6 +19,8 @@ class CharismaPlugin extends AudioRoomPlugin {
   bool _isActive = false;
   UTDRoomController? _controller;
   int? _currentRoomId;
+  String? _localUserId;
+  StreamSubscription<GiftDisplayEvent>? _giftSub;
 
   CharismaPlugin() {
     final repository = CharismaRepositoryImpl(
@@ -57,15 +61,63 @@ class CharismaPlugin extends AudioRoomPlugin {
   @override
   void onRoomEnter(int roomId, String userId) {
     _currentRoomId = roomId;
+    _localUserId = userId;
     _bloc.add(LoadRoomCharismaEvent(roomId: roomId));
+    _giftSub?.cancel();
+    _giftSub = GiftEventBus.instance.stream.listen(_onGiftEvent);
   }
 
   @override
   void onRoomExit(int roomId, String userId) {
     _isActive = false;
     _currentRoomId = null;
+    _localUserId = null;
     _controller = null;
+    _giftSub?.cancel();
+    _giftSub = null;
     _bloc.add(const InitCharismaEvent());
+  }
+
+  void _onGiftEvent(GiftDisplayEvent event) {
+    if (!_bloc.state.charismaActive) return;
+    if (event.senderId != _localUserId) return;
+
+    final current = List<CharismaModel>.from(_bloc.state.data ?? []);
+    final added = event.giftPrice * event.giftNum;
+
+    for (final receiverId in event.receiverIds) {
+      final uid = int.tryParse(receiverId) ?? 0;
+      final idx = current.indexWhere((e) => e.userId == uid);
+      if (idx >= 0) {
+        final old = current[idx];
+        final newTotal = (double.tryParse(old.total) ?? 0) + added;
+        current[idx] = CharismaModel(
+          userId: old.userId,
+          total: newTotal.toStringAsFixed(0),
+          position: old.position,
+        );
+      } else {
+        current.add(CharismaModel(
+          userId: uid,
+          total: added.toString(),
+          position: current.length,
+        ));
+      }
+    }
+
+    _bloc.add(UpdateCharismaEvent(data: current));
+
+    final charismaList = current
+        .map((e) => {
+              'user_id': e.userId,
+              'total': e.total,
+              'position': e.position,
+            })
+        .toList();
+    _controller?.sendRoomMessage({
+      'type': 'updateCharisma',
+      'data': {'charisma': charismaList},
+    });
   }
 
   @override
