@@ -4,6 +4,7 @@ import 'dart:developer' as developer;
 import 'package:audio_room/audio_room.dart';
 import 'package:audio_room_charisma/audio_room_charisma.dart';
 import 'package:audio_room_mode_seats12/audio_room_mode_seats12.dart';
+import 'package:audio_room_mode_seats16/audio_room_mode_seats16.dart';
 import 'package:audio_room_mode_seats22/audio_room_mode_seats22.dart';
 import 'package:authentication/authentication.dart';
 import 'package:device_preview/device_preview.dart';
@@ -109,7 +110,9 @@ Future<void> _startApp() async {
   // instance (with plugins attached) is reused across buildFeatures() calls.
   final audioRoom = AudioRoomFeature();
   audioRoom.registerPlugin(CharismaPlugin());
+  audioRoom.registerPlugin(AudioRoomGiftPlugin());
   audioRoom.registerModePlugin(Seats12ModePlugin());
+  audioRoom.registerModePlugin(Seats16ModePlugin());
   audioRoom.registerModePlugin(Seats22ModePlugin());
 
   List<AppFeature> buildFeatures() {
