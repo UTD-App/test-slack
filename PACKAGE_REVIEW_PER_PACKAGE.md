@@ -94,15 +94,22 @@ Everything below is **open** by request:
 ---
 
 ## Remaining open (non-audio-room) — quick list
-| Package | Open item | Severity |
-|---|---|---|
-| reels | `reals/seed` route outside throttle/`package.enabled` group | low |
-| gifts | quantity hint hardcoded; `GiftDirectoryService` raw-vs-absolute media split | low |
-| moment | `gifts_count`/`gifts_coins` N+1 in `MomentResource`; `MomentCommint` typo | low / cosmetic |
-| profile | `mini_profile_card` placeholder stub registration | low |
-| base (flutter) | a few hardcoded UI strings (`home_screen`/`app_shell`/`ui_slot_renderer`) | low |
-| base | legacy `api_responses` keys flagged (not migrated); `UtdManifest` raw envelope (by design) | low |
-| CI/infra | translation key-drift check; `dependency_overrides` guard | ⏳ infra |
-| **audio-room** | **all of it** (Stream-token impersonation is the priority) | 🚫 owner |
 
-Everything not in this table from the audits has been fixed (commits above).
+Second cleanup pass (`d4956b1`) closed the low-severity items below:
+- ✅ reels — `reals/seed` route now throttled (`throttle:5,1`).
+- ✅ gifts — quantity hint localized (`gifts.quantity_hint`). The `GiftDirectoryService` raw-vs-absolute
+  split turned out to be **already documented** per-method (intentional, for Flutter `resolveMediaUrl`) — left as-is.
+- ✅ base (flutter) — the last hardcoded UI strings (`home_screen`/`app_shell`/`ui_slot_renderer`) localized.
+- ✅ profile — unused `mini_profile_card` stub registration removed.
+
+Still open — **deliberately left** (change riskier than the benefit) + infra + audio-room:
+| Package | Open item | Why left | Severity |
+|---|---|---|---|
+| moment | `gifts_count`/`gifts_coins` N+1 in `MomentResource` | needs a batch method on the `GiftDirectory` seam; fine at 10/page | low (perf) |
+| moment | `MomentCommint` entity / `Reporter_id` column typos | renaming touches the DB schema + many refs for zero behavior gain | cosmetic |
+| base | legacy `api_responses` keys (flagged, not deleted) | packages may still reference them — needs a careful per-key migration | low |
+| base | `UtdManifestController` hand-rolled JSON envelope | by design (Studio design-time contract) | n/a |
+| CI/infra | translation key-drift check; `dependency_overrides` guard | CI wiring, not code | ⏳ infra |
+| **audio-room** | **all of it** (Stream-token impersonation is the priority) | not touched by request | 🚫 owner |
+
+Everything else from the audits has been fixed (see commits in the action plan + `d4956b1`).
