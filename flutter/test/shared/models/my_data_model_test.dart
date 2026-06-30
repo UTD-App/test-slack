@@ -129,6 +129,42 @@ void main() {
       expect(m.profile!.age, 0);
       expect(m.profile!.imageId, '');
     });
+
+    test('type drift does NOT throw (launch/cache hot-path safety)', () {
+      // This model is parsed on app start, including the OFFLINE cached fallback
+      // in UserSessionService which runs OUTSIDE any try/catch. If the server (or
+      // a cache round-trip) hands a field back as a different primitive type, the
+      // old raw `as int`/`as String` casts threw and crashed the app on launch.
+      // Coercion must turn each drift into a sane default instead.
+      final m = MyDataModel.fromJson(<String, dynamic>{
+        'id': '42', // String where an int is expected
+        'name': 12345, // int where a String is expected
+        'is_first': 1, // 1/0 where a bool is expected
+        'online_time': 99, // int where a String is expected
+        'profile': <String, dynamic>{
+          'gender': '2', // String where an int is expected
+          'age': '30', // String where an int is expected
+        },
+        'country': <String, dynamic>{
+          'id': '7', // String where an int is expected
+          'name': 100, // int where a String is expected
+        },
+      });
+
+      expect(m.id, 42); // '42' -> 42
+      expect(m.name, '12345'); // coerced via toString
+      expect(m.isFirst, true); // 1 -> true
+      expect(m.onlineTime, '99');
+      expect(m.profile!.gender, 2); // '2' -> 2
+      expect(m.profile!.age, 30); // '30' -> 30
+      expect(m.country!.id, 7); // '7' -> 7
+      expect(m.country!.name, '100');
+    });
+
+    test('non-numeric id string falls back to 0, not a crash', () {
+      final m = MyDataModel.fromJson(<String, dynamic>{'id': 'not-a-number'});
+      expect(m.id, 0);
+    });
   });
 
   group('MyDataModel.toJson', () {

@@ -9,6 +9,7 @@ return [
     'user_not_found'           => 'User not found',
     'invalid_type'             => 'Please select a valid type',
     'empty_content'            => 'You cannot post empty content',
+    'content_too_long'         => 'The text is too long',
     'gifts_not_installed'      => 'Gifts feature is not installed',
     'report_need_description'  => 'Please add a description to help the owner remove this moment',
     'report_need_type'         => 'Please select a type',

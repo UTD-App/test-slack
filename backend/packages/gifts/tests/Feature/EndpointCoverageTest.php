@@ -120,6 +120,17 @@ class EndpointCoverageTest extends TestCase
             ->assertJsonPath('meta.has_more', true);
     }
 
+    public function test_history_clamps_excessive_per_page(): void
+    {
+        // Guards against a row-count DoS: an absurd per_page must be capped at
+        // 100 (matches WalletController::transactions), not honoured verbatim.
+        $user = User::factory()->create();
+
+        $this->authed($user)->getJson('/api/gifts/history?per_page=1000000')
+            ->assertStatus(200)
+            ->assertJsonPath('meta.per_page', 100);
+    }
+
     // ----- GET /api/gifts/context/{type}/{id} -----
 
     public function test_context_gifts_groups_and_sums_for_a_context(): void

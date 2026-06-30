@@ -1,3 +1,4 @@
+import 'package:utd_app/shared/core/json_coerce.dart';
 import 'package:utd_app/shared/entities/profile_room_entity.dart';
 
 class ProfileRoomModel extends ProfileRoomEntity {
@@ -10,12 +11,15 @@ class ProfileRoomModel extends ProfileRoomEntity {
   });
 
   factory ProfileRoomModel.fromJson(Map<String, dynamic> map) {
+    // Null-aware coercion: reached from MyDataModel.fromJson on the unguarded
+    // launch/cache path, so a type drift (e.g. gender or age arriving as a
+    // String) must NOT throw — coerce through num/toString instead.
     return ProfileRoomModel(
-      image: (map['image'] as String?) ?? '',
-      gender: (map['gender'] as int?) ?? 0,
-      imageId: (map['image_id'] as String?) ?? '',
-      birthday: (map['birthday'] as String?) ?? '',
-      age: (map['age'] as int?) ?? 0,
+      image: map['image']?.toString() ?? '',
+      gender: coerceInt(map['gender']),
+      imageId: map['image_id']?.toString() ?? '',
+      birthday: map['birthday']?.toString() ?? '',
+      age: coerceInt(map['age']),
     );
   }
 

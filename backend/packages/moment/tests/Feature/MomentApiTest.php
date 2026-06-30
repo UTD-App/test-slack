@@ -87,6 +87,38 @@ class MomentApiTest extends TestCase
         $this->assertDatabaseHas('moment_user_comments', ['moment_id' => $moment->id, 'comment' => 'nice!']);
     }
 
+    public function test_empty_comment_is_rejected_not_500(): void
+    {
+        // The comment column is NOT-NULL VARCHAR(255); an empty/missing body must
+        // return a clean error (status:false, 200) — not a raw SQL 500.
+        [$owner] = $this->actingUser();
+        $moment = Moment::create(['user_id' => $owner->id, 'description' => 'commentable']);
+
+        [, $token] = $this->actingUser();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/moment/{$moment->id}/comment", ['comment' => '   '])
+            ->assertStatus(200)
+            ->assertJsonPath('status', false);
+
+        $this->assertDatabaseMissing('moment_user_comments', ['moment_id' => $moment->id]);
+    }
+
+    public function test_overlong_comment_is_rejected_not_500(): void
+    {
+        [$owner] = $this->actingUser();
+        $moment = Moment::create(['user_id' => $owner->id, 'description' => 'commentable']);
+
+        [, $token] = $this->actingUser();
+
+        $this->withHeader('Authorization', "Bearer {$token}")
+            ->postJson("/api/moment/{$moment->id}/comment", ['comment' => str_repeat('a', 300)])
+            ->assertStatus(200)
+            ->assertJsonPath('status', false);
+
+        $this->assertDatabaseMissing('moment_user_comments', ['moment_id' => $moment->id]);
+    }
+
     public function test_user_can_report_a_moment(): void
     {
         [$owner] = $this->actingUser();

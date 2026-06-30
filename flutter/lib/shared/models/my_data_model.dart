@@ -1,3 +1,4 @@
+import 'package:utd_app/shared/core/json_coerce.dart';
 import 'package:utd_app/shared/entities/my_data_entity.dart';
 import 'package:utd_app/shared/models/country_model.dart';
 import 'package:utd_app/shared/models/profile_room_model.dart';
@@ -20,18 +21,24 @@ class MyDataModel extends MyDataEntity {
   });
 
   factory MyDataModel.fromJson(Map<String, dynamic> map) {
+    // Defensive coercion: this runs on the launch hot-path (incl. the offline
+    // cached fallback in UserSessionService, OUTSIDE any try/catch). The server
+    // — or a cache round-trip — can hand back a field as a different primitive
+    // type (id as String, is_first as 1/0, etc.); a raw `as int`/`as String`
+    // cast would throw an UNCAUGHT exception and crash the app on start. Coerce
+    // through num/toString/truthy instead so a type drift degrades to a default.
     return MyDataModel(
-      id: (map['id'] as int?) ?? 0,
-      uid: (map['firebase_uuid'] as String?) ?? '',
-      notificationId: (map['notification_id'] as String?) ?? '',
-      name: (map['name'] as String?) ?? '',
-      email: (map['email'] as String?) ?? '',
-      phone: (map['phone'] as String?) ?? '',
-      uuid: (map['uuid'] as String?) ?? '',
-      bio: (map['bio'] as String?) ?? '',
-      isFirst: (map['is_first'] as bool?) ?? false,
-      onlineTime: (map['online_time'] as String?) ?? '',
-      authToken: (map['auth_token'] as String?) ?? '',
+      id: coerceInt(map['id']),
+      uid: map['firebase_uuid']?.toString() ?? '',
+      notificationId: map['notification_id']?.toString() ?? '',
+      name: map['name']?.toString() ?? '',
+      email: map['email']?.toString() ?? '',
+      phone: map['phone']?.toString() ?? '',
+      uuid: map['uuid']?.toString() ?? '',
+      bio: map['bio']?.toString() ?? '',
+      isFirst: map['is_first'] == true || map['is_first'] == 1 || map['is_first'] == '1',
+      onlineTime: map['online_time']?.toString() ?? '',
+      authToken: map['auth_token']?.toString() ?? '',
       // Coerce nested maps to Map<String, dynamic>: the Hive cache round-trip
       // returns nested objects as _Map<dynamic, dynamic>, which would throw a
       // cast error when handed to the sub-model fromJson (param is

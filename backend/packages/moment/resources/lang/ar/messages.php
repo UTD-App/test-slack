@@ -9,6 +9,7 @@ return [
     'user_not_found'           => 'المستخدم غير موجود',
     'invalid_type'             => 'برجاء اختيار نوع صحيح',
     'empty_content'            => 'لا يمكنك نشر محتوى فارغ',
+    'content_too_long'         => 'النص طويل جدًا',
     'gifts_not_installed'      => 'ميزة الهدايا غير مُفعّلة',
     'report_need_description'  => 'برجاء إضافة وصف لمساعدة صاحب اللحظة على إزالتها',
     'report_need_type'         => 'برجاء اختيار النوع',

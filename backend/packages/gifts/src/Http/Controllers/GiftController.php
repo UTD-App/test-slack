@@ -79,10 +79,14 @@ class GiftController extends Controller
         $type   = $request->string('type')->toString() === 'sent' ? 'sent' : 'received';
         $column = $type === 'sent' ? 'sender_id' : 'receiver_id';
 
+        // Clamp page size to a sane range so a caller can't request millions of
+        // rows in one page (matches WalletController::transactions).
+        $perPage = min(max((int) $request->integer('per_page', 20), 1), 100);
+
         $logs = GiftLog::query()
             ->where($column, $userId)
             ->latest()
-            ->paginate((int) $request->integer('per_page', 20))
+            ->paginate($perPage)
             ->through(fn (GiftLog $log) => [
                 'id'           => $log->id,
                 'gift_id'      => $log->gift_id,

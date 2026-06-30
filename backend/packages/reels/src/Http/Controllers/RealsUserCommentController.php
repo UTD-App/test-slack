@@ -118,6 +118,10 @@ class RealsUserCommentController extends Controller
         if (! $request->input('type')) {
             return Common::apiResponse(false, __('reels::messages.report_need_type'));
         }
+        // `type` is VARCHAR(255) (description is TEXT); cap it to avoid a raw 500.
+        if (mb_strlen((string) $request->input('type')) > 255) {
+            return Common::apiResponse(false, __('reels::messages.content_too_long'));
+        }
 
         $userId = Auth::id();
         $already = ReportRealComment::where('comment_id', $id)->where('Reporter_id', $userId)->first();

@@ -49,5 +49,26 @@ void main() {
       expect(r.success, isTrue, reason: 'BaseResponse prefers `status` (the backend key)');
       expect(r.message, '');
     });
+
+    test('status as 1/0 (int) is coerced, not treated as a parse failure', () {
+      final ok = BaseResponse<Object>.fromJson({'status': 1, 'message': 'ok', 'data': null});
+      expect(ok.success, isTrue);
+
+      final bad = BaseResponse<Object>.fromJson({'status': 0, 'message': 'no', 'data': null});
+      expect(bad.success, isFalse);
+    });
+
+    test('missing message does NOT throw (defaults to empty string)', () {
+      // Previously `json['message'] as String` threw on a 200 with no message,
+      // turning an otherwise-good response into a failure.
+      final r = BaseResponse<Object>.fromJson({'status': true, 'data': null});
+      expect(r.message, '');
+      expect(r.success, isTrue);
+    });
+
+    test('non-string message is coerced via toString', () {
+      final r = BaseResponse<Object>.fromJson({'status': true, 'message': 123, 'data': null});
+      expect(r.message, '123');
+    });
   });
 }

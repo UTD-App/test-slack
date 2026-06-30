@@ -42,6 +42,17 @@ class MomentUserCommentController extends Controller
             return Common::apiResponse(0, __('moment::messages.not_found'), [], 404);
         }
 
+        // Validate the comment body BEFORE insert: the column is NOT-NULL
+        // VARCHAR(255), so a missing/over-length comment would otherwise throw a
+        // raw SQL error (500). Mirrors the reels comment handler.
+        $comment = trim((string) $request->input('comment'));
+        if ($comment === '') {
+            return Common::apiResponse(0, __('moment::messages.empty_content'));
+        }
+        if (mb_strlen($comment) > 255) {
+            return Common::apiResponse(0, __('moment::messages.content_too_long'));
+        }
+
         $user = Auth::user();
 
         // Optional reply target: only accept a parent that belongs to THIS moment
@@ -54,7 +65,7 @@ class MomentUserCommentController extends Controller
 
         $created = MomentCommint::create([
             'user_id'   => $user->id,
-            'comment'   => $request->comment,
+            'comment'   => $comment,
             'moment_id' => $moment_id,
             'parent_id' => $parentId,
         ]);
@@ -120,6 +131,10 @@ class MomentUserCommentController extends Controller
         }
         if (! $request->input('type')) {
             return Common::apiResponse(false, __('moment::messages.report_need_type'));
+        }
+        // `type` is VARCHAR(255) (description is TEXT); cap it to avoid a raw 500.
+        if (mb_strlen((string) $request->input('type')) > 255) {
+            return Common::apiResponse(false, __('moment::messages.content_too_long'));
         }
 
         $userId = Auth::id();

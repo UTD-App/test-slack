@@ -22,6 +22,11 @@ class ReportController extends Controller
         if (! $request['type']) {
             return Common::apiResponse(false, __('reels::messages.report_need_type'));
         }
+        // Both columns are VARCHAR(255); cap before insert so an over-length
+        // value returns a clean error instead of a raw SQL 500.
+        if (mb_strlen((string) $request['description']) > 255 || mb_strlen((string) $request['type']) > 255) {
+            return Common::apiResponse(false, __('reels::messages.content_too_long'));
+        }
 
         $real = Real::find($realId);
         if (! $real) {

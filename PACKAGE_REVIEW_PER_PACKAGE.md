@@ -113,3 +113,27 @@ Still open — **deliberately left** (change riskier than the benefit) + infra +
 | **audio-room** | **all of it** (Stream-token impersonation is the priority) | not touched by request | 🚫 owner |
 
 Everything else from the audits has been fixed (see commits in the action plan + `d4956b1`).
+
+---
+
+## Verification pass #2 — 2026-06-30 (adversarial re-audit + hardening)
+
+To gain confidence beyond the test counts, I ran **4 parallel read-only adversarial audits** over every non-audio-room package, each on a high-risk dimension, then fixed only what was real and verified it with new regression tests.
+
+**Audit results (what was attacked):**
+- **Authorization / IDOR / impersonation / mass-assignment / SQLi** — *clean.* Every mutating route is `auth:sanctum`-gated; every ownership-keyed delete/update checks `Auth::id()`; writes derive identity server-side (no impersonation); `User` and wallet models exclude sensitive columns from mass-assignment; no raw-input SQL. One **P2 informational** only: gift *aggregate* leaderboards (`/my_gifts?user_id=`, `/gifts/context/*`) are readable for any id — read-only, non-private, intentional.
+- **Wallet / gifts money path** — *sound.* `DatabaseWallet::move()` is `DB::transaction` + `lockForUpdate`, atomic ledger writes, bcmath on `decimal(20,2)`, `unique` idempotency keys (double-guarded in the gift layer), `assertPositive`, room-owner cut pinned to the room (never client `owner_id`). No value-create/destroy bug.
+- **Input validation** — the "must use CValidationException" premise is now **moot**: `Handler` renders plain `ValidationException` as 422 on `api/*` (concurrent fix). Real findings were a cluster of **unvalidated free-text → guaranteed 500** + one uncapped paginator (fixed below).
+- **Flutter JSON-parse crashes** — model layers are mostly hardened already; the residual was a **P1 launch-path crash** in the base `MyDataModel` chain (fixed below).
+
+**Fixes applied this pass:**
+| # | Sev | Package | Fix | Tests |
+|---|---|---|---|---|
+| 1 | P1 | base (flutter) | `MyDataModel`/`ProfileRoomModel`/`CountryModel`/`BaseResponse` now coerce primitives (new shared `coerceInt` + `?.toString()` + tolerant bool). The cached **offline-launch** path parses outside any try/catch, so a server/cache type-drift used to crash the app on start. | +5 |
+| 2 | P2 | moment | Comment `store` now trims + rejects empty/over-255 (NOT-NULL VARCHAR(255)) — mirrors reels. Was a guaranteed **500**. New `content_too_long` key (en/ar). | +2 |
+| 3 | P2 | gifts | `gifts/history` `per_page` clamped to `[1,100]` (matches WalletController) — row-count DoS. | +1 |
+| 4 | P2 | moment + reels | Report `description`/`type` length-capped to the actual column size (VARCHAR 255) before insert — prevented **500** on over-length report payloads (4 endpoints). | covered |
+
+**Still NOT changed (unchanged rationale):** the deliberately-left items table above (moment N+1, `MomentCommint` typo, legacy `api_responses` keys, `UtdManifest` envelope, CI guards) and **all of audio-room**.
+
+**Verified:** backend **834** tests / Flutter **990** (+1 skip), 0 failures · `dart analyze` clean on all changed files.

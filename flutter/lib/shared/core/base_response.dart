@@ -33,13 +33,30 @@ class BaseResponse<T> extends Equatable {
     }
 
     return BaseResponse(
-      success: json['status'] as bool? ?? (json['success'] as bool?),
-      message: json['message'] as String,
+      // Coerce defensively: `status` may arrive as a real bool OR as 1/0
+      // (some endpoints), and `message` may be absent/non-string. A raw cast
+      // here turned an otherwise-good 200 into a parse failure.
+      success: _asBool(json['status']) ?? _asBool(json['success']),
+      message: json['message']?.toString() ?? '',
       paginates: json['paginates'] == null
           ? null
           : PaginatesModel.fromJson(json['paginates']),
       data: data(),
     );
+  }
+
+  /// Tolerant truthiness: accepts a real bool, 1/0, or "true"/"false"/"1"/"0".
+  /// Returns null when the value is absent so callers can fall through.
+  static bool? _asBool(dynamic value) {
+    if (value == null) return null;
+    if (value is bool) return value;
+    if (value is num) return value != 0;
+    if (value is String) {
+      final v = value.toLowerCase().trim();
+      if (v == 'true' || v == '1') return true;
+      if (v == 'false' || v == '0') return false;
+    }
+    return null;
   }
 
   static T _parse<T>(dynamic json, T Function(dynamic) fromJsonT) {
