@@ -74,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildNavItem(
               activeIcon: Icons.home,
               inactiveIcon: Icons.home_outlined,
-              label: 'Home',
+              label: 'app.home', // resolved via context.tr(label) in _buildNavItem
               isSelected: isHomeTab,
               colors: colors,
               onTap: () => setState(() => _selectedIndex = 0),
@@ -224,7 +224,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: SizedBox(
                 width: double.infinity,
                 child: Text(
-                  'Menu',
+                  context.tr('app.menu'),
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -410,7 +410,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildCenterFab() {
     return GestureDetector(
       onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('coming soon')),
+        SnackBar(content: Text(context.tr('app.coming_soon'))),
       ),
       child: Container(
         width: 56,

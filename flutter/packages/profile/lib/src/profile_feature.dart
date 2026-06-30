@@ -5,7 +5,6 @@ import 'package:utd_app/addons/ui_contribution.dart';
 import 'package:utd_app/addons/widget_registry.dart';
 import 'package:utd_app/shared/notifiers/user_data_notifier.dart';
 
-import 'presentation/widgets/mini_profile_card.dart';
 import 'profile_routes.dart';
 import 'profile_strings.dart';
 import 'stac/profile_stac_sources.dart';
@@ -45,13 +44,6 @@ class ProfileFeature extends AppFeature {
 
   @override
   void registerWidgets(WidgetRegistry registry) {
-    registry.register(
-      'mini_profile_card',
-      (context) => const MiniProfileCard(
-        userId: 0,
-        name: '',
-      ),
-    );
     // The base home screen renders the current user's own profile as its last
     // ("Me") tab via this seam, so the base never imports this package. The
     // current user id comes from the shared UserDataNotifier. The tab shows the

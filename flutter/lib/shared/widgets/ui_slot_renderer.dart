@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../addons/addons.dart';
+import '../../localization/localization.dart';
 
 /// Renders all UI contributions for a specific slot.
 ///
@@ -136,7 +137,7 @@ class HomeSlotRenderer extends StatelessWidget {
 
     if (contributions.isEmpty) {
       // Core displays placeholder when no features contribute
-      return const Center(child: Text('No features available'));
+      return Center(child: Text(context.tr('app.no_features')));
     }
 
     final widgets = contributions.map((c) => c.builder(context)).toList();

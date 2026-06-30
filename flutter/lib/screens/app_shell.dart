@@ -46,7 +46,7 @@ class _AppShellState extends State<AppShell> {
   Widget build(BuildContext context) {
     final tabs = _tabs;
     if (tabs.isEmpty) {
-      return const Scaffold(body: Center(child: Text('لا توجد تبويبات.')));
+      return Scaffold(body: Center(child: Text(context.tr('app.no_tabs'))));
     }
     if (_selected >= tabs.length) _selected = 0;
     final style = widget.config.style;
@@ -160,8 +160,10 @@ class _AppShellState extends State<AppShell> {
     if (tab.isNative) {
       final builder = _nativeBuilder(tab.featureId);
       if (builder != null) return Builder(builder: builder);
-      return Center(
-        child: Text('تبويب native غير متاح: ${tab.featureId ?? tab.screen}'),
+      return Builder(
+        builder: (ctx) => Center(
+          child: Text('${ctx.tr('app.native_tab_unavailable')}: ${tab.featureId ?? tab.screen}'),
+        ),
       );
     }
     // A `stac` tab whose screen is owned by a native package feature → render the

@@ -400,7 +400,7 @@ class _QuantityPresets extends StatelessWidget {
           controller: controller,
           keyboardType: TextInputType.number,
           autofocus: true,
-          decoration: const InputDecoration(hintText: '1 – 9999'),
+          decoration: InputDecoration(hintText: ctx.tr(GiftsStrings.quantityHint)),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: Text(ml.cancelButtonLabel)),

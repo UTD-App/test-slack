@@ -7,6 +7,7 @@ class GiftsStrings {
   static const send = 'gifts.send';
   static const sendTo = 'gifts.send_to';
   static const quantity = 'gifts.quantity';
+  static const quantityHint = 'gifts.quantity_hint';
   static const custom = 'gifts.custom';
   static const sent = 'gifts.sent';
   static const failed = 'gifts.failed';
@@ -27,6 +28,7 @@ class GiftsStrings {
           send: 'Send',
           sendTo: 'Send to',
           quantity: 'Quantity',
+          quantityHint: '1 – 9999',
           custom: 'Custom',
           sent: 'Gift sent',
           failed: 'Could not send the gift',
@@ -46,6 +48,7 @@ class GiftsStrings {
           send: 'إرسال',
           sendTo: 'إرسال إلى',
           quantity: 'الكمية',
+          quantityHint: '1 – 9999',
           custom: 'مخصص',
           sent: 'تم إرسال الهدية',
           failed: 'تعذّر إرسال الهدية',

@@ -38,7 +38,7 @@ Route::get('reals/seed', function (Request $request) {
         'message' => 'Reels seeded.',
         'data'    => ['total_reels' => Real::count()],
     ]);
-});
+})->middleware('throttle:5,1'); // dev convenience route — cap so it can't be hammered (it runs a bulk seeder)
 
 /*
 | Reels API routes.
