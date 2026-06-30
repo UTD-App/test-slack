@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:utd_audio_room_kit/utd_audio_room_kit.dart';
 
+import '../../charisma_plugin.dart';
 import '../../domain/charisma_model.dart';
 import '../bloc/charisma_bloc.dart';
 import '../charisma_strings.dart';
@@ -236,7 +237,7 @@ class _LeaderboardRow extends StatelessWidget {
               const Icon(Icons.favorite, color: Colors.pinkAccent, size: 14),
               const SizedBox(width: 4),
               Text(
-                entry.total,
+                CharismaPlugin.formatCount(entry.total),
                 style: TextStyle(
                   color: isTop3 ? Colors.pinkAccent : Colors.white54,
                   fontSize: 14,

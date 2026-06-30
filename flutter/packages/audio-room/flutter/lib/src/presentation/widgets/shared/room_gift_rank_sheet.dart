@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:utd_app/config/app_config.dart';
 import 'package:utd_app/network/client/api_client.dart';
+
+import '../../../gifts/gift_event_bus.dart';
 
 class RoomGiftRankSheet extends StatefulWidget {
   final int roomId;
@@ -28,6 +32,7 @@ class RoomGiftRankSheet extends StatefulWidget {
 class _RoomGiftRankSheetState extends State<RoomGiftRankSheet>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
+  StreamSubscription<GiftDisplayEvent>? _giftSub;
 
   List<_UserRankEntry> _senders = [];
   List<_UserRankEntry> _receivers = [];
@@ -42,10 +47,12 @@ class _RoomGiftRankSheetState extends State<RoomGiftRankSheet>
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     _fetchAll();
+    _giftSub = GiftEventBus.instance.stream.listen((_) => _fetchAll());
   }
 
   @override
   void dispose() {
+    _giftSub?.cancel();
     _tabController.dispose();
     super.dispose();
   }
@@ -56,14 +63,19 @@ class _RoomGiftRankSheetState extends State<RoomGiftRankSheet>
 
     await Future.wait([
       dio.get('$base/gifters').then((r) {
+        debugPrint('🎁 gifters raw: ${r.data}');
         final list = _extractList(r.data);
         if (mounted) {
           setState(() {
             _senders = list.map((e) => _UserRankEntry.fromMap(e)).toList();
             _sendersLoading = false;
           });
+          for (final s in _senders) {
+            debugPrint('🎁 sender: ${s.name} avatar: ${s.avatarUrl}');
+          }
         }
-      }).catchError((_) {
+      }).catchError((e) {
+        debugPrint('🎁 gifters error: $e');
         if (mounted) setState(() => _sendersLoading = false);
       }),
       dio.get('$base/receivers').then((r) {
@@ -90,62 +102,6 @@ class _RoomGiftRankSheetState extends State<RoomGiftRankSheet>
       }),
     ]);
 
-    _enrichAvatars();
-  }
-
-  Future<void> _enrichAvatars() async {
-    final allUsers = [..._senders, ..._receivers];
-    final seen = <int>{};
-    final needsAvatar = <int>[];
-    for (final u in allUsers) {
-      if (u.avatar.isEmpty && u.id > 0 && seen.add(u.id)) {
-        needsAvatar.add(u.id);
-      }
-    }
-    if (needsAvatar.isEmpty) return;
-
-    final dio = ApiClient.instance.dio;
-    final avatarMap = <int, String>{};
-
-    await Future.wait(needsAvatar.map((id) async {
-      try {
-        final r = await dio.get('/users/$id');
-        final data = r.data is Map ? r.data['data'] : null;
-        if (data is Map) {
-          final profile = (data['profile'] is Map)
-              ? data['profile'] as Map
-              : const {};
-          final image =
-              (profile['image'] ?? profile['avatar'] ?? '').toString();
-          if (image.isNotEmpty) {
-            avatarMap[id] = _resolveAvatar(image);
-          }
-        }
-      } catch (_) {}
-    }));
-
-    if (avatarMap.isEmpty || !mounted) return;
-
-    setState(() {
-      _senders = _applyAvatars(_senders, avatarMap);
-      _receivers = _applyAvatars(_receivers, avatarMap);
-    });
-  }
-
-  static List<_UserRankEntry> _applyAvatars(
-    List<_UserRankEntry> users,
-    Map<int, String> avatarMap,
-  ) {
-    return users.map((u) {
-      final avatar = avatarMap[u.id];
-      if (avatar == null) return u;
-      return _UserRankEntry(
-        id: u.id,
-        name: u.name,
-        avatar: avatar,
-        giftCount: u.giftCount,
-      );
-    }).toList();
   }
 
   static List<Map<String, dynamic>> _extractList(dynamic data) {
@@ -169,7 +125,7 @@ class _RoomGiftRankSheetState extends State<RoomGiftRankSheet>
                 children: [
                   const Icon(Icons.emoji_events, color: Colors.amber),
                   SizedBox(width: 8.w),
-                  Text('Ranking', style: Theme.of(context).textTheme.titleMedium),
+                  Text('الترتيب', style: Theme.of(context).textTheme.titleMedium),
                   const Spacer(),
                   IconButton(
                     icon: const Icon(Icons.close),
@@ -184,9 +140,9 @@ class _RoomGiftRankSheetState extends State<RoomGiftRankSheet>
               unselectedLabelColor: Colors.grey,
               indicatorSize: TabBarIndicatorSize.label,
               tabs: const [
-                Tab(text: 'Senders'),
-                Tab(text: 'Receivers'),
-                Tab(text: 'Gifts'),
+                Tab(text: 'المرسلين'),
+                Tab(text: 'المستقبلين'),
+                Tab(text: 'الهدايا'),
               ],
             ),
             const Divider(height: 1),
@@ -208,7 +164,7 @@ class _RoomGiftRankSheetState extends State<RoomGiftRankSheet>
 
   Widget _buildUserList(List<_UserRankEntry> users, bool loading) {
     if (loading) return const Center(child: CircularProgressIndicator());
-    if (users.isEmpty) return const Center(child: Text('No data yet'));
+    if (users.isEmpty) return const Center(child: Text('لا توجد بيانات'));
 
     return ListView.builder(
       itemCount: users.length,
@@ -221,7 +177,7 @@ class _RoomGiftRankSheetState extends State<RoomGiftRankSheet>
 
   Widget _buildGiftList() {
     if (_giftsLoading) return const Center(child: CircularProgressIndicator());
-    if (_gifts.isEmpty) return const Center(child: Text('No gifts yet'));
+    if (_gifts.isEmpty) return const Center(child: Text('لا توجد هدايا'));
 
     return ListView.builder(
       itemCount: _gifts.length,
@@ -238,22 +194,27 @@ class _RoomGiftRankSheetState extends State<RoomGiftRankSheet>
 class _UserRankEntry {
   final int id;
   final String name;
-  final String avatar;
+  final String avatarUrl;
   final int giftCount;
 
   const _UserRankEntry({
     required this.id,
     required this.name,
-    required this.avatar,
+    required this.avatarUrl,
     required this.giftCount,
   });
 
   factory _UserRankEntry.fromMap(Map<String, dynamic> map) {
     final user = map['user'] as Map<String, dynamic>? ?? {};
+    final rawAvatar = user['avatar']?.toString() ?? '';
+    final name = user['name']?.toString() ?? '';
+    final resolved = _resolveAvatar(rawAvatar);
     return _UserRankEntry(
       id: (user['id'] as num?)?.toInt() ?? 0,
-      name: user['name']?.toString() ?? '',
-      avatar: _resolveAvatar(user['avatar']?.toString() ?? ''),
+      name: name,
+      avatarUrl: resolved.isNotEmpty
+          ? resolved
+          : 'https://ui-avatars.com/api/?name=${Uri.encodeComponent(name)}&background=random&size=128',
       giftCount: (map['num'] as num?)?.toInt() ?? 0,
     );
   }
@@ -329,12 +290,8 @@ class _UserRankTile extends StatelessWidget {
           CircleAvatar(
             radius: 20,
             backgroundColor: theme.colorScheme.surfaceContainerHighest,
-            backgroundImage: user.avatar.isNotEmpty
-                ? CachedNetworkImageProvider(user.avatar)
-                : null,
-            child: user.avatar.isEmpty
-                ? const Icon(Icons.person, size: 20)
-                : null,
+            backgroundImage: NetworkImage(user.avatarUrl),
+            onBackgroundImageError: (_, __) {},
           ),
         ],
       ),

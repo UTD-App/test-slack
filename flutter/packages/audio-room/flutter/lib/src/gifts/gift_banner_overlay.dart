@@ -4,7 +4,6 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:utd_audio_room_kit/utd_audio_room_kit.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:utd_app/cache/cache_manager.dart';
 import 'package:utd_app/shared/media/dynamic_image.dart';
 import 'package:video_player/video_player.dart';
 
@@ -52,17 +51,11 @@ class _GiftBannerOverlayState extends State<GiftBannerOverlay> {
     }
 
     if (event.isPlay) {
-      final currentUserId =
-          CacheManager.getUserData()?['id']?.toString() ?? '';
-      final isSender = event.senderId == currentUserId;
-      final isReceiver = event.receiverIds.contains(currentUserId);
-      if (isSender || isReceiver) {
-        final animSrc = event.giftShowImg.isNotEmpty
-            ? event.giftShowImg
-            : event.giftImg;
-        if (animSrc.isNotEmpty && animSrc.startsWith('http')) {
-          _playFullScreen(event);
-        }
+      final animSrc = event.giftShowImg.isNotEmpty
+          ? event.giftShowImg
+          : event.giftImg;
+      if (animSrc.isNotEmpty && animSrc.startsWith('http')) {
+        _playFullScreen(event);
       }
     }
   }

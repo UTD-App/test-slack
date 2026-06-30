@@ -19,7 +19,6 @@ class CharismaPlugin extends AudioRoomPlugin {
   bool _isActive = false;
   UTDRoomController? _controller;
   int? _currentRoomId;
-  String? _localUserId;
   StreamSubscription<GiftDisplayEvent>? _giftSub;
 
   CharismaPlugin() {
@@ -61,7 +60,6 @@ class CharismaPlugin extends AudioRoomPlugin {
   @override
   void onRoomEnter(int roomId, String userId) {
     _currentRoomId = roomId;
-    _localUserId = userId;
     _bloc.add(LoadRoomCharismaEvent(roomId: roomId));
     _giftSub?.cancel();
     _giftSub = GiftEventBus.instance.stream.listen(_onGiftEvent);
@@ -71,7 +69,6 @@ class CharismaPlugin extends AudioRoomPlugin {
   void onRoomExit(int roomId, String userId) {
     _isActive = false;
     _currentRoomId = null;
-    _localUserId = null;
     _controller = null;
     _giftSub?.cancel();
     _giftSub = null;
@@ -80,7 +77,6 @@ class CharismaPlugin extends AudioRoomPlugin {
 
   void _onGiftEvent(GiftDisplayEvent event) {
     if (!_bloc.state.charismaActive) return;
-    if (event.senderId != _localUserId) return;
 
     final current = List<CharismaModel>.from(_bloc.state.data ?? []);
     final added = event.giftPrice * event.giftNum;
@@ -106,18 +102,19 @@ class CharismaPlugin extends AudioRoomPlugin {
     }
 
     _bloc.add(UpdateCharismaEvent(data: current));
+  }
 
-    final charismaList = current
-        .map((e) => {
-              'user_id': e.userId,
-              'total': e.total,
-              'position': e.position,
-            })
-        .toList();
-    _controller?.sendRoomMessage({
-      'type': 'updateCharisma',
-      'data': {'charisma': charismaList},
-    });
+  static String formatCount(String value) {
+    final n = double.tryParse(value) ?? 0;
+    if (n >= 1000000) {
+      final m = n / 1000000;
+      return m == m.roundToDouble() ? '${m.toInt()}M' : '${m.toStringAsFixed(1)}M';
+    }
+    if (n >= 1000) {
+      final k = n / 1000;
+      return k == k.roundToDouble() ? '${k.toInt()}k' : '${k.toStringAsFixed(1)}k';
+    }
+    return n.toStringAsFixed(0);
   }
 
   @override
@@ -193,7 +190,7 @@ class CharismaPlugin extends AudioRoomPlugin {
                 const Icon(Icons.favorite, color: Colors.pinkAccent, size: 10),
                 const SizedBox(width: 2),
                 Text(
-                  total,
+                  formatCount(total),
                   style: const TextStyle(color: Colors.white, fontSize: 9),
                 ),
               ],

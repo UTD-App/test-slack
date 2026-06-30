@@ -12,5 +12,5 @@ class CharismaEntity extends Equatable {
   });
 
   @override
-  List<Object?> get props => [userId];
+  List<Object?> get props => [userId, total, position];
 }
