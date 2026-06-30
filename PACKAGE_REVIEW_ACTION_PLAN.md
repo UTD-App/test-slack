@@ -6,8 +6,30 @@
 > `wallet` و`reels` الأفضل، و`audio-room` الأسوأ (مفيش ترجمة backend خالص + ~55 نص إنجليزي
 > ثابت + ثغرة أمان في توكن الـ Stream). تحت فيه scorecard لكل باكدج + خطة عمل P0/P1/P2.
 
-Date: 2026-06-29 · Scope: every package (backend `packages/*` + flutter `packages/*`) + base.
+Date: 2026-06-29 (updated 2026-06-30) · Scope: every package (backend `packages/*` + flutter `packages/*`) + base.
 Method: 8 parallel read-only audits against the base i18n + architecture conventions.
+
+---
+
+## 0. Execution status (2026-06-30)
+
+**P0, P1 and P2 are DONE for every package except `audio-room`** (left untouched by request)
+and the CI-tooling items (left as recommendations). Verified green after each batch:
+**backend 831 tests**, **Flutter 985 tests** (1 expected network-SVG skip).
+
+| Batch | Commit | Status |
+|---|---|---|
+| P0 — security + install blockers | `a965283` | ✅ done (audio-room item deferred) |
+| P1 — localization + contract consistency | `b4555ef` | ✅ done (audio-room items deferred) |
+| P2 — quality + docs + cleanup | `2535655` | ✅ done (CI items deferred) |
+
+🚫 **audio-room — NOT touched** (owner's call): Stream-token impersonation (P0), backend i18n
+absence + hardcoded dialogs/plugins (P1), raw avatar URLs + dead dialogs/debugPrint (P2). All
+its findings remain below for whoever owns it.
+⏳ **Deferred (CI/infra, not code)**: translation key-drift CI check; `dependency_overrides`
+duplication CI guard.
+
+Legend below: ✅ done · 🚫 audio-room (skipped) · ⏳ deferred.
 
 ---
 
@@ -70,71 +92,69 @@ const maps. Languages/RTL/native-names are admin-driven, not hardcoded.
 
 ## 3. Consolidated action plan
 
-### P0 — security / correctness / install-blocking (do first)
-- [ ] **audio-room — fix Stream-token impersonation**: pin `'identity' => (string) Auth::id()` in
-      `backend/packages/audio-room/.../RoomController.php:296` (ignore client `identity`).
-- [ ] **base — `CheckLatestToken` 505 → 401** (`app/Http/Middleware/CheckLatestToken.php:39`) and
-      localize the message; 505 breaks proxies/clients that branch on status class.
-- [ ] **base — middleware parity on package routes**: add `checkLatestToken, userBan,
-      update.last.seen, localization` (and `generalBan` for reels) to `packages/moment/routes/api.php:20`
-      and `packages/reels/routes/api.php:54` — today a banned/superseded user bypasses via these routes.
-- [ ] **gifts — re-sync stale seam** `flutter/packages/gifts/base-seam/shared/gifts/gift_bridge.dart`
-      from the live `flutter/lib/shared/gifts/gift_bridge.dart` (missing `GiftRecipient`,
-      `RoomGiftSentCallback`, room params) — a fresh install currently won't compile.
-- [ ] **authentication — harden `LoginModel.fromJson`** (`login_model.dart:13-21`): defensive
-      coercion for `id/is_first/auth_token` so an edge payload fails cleanly instead of crashing.
-- [ ] **wallet — add Filament admin for `Coin`/`PaymentCoin`** so the recharge catalogue served by
-      `CoinController` is manageable (today coin packages need raw DB).
-- [ ] **base — `fallback_locale` `ar` → `en`** (`config/app.php:143`).
+### P0 — security / correctness / install-blocking (do first)  — ✅ done (`a965283`), audio-room deferred
+- [ ] 🚫 **audio-room — fix Stream-token impersonation**: pin `'identity' => (string) Auth::id()` in
+      `backend/packages/audio-room/.../RoomController.php:296` (ignore client `identity`). *(skipped — audio-room)*
+- [x] ✅ **base — `CheckLatestToken` 505 → 401** + localized message (`messages.another_device_login`).
+- [x] ✅ **base — middleware parity on package routes**: added `checkLatestToken, userBan,
+      update.last.seen, localization` (and `generalBan` for reels) to moment + reels route groups.
+- [x] ✅ **gifts — re-synced the stale seam** `gift_bridge.dart` (added `GiftRecipient`,
+      `RoomGiftSentCallback`, room params) — fresh install compiles.
+- [x] ✅ **authentication — hardened `LoginModel.fromJson`** (null/typed-variant coercion) + test.
+- [x] ✅ **wallet — added Filament admin for `Coin` + `PaymentCoin`** (recharge catalogue) + test.
+- [x] ✅ **base — `fallback_locale` `ar` → `en`**.
 
-### P1 — localization completeness + contract consistency (professional polish)
-- [ ] **audio-room — add backend i18n**: create `resources/lang/{en,ar}/audio-room.php` mirroring the
-      Flutter `audio_room.*` map, register it, and replace all ~55 controller literals with `__()`.
-- [ ] **audio-room — localize live Flutter dialogs** (pip permission, room password, edit-text sheet,
-      app-overlay) and the 13 plugin `displayName`s; migrate charisma/emoji to `context.tr`.
-- [ ] **moment — localize** `moment_feed_bloc.dart:207` ("Cannot post empty content"/"Failed to post").
-- [ ] **gifts — localize** `GiftController.php:129` ('user not found') + `gift_api_service.dart:110`.
-- [ ] **profile — localize badge chips** (`profile_badges_row.dart`) and **fix the casing bug**
-      `'/resources/lang'`→`'/Resources/lang'` in `ProfileServiceProvider.php:34` (breaks dashboard i18n on prod).
-- [ ] **authentication — localize** `Text('OK')`, the `'، '` join, and resend `s`; fix the
-      `status`/`success` envelope key in `base_response.dart:36` + `api_response.dart:52`.
-- [ ] **studio_sdk — route `_missing` through the translate port** (`stac_dynamic_screen.dart:121`).
-- [ ] **base — reconcile `api_responses.php`** to AR↔EN parity, purge legacy/typo'd non-base keys into
-      the owning packages; replace bare literals in the ~6 base controllers with `__()` keys.
-- [ ] **cross-stack mirror** — add backend lang entries for the Flutter-only keys (profile ~32,
-      moment 5) so they become admin-editable.
-- [ ] **pagination meta** — emit `meta` for gifts `history`/`userGifts` (pass paginator as the 5th
-      `apiResponse` arg) and consume backend `meta` in moment's `moment_api_service` (+ fix stale
-      NOTES_GAPS claims); add meta (or document non-paged) on audio-room `->get()` lists.
-- [ ] **media URLs** — resolve raw avatar paths to absolute in audio-room `RoomController.php:391`,
-      `RoomAdminController.php:27,104` (and `country_flag`).
+### P1 — localization completeness + contract consistency  — ✅ done (`b4555ef`), audio-room deferred
+- [ ] 🚫 **audio-room — add backend i18n** (lang files + registration + replace ~55 literals). *(skipped — audio-room)*
+- [ ] 🚫 **audio-room — localize live Flutter dialogs + plugin `displayName`s**. *(skipped — audio-room)*
+- [x] ✅ **moment — localized** the post-error path (`empty_content`/`post_failed`).
+- [x] ✅ **gifts — localized** 'user not found' + 'unsupported context'.
+- [x] ✅ **profile — localized badge chips** + **fixed the `Resources/lang` casing bug** (prod-safe).
+- [x] ✅ **authentication — localized** OK / list-separator / seconds-unit; **fixed the `status`/`success`
+      envelope key** (now prefers `status`, falls back to `success`).
+- [x] ✅ **studio_sdk — routed `_missing`** through the translate port (English fallback).
+- [x] ✅ **base — `api_responses.php` AR↔EN parity** (no deletions; legacy keys flagged); ~11 base
+      controller literals → `__()`.
+- [x] ✅ **cross-stack mirror** — backend lang entries added (profile ~38, moment 5) → admin-editable.
+- [x] ✅ **pagination meta** — gifts `history`/`userGifts` emit `meta`; moment feed consumes it
+      (new `MomentPage`); NOTES_GAPS corrected. *(audio-room `->get()` lists deferred — 🚫)*
+- [ ] 🚫 **media URLs** — raw avatar paths in audio-room controllers. *(skipped — audio-room)*
 
-### P2 — quality / convention / cleanup
-- [ ] **doc convention — ALL packages**: ship bilingual `doc/about.html` + `doc/installation.html`
-      (currently **missing in every package**, backend and flutter).
-- [ ] **dead code**: profile (`profile_format.dart`, `ProfileHeader`), reels typo `deleteReeltAndReport`,
-      moment dead keys + `MomentReaction.label`, gifts 3 dead keys, audio-room dead dialogs +
-      `[MSG]` debugPrint, authentication unused `CheckEmailEvent`.
-- [ ] **profile — adopt the `XStrings` class shape** for `profile_strings.dart` (match siblings).
-- [ ] **wallet — localize `CoinTransactionType` labels** + implement transactions load-more (backend
-      already paginates); fix stale `NOTES_GAPS.md`.
-- [ ] **studio_sdk — gate `_log` `debugPrint` behind `kDebugMode`**; add a CI check for the
-      `dependency_overrides` duplication footgun.
-- [ ] **base — guard the password double-hash footgun** (`User::setPasswordAttribute`): add the
-      `'password' => 'hashed'` cast OR a "don't pass pre-hashed values" guard/test.
-- [ ] **base — CI key-drift check** between backend `app` lang group and Flutter `base_translations.dart`;
-      moment liked-feed (type 2) shape fix before enabling that tab.
+### P2 — quality / convention / cleanup  — ✅ done (`2535655`), audio-room + CI deferred
+- [x] ✅ **doc convention** — bilingual `doc/about.html` + `doc/installation.html` shipped for gifts,
+      moment, profile, reels, wallet, authentication, utd_studio_sdk. *(audio-room docs skipped — 🚫)*
+- [x] ✅ **dead code** — profile (`profile_format.dart`+test, `ProfileHeader`), reels typo
+      `deleteReeltAndReport`→`deleteReelAndReport` + `ReelReaction.label`, moment 5 dead keys +
+      `MomentReaction.label`, gifts 3 dead keys, authentication `CheckEmailEvent`/`CheckEmailUseCase`.
+      *(audio-room dead dialogs + `[MSG]` debugPrint skipped — 🚫)*
+- [x] ✅ **profile — adopted the `ProfileStrings` class shape** (20 callsites).
+- [x] ✅ **wallet — localized ~43 `CoinTransactionType` labels** (with fallback) + **transactions
+      load-more** (`WalletTransactionPage`); stale `NOTES_GAPS.md` fixed.
+- [x] ✅ **studio_sdk — gated `_log` `debugPrint` behind `kDebugMode`**. ⏳ *(CI guard for the
+      `dependency_overrides` footgun deferred — infra.)*
+- [x] ✅ **base — fixed the password double-hash footgun**: idempotent `setPasswordAttribute`
+      (blank=keep, already-hashed=store as-is, plaintext=bcrypt) + test. *(Used a smart mutator instead
+      of the `hashed` cast so the "blank = keep current" admin-edit behavior is preserved.)*
+- [x] ✅ **moment — liked-feed (type 2) shape fix** (returns `Moment` models) + test.
+      ⏳ *(translation key-drift CI check deferred — infra.)*
 
 ---
 
-## 4. Suggested execution order
+## 4. Execution log
 
-1. **Security & install blockers (P0)** — one short PR: audio-room identity pin, CheckLatestToken 401,
-   middleware parity, gifts seam re-sync, fallback_locale, LoginModel hardening, wallet Coin admin.
-2. **Localization sweep (P1)** — package by package, starting with **audio-room backend i18n** (the
-   only package failing the convention outright), then the stray-literal fixes + mirror completion +
-   `api_responses.php` cleanup. This is the bulk of "make it professional / language consistent."
-3. **Convention & cleanup (P2)** — the universal `doc/` rollout, dead-code removal, and the
-   hardening/CI guards.
+All three batches were executed in order (audio-room excluded throughout), each verified green:
 
-Each item above has a concrete file reference; tackle P0 as a batch, then P1 per-package.
+1. **P0** (`a965283`) — CheckLatestToken 401, moment/reels middleware parity, gifts seam re-sync,
+   fallback_locale, LoginModel hardening, wallet Coin/PaymentCoin admin.
+2. **P1** (`b4555ef`) — moment/gifts/profile/authentication/studio localizations, base controllers +
+   `api_responses.php` parity, cross-stack mirror, envelope `status` key, pagination meta.
+3. **P2** (`2535655`) — bilingual `doc/` for 7 packages, dead-code removal, profile `ProfileStrings`,
+   wallet tx-label localization + load-more, studio debugPrint gate, base double-hash fix, moment
+   type-2 fix.
+
+**Still open (intentionally):**
+- **audio-room** — every audio-room item above (P0 Stream-token impersonation is the priority). Left
+  for its owner.
+- **CI/infra** — translation key-drift check; `dependency_overrides` duplication guard.
+
+Tests after the full run: **backend 831**, **Flutter 985** (+1 expected skip), 0 failures.
