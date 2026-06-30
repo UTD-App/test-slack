@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Profile Package — About</title>
+  <style>
+    body { font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.6; color: #1f2430; max-width: 820px; margin: 0 auto; padding: 24px; }
+    section { border: 1px solid #e6e8ee; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+    h1 { font-size: 1.6rem; margin-top: 0; }
+    h2 { font-size: 1.15rem; margin-top: 1.4em; color: #5b21b6; }
+    code { background: #f4f4f8; padding: 1px 5px; border-radius: 4px; font-size: 0.9em; }
+    ul { padding-inline-start: 1.3em; }
+    .tag { display: inline-block; background: #ede9fe; color: #5b21b6; border-radius: 6px; padding: 2px 8px; font-size: 0.8rem; }
+    [dir="rtl"] { text-align: right; }
+  </style>
+</head>
+<body>
+
+  <!-- ============ ENGLISH ============ -->
+  <section dir="ltr" lang="en">
+    <span class="tag">utd/profile · v1.0.0</span>
+    <h1>Profile Package</h1>
+    <p>
+      The Profile package turns a user's profile into a single, server-driven, extensible
+      view. The backend aggregates public identity, lets other installed packages contribute
+      their own sections, and serves it all from one endpoint, so the app renders a rich
+      profile without hard-coding which features exist.
+    </p>
+
+    <h2>What it serves</h2>
+    <p>
+      <code>GET /api/users/{id}/profile</code> returns a single JSON payload built from three layers:
+    </p>
+    <ul>
+      <li><strong>publicData</strong> — viewer-safe core identity (name, UID, avatar, country,
+        bio, gender, levels). No private fields are leaked. Produced by the base
+        <code>UserDataService::publicData()</code>.</li>
+      <li><strong>Contributed sections</strong> — one entry per <em>enabled</em> feature package,
+        each under its own key, collected via <code>ProfileContributorRegistry::aggregate()</code>.
+        Gifts contributes today; wallet / follow / vip / family / etc. appear automatically as
+        their packages are installed. Core keys stay authoritative — sections use distinct keys.</li>
+      <li><strong>is_me</strong> — a boolean telling the app whether the viewer is looking at
+        their own profile, which drives the editable affordances (edit pencil, "Add a bio",
+        Settings tile, visitor preview).</li>
+    </ul>
+
+    <h2>Admin dashboard</h2>
+    <p>
+      When enabled, the package <strong>owns the dashboard's "view a user" screen</strong>: it
+      registers a rich Filament infolist (<code>ProfileInfolist</code>) into
+      <code>UserProfileInfolistRegistry</code>, so <code>UserResource</code> renders it instead
+      of the base plain schema. The header pulls only light, bounded data (gift levels,
+      top-N supporters, denormalised social counts); heavy per-user lists live in lazy,
+      paginated relation-manager tabs so opening a whale's profile stays fast. When the package
+      is not installed, the base falls back to its own schema automatically.
+    </p>
+
+    <h2>Flutter side</h2>
+    <p>
+      The app renders the aggregated payload as the rich profile UI (cover banner, avatar frame,
+      identity, badges, feature grid) and exposes contributed sections to each owning package's
+      widgets via UI slots. It also registers the <code>profile.user</code> Stac object source so
+      UTD Studio screens can bind to the signed-in user's profile. The feature is gated by the
+      backend <code>profile</code> package: when an admin disables it, the app auto-disables the
+      feature and the "Me" tab falls back to the base self-profile fallback.
+    </p>
+  </section>
+
+  <!-- ============ ARABIC ============ -->
+  <section dir="rtl" lang="ar">
+    <span class="tag">utd/profile · v1.0.0</span>
+    <h1>حزمة الملف الشخصي (Profile)</h1>
+    <p>
+      تحوّل حزمة Profile الملف الشخصي للمستخدم إلى عرض واحد موجّه من الخادم وقابل للتوسعة.
+      يجمع الخادم بيانات الهوية العامة، ويسمح للحِزم الأخرى المثبَّتة بالمساهمة بأقسامها الخاصة،
+      ويقدّم كل ذلك من نقطة نهاية واحدة، فيعرض التطبيق ملفًا ثريًا دون ترميز ثابت للميزات الموجودة.
+    </p>
+
+    <h2>ما الذي تقدّمه</h2>
+    <p>
+      تُرجع <code>GET /api/users/{id}/profile</code> حمولة JSON واحدة مبنية من ثلاث طبقات:
+    </p>
+    <ul>
+      <li><strong>publicData</strong> — هوية أساسية آمنة للزائر (الاسم، المعرّف، الصورة، الدولة،
+        النبذة، الجنس، المستويات) دون أي حقول خاصة، عبر
+        <code>UserDataService::publicData()</code> في القاعدة.</li>
+      <li><strong>الأقسام المساهَم بها</strong> — قسم واحد لكل حزمة ميزة <em>مفعّلة</em>، كلٌّ
+        تحت مفتاحه الخاص، تُجمع عبر <code>ProfileContributorRegistry::aggregate()</code>. تساهم
+        حزمة الهدايا حاليًا، وتظهر حِزم المحفظة / المتابعة / VIP / العائلة تلقائيًا عند تثبيتها.
+        تبقى المفاتيح الأساسية مرجعية لأن لكل قسم مفتاحًا مميزًا.</li>
+      <li><strong>is_me</strong> — قيمة منطقية تُعلِم التطبيق إن كان الزائر يشاهد ملفه الخاص،
+        وهي تتحكم بأدوات التحرير (قلم التعديل، "أضف نبذة"، أيقونة الإعدادات، معاينة الزائر).</li>
+    </ul>
+
+    <h2>لوحة الإدارة</h2>
+    <p>
+      عند التفعيل، <strong>تمتلك الحزمة شاشة "عرض المستخدم"</strong> في اللوحة: تسجّل infolist
+      غنيًا (<code>ProfileInfolist</code>) في <code>UserProfileInfolistRegistry</code> فيعرضه
+      <code>UserResource</code> بدلًا من المخطط الأساسي البسيط. يجلب الرأس بيانات خفيفة ومحدودة
+      فقط (مستويات الهدايا، أبرز الداعمين، عدّادات اجتماعية مخزّنة مسبقًا)، بينما تعيش القوائم
+      الثقيلة في تبويبات مُحمّلة بكسل ومُرقّمة لتبقى سريعة. وإن لم تُثبَّت الحزمة تعود القاعدة
+      إلى مخططها تلقائيًا.
+    </p>
+
+    <h2>جانب فلاتر</h2>
+    <p>
+      يعرض التطبيق الحمولة المجمّعة كواجهة ملف ثري (غلاف، إطار الصورة، الهوية، الشارات، شبكة
+      الميزات)، ويكشف الأقسام المساهَم بها لكل حزمة عبر فتحات الواجهة (UI slots). كما يسجّل مصدر
+      كائن Stac باسم <code>profile.user</code> لتربط به شاشات UTD Studio. وتُضبط الميزة عبر حزمة
+      <code>profile</code> الخلفية: عند تعطيلها من الإدارة يتعطّل التطبيق تلقائيًا ويعود تبويب
+      "أنا" إلى الملف الاحتياطي الأساسي.
+    </p>
+  </section>
+
+</body>
+</html>

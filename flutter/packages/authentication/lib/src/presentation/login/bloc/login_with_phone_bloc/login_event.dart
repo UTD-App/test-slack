@@ -23,10 +23,6 @@ class UpdateFormValidationEvent extends LoginEvent {
   const UpdateFormValidationEvent();
 }
 
-class CheckEmailEvent extends LoginEvent {
-  const CheckEmailEvent();
-}
-
 class ResetLoginStateEvent extends LoginEvent {
   const ResetLoginStateEvent();
 }

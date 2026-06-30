@@ -1,5 +1,4 @@
 import '../src/domain/usecases/add_info_usecase.dart';
-import '../src/domain/usecases/check_email_usecase.dart';
 import '../src/domain/usecases/forget_password_usecase.dart';
 import '../src/domain/usecases/login_usecase.dart';
 import '../src/domain/usecases/register_usecase.dart';
@@ -17,7 +16,6 @@ class AuthLocator {
 
   static LoginUseCase? login;
   static RegisterUseCase? register;
-  static CheckEmailUseCase? checkEmail;
   static AddInfoUseCase? addInfo;
   static ForgetPasswordUseCase? forgetPassword;
 }

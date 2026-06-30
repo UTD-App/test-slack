@@ -10,7 +10,6 @@ import '../src/data/datasources/auth_api_service.dart';
 import '../src/data/datasources/auth_remote_datasource.dart';
 import '../src/data/repositories/auth_repository_impl.dart';
 import '../src/domain/usecases/login_usecase.dart';
-import '../src/domain/usecases/check_email_usecase.dart';
 import '../src/domain/usecases/register_usecase.dart';
 import '../src/domain/usecases/add_info_usecase.dart';
 import '../src/domain/usecases/send_otp_usecase.dart';
@@ -31,7 +30,6 @@ class AuthFeature extends AppFeature {
   late final AuthRepositoryImpl _repository;
 
   late final LoginUseCase _loginUseCase;
-  late final CheckEmailUseCase _checkEmailUseCase;
   late final AddInfoUseCase _addInfoUseCase;
   late final RegisterUseCase _registerUseCase;
   late final SendOtpUseCase _sendOtpUseCase;
@@ -61,7 +59,6 @@ class AuthFeature extends AppFeature {
     _repository = AuthRepositoryImpl(remoteDataSource: _dataSource);
 
     _loginUseCase = LoginUseCase(_repository);
-    _checkEmailUseCase = CheckEmailUseCase(_repository);
     _addInfoUseCase = AddInfoUseCase(_repository);
     _registerUseCase = RegisterUseCase(_repository);
     _sendOtpUseCase = SendOtpUseCase(_repository);
@@ -74,16 +71,12 @@ class AuthFeature extends AppFeature {
     // server-driven screen, outside the BLoC layer. Filled here because the
     // addon platform awaits initialize() before any screen/route builds.
     AuthLocator.login = _loginUseCase;
-    AuthLocator.checkEmail = _checkEmailUseCase;
     AuthLocator.addInfo = _addInfoUseCase;
     AuthLocator.register = _registerUseCase;
     AuthLocator.forgetPassword = _forgetPasswordUseCase;
 
     _splashBloc = SplashBloc(checkAuth: () => CacheManager.hasSession);
-    _loginBloc = LoginBloc(
-      loginUseCase: _loginUseCase,
-      checkEmailUseCase: _checkEmailUseCase,
-    );
+    _loginBloc = LoginBloc(loginUseCase: _loginUseCase);
     _addInformationBloc = AddInformationBloc(addInfoUseCase: _addInfoUseCase);
     _registerBloc = RegisterBloc(_registerUseCase);
     _recoverPasswordBloc = RecoverPasswordBloc(

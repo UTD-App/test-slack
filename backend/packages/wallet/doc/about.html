@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wallet Package — About</title>
+  <style>
+    body { font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; line-height: 1.6; color: #1f2430; max-width: 860px; margin: 0 auto; padding: 24px; }
+    h1 { color: #6d28d9; border-bottom: 2px solid #ede9fe; padding-bottom: 8px; }
+    h2 { color: #7c3aed; margin-top: 28px; }
+    h3 { color: #5b21b6; margin-top: 20px; }
+    code { background: #f3f0ff; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+    ul { padding-inline-start: 22px; }
+    li { margin: 4px 0; }
+    .lang { border: 1px solid #ede9fe; border-radius: 10px; padding: 18px 22px; margin: 18px 0; background: #fbfaff; }
+    .tag { display: inline-block; background: #ede9fe; color: #6d28d9; font-size: 0.78em; font-weight: 600; padding: 2px 10px; border-radius: 999px; margin-bottom: 8px; }
+    .note { background: #fff7ed; border-inline-start: 4px solid #f59e0b; padding: 10px 14px; border-radius: 6px; margin: 12px 0; }
+    hr { border: none; border-top: 1px dashed #ddd; margin: 36px 0; }
+    section[dir="rtl"] { text-align: right; }
+  </style>
+</head>
+<body>
+
+<!-- ============================ ENGLISH ============================ -->
+<section dir="ltr" lang="en">
+  <div class="lang">
+    <span class="tag">English</span>
+    <h1>Wallet Package</h1>
+    <p>
+      The <strong>Wallet</strong> package (<code>utd/wallet</code>) owns the user's in-app
+      <strong>COIN</strong> wallet: a per-user balance plus one unified, append-only
+      <code>wallet_transactions</code> ledger that records every coin movement. It is the single
+      path through which coins are credited or debited — admin charges, gateway recharges, gifts,
+      games and rewards all land here.
+    </p>
+    <div class="note">
+      <strong>Scope — coins only.</strong> The dollar / earnings wallet and withdrawals live in the
+      <code>target</code> package; diamonds in the <code>agency</code> / <code>gifts</code> packages.
+      A dollar→coins conversion is recorded here as a <code>wallet_transactions</code> row of type
+      <code>exchange</code>. The currency list is config-driven, so an extra currency can be added
+      with no schema change.
+    </p>
+
+    <h2>What it does</h2>
+    <ul>
+      <li>
+        <strong>Binds the Base contract.</strong> The provider binds
+        <code>App\Contracts\WalletContract</code> to its <code>DatabaseWallet</code> implementation
+        (or to the Base <code>NullWallet</code> when the package is disabled — reads return 0,
+        writes throw). The Base only ships the contract, facade, events and the Null seam; this
+        package is the real engine.
+      </li>
+      <li>
+        <strong>bcmath decimal balances.</strong> Balances are <code>decimal(20,2)</code> and all
+        money math is done with <code>bcmath</code> on the decimal strings, so there is no float
+        rounding drift. Every move is row-locked (<code>FOR UPDATE</code>) and wrapped in a DB
+        transaction; available = balance − held (held = reserved for pending withdrawals).
+      </li>
+      <li>
+        <strong>Idempotent ledger.</strong> A caller that retries the same money op (payment
+        webhook, gift, exchange) passes <code>meta['idempotency_key']</code>; the existing ledger
+        row is replayed instead of moving balance twice, and the unique-key race between concurrent
+        identical calls is resolved safely. Every credit/debit fires
+        <code>WalletCredited</code> / <code>WalletDebited</code>.
+      </li>
+      <li>
+        <strong>Charges (admin).</strong> <code>ChargeService</code> is the single entry point for
+        manual charges (admin → user today; agencies / area managers later through the same method).
+        It moves balance via the Wallet and records a <code>charges</code> history row linked to the
+        ledger entry. The Filament <em>Charges</em> resource exposes a list + create form.
+      </li>
+      <li>
+        <strong>Recharge catalogue.</strong> <code>Coin</code> (coin packages buyable for money) and
+        <code>PaymentCoin</code> (payment-method groups) model the recharge screen, with a
+        <code>coin_logs</code> gateway-purchase log. They are served to the app via
+        <code>GET /api/coins</code> and <code>GET /api/coins/payment-methods</code> and managed from
+        the new Filament <em>Coins</em> / <em>Payment Coins</em> admin resources.
+      </li>
+      <li>
+        <strong>Transaction types.</strong> The <code>CoinTransactionType</code> enum (ported from
+        Eagle's <code>UserCoinLogType</code>) standardises <code>wallet_transactions.type</code>
+        across ~45 flows (admin/area-manager/BD charges, payment / Google Pay / Huawei Pay,
+        exchange, gifts &amp; rooms, games, rewards, special items). Each value has a localized
+        label (<code>wallet.tx_type.*</code>) served to the app.
+      </li>
+    </ul>
+
+    <h2>API (authenticated)</h2>
+    <ul>
+      <li><code>GET /api/wallet/balances</code> — all balances for the current user.</li>
+      <li><code>GET /api/wallet/transactions?currency=&amp;type=&amp;start_date=&amp;end_date=&amp;page=</code> — the paginated ledger (newest first); the envelope carries pagination <code>meta</code> (<code>has_more</code>).</li>
+      <li><code>GET /api/coins</code> — coin recharge packages.</li>
+      <li><code>GET /api/coins/payment-methods</code> — payment-method groups.</li>
+    </ul>
+
+    <h2>Admin (Filament — group "Wallet")</h2>
+    <ul>
+      <li><strong>Charges</strong> — list + create a manual charge.</li>
+      <li><strong>Wallet Transactions</strong> — the read-only ledger.</li>
+      <li><strong>Coins</strong> / <strong>Payment Coins</strong> — manage the recharge catalogue.</li>
+    </ul>
+
+    <h2>Data model</h2>
+    <p>
+      Migrations: <code>user_wallets</code>, <code>wallet_transactions</code> (+ idempotency key),
+      <code>coins</code>, <code>payment_coins</code>, <code>coin_logs</code>, <code>charges</code>.
+    </p>
+  </div>
+</section>
+
+<hr>
+
+<!-- ============================ ARABIC ============================ -->
+<section dir="rtl" lang="ar">
+  <div class="lang">
+    <span class="tag">العربية</span>
+    <h1>حزمة المحفظة</h1>
+    <p>
+      تملك حزمة <strong>المحفظة</strong> (<code>utd/wallet</code>) محفظة
+      <strong>الكوينز</strong> داخل التطبيق: رصيد لكل مستخدم بالإضافة إلى سجلّ موحّد لا يُعدَّل
+      (<code>wallet_transactions</code>) يسجّل كل حركة كوينز. وهي المسار الوحيد الذي تُضاف أو
+      تُخصم عبره الكوينز — شحنات الإدارة، وشحن البوابات، والهدايا، والألعاب، والمكافآت كلها تمر هنا.
+    </p>
+    <div class="note">
+      <strong>النطاق — الكوينز فقط.</strong> محفظة الدولار / الأرباح والسحوبات موجودة في حزمة
+      <code>target</code>؛ والألماس في حزمتي <code>agency</code> / <code>gifts</code>. ويُسجَّل
+      تحويل الدولار إلى كوينز هنا كصفّ في <code>wallet_transactions</code> من النوع
+      <code>exchange</code>. قائمة العملات قابلة للتهيئة، فيمكن إضافة عملة دون أي تغيير في المخطط.
+    </p>
+
+    <h2>ماذا تفعل</h2>
+    <ul>
+      <li>
+        <strong>تربط عقد القاعدة.</strong> يربط المزوّد <code>App\Contracts\WalletContract</code>
+        بتنفيذها <code>DatabaseWallet</code> (أو بـ <code>NullWallet</code> من القاعدة عند تعطيل
+        الحزمة — تُعيد القراءة 0 وتُطلِق الكتابة استثناء). القاعدة تشحن العقد والـ facade
+        والأحداث وبذرة Null فقط؛ وهذه الحزمة هي المحرّك الفعلي.
+      </li>
+      <li>
+        <strong>أرصدة عشرية بـ bcmath.</strong> الأرصدة من نوع <code>decimal(20,2)</code> وكل
+        حسابات المال تُجرى بـ <code>bcmath</code> على السلاسل العشرية، فلا يوجد انحراف تقريب
+        للأعداد العائمة. وكل حركة مقفولة على الصف (<code>FOR UPDATE</code>) ضمن معاملة قاعدة بيانات؛
+        المتاح = الرصيد − المحجوز (المحجوز = محتجز لسحوبات معلّقة).
+      </li>
+      <li>
+        <strong>سجلّ غير قابل للتكرار (idempotent).</strong> المستدعي الذي يعيد المحاولة لنفس
+        العملية المالية (ويب-هوك دفع، هدية، تحويل) يمرّر <code>meta['idempotency_key']</code>؛
+        فيُعاد تشغيل صفّ السجلّ القائم بدل تحريك الرصيد مرتين، ويُحلّ تسابق المفتاح الفريد بين
+        النداءات المتطابقة المتزامنة بأمان. وكل إضافة/خصم يُطلِق
+        <code>WalletCredited</code> / <code>WalletDebited</code>.
+      </li>
+      <li>
+        <strong>الشحنات (الإدارة).</strong> <code>ChargeService</code> هو نقطة الدخول الوحيدة
+        للشحنات اليدوية (الإدارة ← المستخدم اليوم؛ والوكالات / مدراء المناطق لاحقًا عبر نفس
+        الطريقة). يحرّك الرصيد عبر المحفظة ويسجّل صفّ تاريخ في <code>charges</code> مرتبطًا بقيد
+        السجلّ. ويوفّر مورد Filament <em>الشحنات</em> قائمة + نموذج إنشاء.
+      </li>
+      <li>
+        <strong>كتالوج الشحن.</strong> يمثّل <code>Coin</code> (باقات الكوينز القابلة للشراء بالمال)
+        و<code>PaymentCoin</code> (مجموعات طرق الدفع) شاشة الشحن، مع سجلّ شراء البوابات
+        <code>coin_logs</code>. وتُقدَّم للتطبيق عبر <code>GET /api/coins</code> و
+        <code>GET /api/coins/payment-methods</code> وتُدار من موارد Filament الجديدة
+        <em>الكوينز</em> / <em>كوينز الدفع</em>.
+      </li>
+      <li>
+        <strong>أنواع المعاملات.</strong> يوحّد التعداد <code>CoinTransactionType</code> (المنقول
+        من <code>UserCoinLogType</code> في Eagle) قيمة <code>wallet_transactions.type</code> عبر
+        ~45 تدفّقًا (شحنات الإدارة / مدير المنطقة / BD، الدفع / Google Pay / Huawei Pay، التحويل،
+        الهدايا والغرف، الألعاب، المكافآت، العناصر الخاصة). ولكل قيمة تسمية مُترجمة
+        (<code>wallet.tx_type.*</code>) تُقدَّم للتطبيق.
+      </li>
+    </ul>
+
+    <h2>واجهة البرمجة (بمصادقة)</h2>
+    <ul>
+      <li><code>GET /api/wallet/balances</code> — كل أرصدة المستخدم الحالي.</li>
+      <li><code>GET /api/wallet/transactions?currency=&amp;type=&amp;start_date=&amp;end_date=&amp;page=</code> — السجلّ المقسّم لصفحات (الأحدث أولًا)؛ يحمل الغلاف بيانات تقسيم <code>meta</code> (<code>has_more</code>).</li>
+      <li><code>GET /api/coins</code> — باقات شحن الكوينز.</li>
+      <li><code>GET /api/coins/payment-methods</code> — مجموعات طرق الدفع.</li>
+    </ul>
+
+    <h2>لوحة التحكم (Filament — مجموعة "المحفظة")</h2>
+    <ul>
+      <li><strong>الشحنات</strong> — قائمة + إنشاء شحنة يدوية.</li>
+      <li><strong>معاملات المحفظة</strong> — السجلّ للقراءة فقط.</li>
+      <li><strong>الكوينز</strong> / <strong>كوينز الدفع</strong> — إدارة كتالوج الشحن.</li>
+    </ul>
+
+    <h2>نموذج البيانات</h2>
+    <p>
+      الترحيلات: <code>user_wallets</code>، <code>wallet_transactions</code> (+ مفتاح
+      idempotency)، <code>coins</code>، <code>payment_coins</code>، <code>coin_logs</code>،
+      <code>charges</code>.
+    </p>
+  </div>
+</section>
+
+</body>
+</html>

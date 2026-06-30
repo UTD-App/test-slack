@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UTD Studio SDK — About</title>
+  <style>
+    body { font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.6; color: #1f2430; max-width: 820px; margin: 0 auto; padding: 24px; }
+    section { border: 1px solid #e6e8ee; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+    h1 { font-size: 1.6rem; margin-top: 0; }
+    h2 { font-size: 1.15rem; margin-top: 1.4em; color: #5b21b6; }
+    code { background: #f4f4f8; padding: 1px 5px; border-radius: 4px; font-size: 0.9em; }
+    ul { padding-inline-start: 1.3em; }
+    .tag { display: inline-block; background: #ede9fe; color: #5b21b6; border-radius: 6px; padding: 2px 8px; font-size: 0.8rem; }
+    .note { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px 16px; }
+    [dir="rtl"] { text-align: right; }
+  </style>
+</head>
+<body>
+
+  <!-- ============ ENGLISH ============ -->
+  <section dir="ltr" lang="en">
+    <span class="tag">utd_studio_sdk · v0.1.0</span>
+    <h1>UTD Studio SDK</h1>
+    <p>
+      <strong>UTD Studio</strong> is the Flutter <strong>Server-Driven UI (SDUI)</strong> runtime.
+      It renders screens authored in the UTD Studio editor from JSON delivered by the backend —
+      so a screen can change without an app-store release. The package is a <strong>curated glue
+      layer over a vendored fork of the open-source <a href="https://github.com/StacDev/stac">Stac</a>
+      framework</strong> (bundled byte-for-byte under <code>vendor/</code>) plus the UTD layer on top.
+    </p>
+    <p>
+      Consumers import <strong>only one barrel</strong> —
+      <code>package:utd_studio_sdk/utd_studio_sdk.dart</code> — never <code>package:stac/...</code>.
+      The barrel re-exports a deliberately small slice of the Stac API
+      (<code>Stac</code>, <code>StacParser</code>, <code>StacActionParser</code>, <code>StacFormScope</code>)
+      plus the UTD facade and runtime.
+    </p>
+
+    <h2>What it adds on top of Stac</h2>
+    <ul>
+      <li><strong>The <code>UtdStudio.init(StudioConfig)</code> facade</strong> — one boot entry point
+        that reproduces the exact Base boot order: <code>Stac.initialize(parsers, actions)</code> once,
+        then <code>screenSource.init()</code> (open the cache), then a fire-and-forget
+        <code>syncAll()</code> in the background — preserving the no-spinner-flash startup.</li>
+      <li><strong>A port-based runtime (<code>StudioRuntime</code>)</strong> — a process-wide holder for
+        the injectable seams the host app implements: <code>StacTransport</code> (HTTP),
+        <code>KeyValueCache</code> (Hive/SharedPreferences/memory), and optional
+        <code>AppNavigator</code>, <code>ThemeSource</code>, <code>LocaleSource</code>,
+        <code>ToastSink</code>, <code>UserSession</code> and a <code>translate</code> port. The SDK
+        never imports app code — it only talks to these contracts.</li>
+      <li><strong>Custom UTD parsers</strong> — the <code>utd*</code> widget set
+        (<code>utdList</code>, <code>utdObject</code>, <code>utdTabs</code>, <code>utdTextField</code>,
+        <code>utdScroll</code>, <code>utdSized</code>, <code>utdPositionedDirectional</code>, …) layered
+        over the upstream primitives.</li>
+      <li><strong>Generic <code>core.*</code> actions</strong> — <code>core.navigate</code>,
+        <code>core.back</code>, <code>core.openDialog</code>, <code>core.closeDialog</code>,
+        <code>core.toggleTheme</code>, <code>core.setLocale</code> — each resolving its dependency
+        from <code>StudioRuntime</code>.</li>
+      <li><strong><code>localizeStac</code> i18n binding</strong> — localises a screen's translatable
+        <code>Text</code> nodes <em>before</em> render. A node is translated when it carries a
+        <code>tKey</code>, a <code>t.*</code> binding, or a <code>data</code> literal that is itself a
+        catalog key. Resolution goes through the app's <code>translate</code> port, so Studio labels
+        follow the app language and the dashboard translation catalog.</li>
+      <li><strong>Screen store</strong> (<code>StacScreenStore</code>) — cache-first fetch with version
+        sync (it replaces upstream's <code>StacService</code>; the barrel deliberately does
+        <em>not</em> re-export <code>StacService</code>).</li>
+      <li><strong>Shared registries</strong> — the data-binding registry
+        (<code>StacDataRegistry</code>) + template binder (<code>StacBinding</code>), and the
+        <code>StudioSlotRegistry</code> (the Studio analogue of native UI slots: a package injects a
+        card into a screen it does not own).</li>
+      <li><strong>Defensive coercion</strong> (<code>StacCoerce</code>) — targeted "force parsing" of
+        known string-typed fields so a mistyped server value (e.g. <code>text.data</code> as an
+        <code>int</code>) coerces to <code>String</code> instead of blanking the whole screen.</li>
+    </ul>
+
+    <h2>How a screen renders</h2>
+    <p>
+      <code>StacDynamicScreen(screenName: 'profile')</code> reads the resolved screen source from
+      <code>StudioRuntime</code>, pulls the cached JSON (no spinner flash), runs the i18n + coercion
+      passes, and hands the tree to the vendored Stac engine. Feature packages contribute parsers /
+      actions / data sources and slot cards through the SPI (<code>StacContributor</code>), and screens
+      bind to data registered via <code>UtdStudio.registerObject</code> / <code>registerList</code>.
+    </p>
+
+    <h2>Why a vendored fork (not a pub dependency)</h2>
+    <p>
+      The four upstream packages — <code>stac</code>, <code>stac_core</code>,
+      <code>stac_framework</code>, <code>stac_logger</code> — are copied verbatim under
+      <code>vendor/</code> and consumed via <code>dependency_overrides</code>. This pins exact versions,
+      lets UTD ship parsers/actions against a stable engine, and avoids a deep symbol rename of ~696
+      vendored files on every re-merge. Internal symbols keep their <code>Stac*</code> names by design;
+      branding is applied at the package + <code>UtdStudio</code> facade level. See <code>UPSTREAM.md</code>.
+    </p>
+
+    <div class="note">
+      <strong>Footgun:</strong> <code>pub</code> honours <code>dependency_overrides</code> only from the
+      <em>entrypoint</em> (app) pubspec. The vendored-stac override block MUST be duplicated in every app
+      that depends on this SDK, or you get two copies of the engine and parser registration silently
+      no-ops. See <code>installation.html</code>.
+    </div>
+  </section>
+
+  <!-- ============ ARABIC ============ -->
+  <section dir="rtl" lang="ar">
+    <span class="tag">utd_studio_sdk · v0.1.0</span>
+    <h1>حزمة UTD Studio</h1>
+    <p>
+      <strong>UTD Studio</strong> هي بيئة تشغيل <strong>الواجهات الموجَّهة من الخادم (SDUI)</strong>
+      في فلاتر. تعرض شاشاتٍ مُنشأة في محرّر UTD Studio انطلاقًا من JSON يرسله الخادم، فيمكن تغيير
+      الشاشة دون إصدار جديد على المتجر. الحزمة هي <strong>طبقة ربط منسّقة فوق نسخة مُضمَّنة (fork)
+      من إطار <a href="https://github.com/StacDev/stac">Stac</a> مفتوح المصدر</strong> (مُضمَّن حرفيًا
+      تحت <code>vendor/</code>) مع طبقة UTD فوقه.
+    </p>
+    <p>
+      يستورد المستهلكون <strong>ملفًا واحدًا فقط</strong> —
+      <code>package:utd_studio_sdk/utd_studio_sdk.dart</code> — وليس <code>package:stac/...</code> أبدًا.
+      يعيد هذا الملف تصدير شريحة صغيرة مقصودة من واجهة Stac
+      (<code>Stac</code> و<code>StacParser</code> و<code>StacActionParser</code> و<code>StacFormScope</code>)
+      إضافةً إلى واجهة UTD وبيئة التشغيل.
+    </p>
+
+    <h2>ما الذي تضيفه فوق Stac</h2>
+    <ul>
+      <li><strong>واجهة <code>UtdStudio.init(StudioConfig)</code></strong> — نقطة إقلاع واحدة تعيد ترتيب
+        الإقلاع كما في القاعدة: <code>Stac.initialize</code> مرة واحدة، ثم
+        <code>screenSource.init()</code> (فتح الكاش)، ثم <code>syncAll()</code> في الخلفية دون انتظار —
+        مع الحفاظ على إقلاع بلا وميض تحميل.</li>
+      <li><strong>بيئة تشغيل قائمة على المنافذ (<code>StudioRuntime</code>)</strong> — حامل على مستوى
+        العملية للمنافذ القابلة للحقن التي يطبّقها التطبيق المضيف: <code>StacTransport</code> (HTTP)،
+        و<code>KeyValueCache</code> (Hive/SharedPreferences/الذاكرة)، إضافةً إلى المنافذ الاختيارية
+        <code>AppNavigator</code> و<code>ThemeSource</code> و<code>LocaleSource</code> و<code>ToastSink</code>
+        و<code>UserSession</code> ومنفذ <code>translate</code>. لا تستورد الحزمة كود التطبيق إطلاقًا،
+        بل تتحدث عبر هذه العقود فقط.</li>
+      <li><strong>مُحلِّلات UTD المخصّصة</strong> — مجموعة عناصر <code>utd*</code>
+        (<code>utdList</code> و<code>utdObject</code> و<code>utdTabs</code> و<code>utdTextField</code>
+        و<code>utdScroll</code> و<code>utdSized</code> و<code>utdPositionedDirectional</code> …) فوق
+        عناصر Stac الأساسية.</li>
+      <li><strong>إجراءات <code>core.*</code> العامة</strong> — <code>core.navigate</code>
+        و<code>core.back</code> و<code>core.openDialog</code> و<code>core.closeDialog</code>
+        و<code>core.toggleTheme</code> و<code>core.setLocale</code> — يجلب كلٌّ منها اعتماده من
+        <code>StudioRuntime</code>.</li>
+      <li><strong>ربط الترجمة <code>localizeStac</code></strong> — يترجم عقد <code>Text</code> القابلة
+        للترجمة <em>قبل</em> العرض. تُترجم العقدة إذا حملت <code>tKey</code> أو ربطًا يبدأ بـ<code>t.</code>
+        أو نصًّا في <code>data</code> هو نفسه مفتاح في الكتالوج. تمر الترجمة عبر منفذ <code>translate</code>
+        في التطبيق، فتتبع تسميات Studio لغة التطبيق وكتالوج ترجمة اللوحة.</li>
+      <li><strong>مخزن الشاشات</strong> (<code>StacScreenStore</code>) — جلب يعتمد الكاش أولًا مع مزامنة
+        الإصدارات (يحلّ محل <code>StacService</code> الأصلي؛ ولا يعيد الملف تصدير <code>StacService</code>
+        عمدًا).</li>
+      <li><strong>سجلّات مشتركة</strong> — سجلّ ربط البيانات (<code>StacDataRegistry</code>) ورابط
+        القوالب (<code>StacBinding</code>)، و<code>StudioSlotRegistry</code> (نظير فتحات الواجهة الأصلية
+        في Studio: حزمة تحقن بطاقة في شاشة لا تملكها).</li>
+      <li><strong>تحويل دفاعي</strong> (<code>StacCoerce</code>) — "فرض تحليل" مُوجّه للحقول المعروفة من
+        نوع نص، فإذا وصلت قيمة بنوع خاطئ من الخادم (مثل <code>text.data</code> كـ<code>int</code>) تُحوَّل
+        إلى <code>String</code> بدلًا من إفراغ الشاشة كاملة.</li>
+    </ul>
+
+    <h2>كيف تُعرض الشاشة</h2>
+    <p>
+      يقرأ <code>StacDynamicScreen(screenName: 'profile')</code> مصدر الشاشة المُحدَّد من
+      <code>StudioRuntime</code>، ويسحب JSON المخزَّن (بلا وميض)، ثم يُجري مرحلتي الترجمة والتحويل،
+      ويسلّم الشجرة لمحرّك Stac المُضمَّن. تساهم حِزم الميزات بالمحلّلات والإجراءات ومصادر البيانات
+      وبطاقات الفتحات عبر واجهة المساهمة (<code>StacContributor</code>)، وتربط الشاشات ببيانات مسجَّلة
+      عبر <code>UtdStudio.registerObject</code> / <code>registerList</code>.
+    </p>
+
+    <h2>لماذا نسخة مُضمَّنة (لا اعتماد من pub)</h2>
+    <p>
+      الحِزم الأربع الأصلية — <code>stac</code> و<code>stac_core</code> و<code>stac_framework</code>
+      و<code>stac_logger</code> — منسوخة حرفيًا تحت <code>vendor/</code> وتُستهلك عبر
+      <code>dependency_overrides</code>. هذا يثبّت إصداراتٍ دقيقة، ويتيح لـUTD شحن محلّلات/إجراءات فوق
+      محرّك مستقر، ويتجنّب إعادة تسمية عميقة لنحو ٦٩٦ ملفًا مُضمَّنًا عند كل دمج. تحتفظ الرموز الداخلية
+      بأسماء <code>Stac*</code> عمدًا، وتُطبَّق العلامة التجارية على مستوى الحزمة وواجهة
+      <code>UtdStudio</code>. انظر <code>UPSTREAM.md</code>.
+    </p>
+
+    <div class="note" dir="rtl">
+      <strong>مزلق شائع:</strong> يحترم <code>pub</code> الكتلة <code>dependency_overrides</code> من
+      pubspec الخاص بـ<em>نقطة الدخول</em> (التطبيق) فقط. يجب تكرار كتلة تجاوز stac المُضمَّن في كل تطبيق
+      يعتمد على هذه الحزمة، وإلا حصلت على نسختين من المحرّك ويفشل تسجيل المحلّلات بصمت. انظر
+      <code>installation.html</code>.
+    </div>
+  </section>
+
+</body>
+</html>

@@ -116,19 +116,28 @@ class MomentRepository
         );
     }
 
+    /**
+     * Moments the viewer has liked. Returns Moment models (not MomentLikes rows)
+     * so the payload matches MomentResource — same eager-load/count/like-flag
+     * shape as the other feeds. Filtered to moments the viewer liked and ordered
+     * by most-recently liked first (a correlated subquery on the viewer's like id,
+     * which keeps the builder's withCount/withExists selects intact — a join's
+     * select('moment.*') would clobber them).
+     */
     public function getLikedMoments($userId, $page)
     {
-        return MomentLikes::with([
-            'moment' => function ($query) use ($userId) {
-                $query->likeExists($userId)
-                    ->withUser()
-                    ->with('images')
-                    ->withCount(['likes', 'comments']);
-            },
-        ])
-            ->where('user_id', $userId)
-            ->orderByDesc('id')
-            ->paginate(10);
+        return $this->hydrateReactions(
+            $this->feedQuery($userId)
+                ->whereHas('likes', fn ($q) => $q->where('user_id', $userId))
+                ->orderByDesc(
+                    MomentLikes::select('id')
+                        ->whereColumn('moment_user_likes.moment_id', 'moment.id')
+                        ->where('user_id', $userId)
+                        ->latest('id')
+                        ->limit(1)
+                )
+                ->paginate(10)
+        );
     }
 
     public function getAllMoments($userId, $page)

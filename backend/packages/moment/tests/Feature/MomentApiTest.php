@@ -135,6 +135,40 @@ class MomentApiTest extends TestCase
             ->assertJsonPath('data.0.description', 'A-old');
     }
 
+    /**
+     * Type-2 (liked) feed must return the MOMENTS the viewer liked — shaped like
+     * MomentResource (a `description`, an `is_like` flag) — not the raw
+     * MomentLikes rows. Previously getLikedMoments returned MomentLikes models,
+     * which MomentResource::collection mis-rendered.
+     */
+    public function test_liked_feed_returns_liked_moments_in_resource_shape(): void
+    {
+        [$viewer, $token] = $this->actingUser();
+        [$author] = $this->actingUser();
+
+        $liked = Moment::create(['user_id' => $author->id, 'description' => 'liked-one']);
+        $unliked = Moment::create(['user_id' => $author->id, 'description' => 'not-liked']);
+
+        $liked->likes()->create(['user_id' => $viewer->id]);
+
+        $data = $this->withHeader('Authorization', "Bearer {$token}")
+            ->getJson('/api/moment?type=2')
+            ->assertStatus(200)
+            ->assertJsonPath('status', true)
+            ->json('data');
+
+        // Only the liked moment is returned, with the moment payload shape.
+        $this->assertCount(1, $data);
+        $this->assertSame($liked->id, $data[0]['id']);
+        $this->assertSame('liked-one', $data[0]['description']);
+        $this->assertTrue($data[0]['is_like']);
+        $this->assertArrayHasKey('like_num', $data[0]);
+        $this->assertArrayHasKey('user', $data[0]);
+
+        $descriptions = array_column($data, 'description');
+        $this->assertNotContains('not-liked', $descriptions);
+    }
+
     public function test_following_feed_filters_by_follow_provider_when_bound(): void
     {
         [, $token] = $this->actingUser();

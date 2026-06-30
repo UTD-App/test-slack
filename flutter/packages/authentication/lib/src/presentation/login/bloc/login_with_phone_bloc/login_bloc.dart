@@ -11,7 +11,6 @@ import 'package:utd_app/shared/services/user_session_service.dart';
 
 import '../../../../domain/params/auth_parameter.dart';
 import '../../../../domain/usecases/login_usecase.dart';
-import '../../../../domain/usecases/check_email_usecase.dart';
 import '../../../../../core/auth_routes.dart';
 
 part 'login_event.dart';
@@ -19,9 +18,8 @@ part 'login_state.dart';
 
 class LoginBloc extends Bloc<LoginEvent, LoginState> {
   final LoginUseCase loginUseCase;
-  final CheckEmailUseCase checkEmailUseCase;
 
-  LoginBloc({required this.loginUseCase, required this.checkEmailUseCase})
+  LoginBloc({required this.loginUseCase})
     : super(
         LoginState(
           formKey: GlobalKey<FormState>(),
@@ -32,38 +30,9 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
     on<TogglePasswordEvent>(_toggleEvent);
     on<LoginWithEmailEvent>(_loginEvent);
     on<UpdateFormValidationEvent>(_updateFormValidation);
-    on<CheckEmailEvent>(_checkEmail);
     on<ResetLoginStateEvent>((event, emit) {
       emit(state.copyWith(isFoundAccount: null, showRegisterDialog: false));
     });
-  }
-
-  Future<void> _checkEmail(CheckEmailEvent event, Emitter<LoginState> emit) async {
-    if (state.formKey.currentState?.validate() == false) return;
-
-    emit(state.copyWith(requestStateCheckEmail: RequestState.loading));
-    final result = await checkEmailUseCase(state.emailController.text.trim());
-
-    result.when(
-      success: (data) {
-        emit(
-          state.copyWith(
-            message: data.message,
-            isFoundAccount: data.data,
-            requestStateCheckEmail: RequestState.loaded,
-            showRegisterDialog: data.data == false,
-          ),
-        );
-      },
-      failure: (message, _) {
-        emit(
-          state.copyWith(
-            message: message,
-            requestStateCheckEmail: RequestState.error,
-          ),
-        );
-      },
-    );
   }
 
   void _toggleEvent(TogglePasswordEvent event, Emitter<LoginState> emit) =>

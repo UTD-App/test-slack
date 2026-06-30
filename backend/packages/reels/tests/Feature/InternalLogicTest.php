@@ -431,7 +431,7 @@ class InternalLogicTest extends TestCase
             'Reported_id' => $owner->id, 'description' => 'bad',
         ]);
 
-        $res = app(RealsService::class)->deleteReeltAndReport($reel->id, $report->id);
+        $res = app(RealsService::class)->deleteReelAndReport($reel->id, $report->id);
 
         $this->assertTrue($res['success']);
         $this->assertSame(200, $res['status']);
@@ -441,7 +441,7 @@ class InternalLogicTest extends TestCase
 
     public function test_delete_reel_and_report_404_for_missing_reel(): void
     {
-        $res = app(RealsService::class)->deleteReeltAndReport(999999, 1);
+        $res = app(RealsService::class)->deleteReelAndReport(999999, 1);
         $this->assertFalse($res['success']);
         $this->assertSame(404, $res['status']);
     }

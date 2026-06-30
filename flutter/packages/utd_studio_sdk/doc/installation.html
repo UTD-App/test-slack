@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>UTD Studio SDK — Installation</title>
+  <style>
+    body { font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.6; color: #1f2430; max-width: 820px; margin: 0 auto; padding: 24px; }
+    section { border: 1px solid #e6e8ee; border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+    h1 { font-size: 1.6rem; margin-top: 0; }
+    h2 { font-size: 1.15rem; margin-top: 1.4em; color: #5b21b6; }
+    code { background: #f4f4f8; padding: 1px 5px; border-radius: 4px; font-size: 0.9em; }
+    pre { background: #0f172a; color: #e2e8f0; border-radius: 10px; padding: 16px; overflow-x: auto; font-size: 0.85rem; direction: ltr; text-align: left; }
+    pre code { background: transparent; color: inherit; padding: 0; }
+    ul, ol { padding-inline-start: 1.3em; }
+    .tag { display: inline-block; background: #ede9fe; color: #5b21b6; border-radius: 6px; padding: 2px 8px; font-size: 0.8rem; }
+    .danger { background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; padding: 12px 16px; }
+    .danger strong { color: #b91c1c; }
+    [dir="rtl"] { text-align: right; }
+  </style>
+</head>
+<body>
+
+  <!-- ============ ENGLISH ============ -->
+  <section dir="ltr" lang="en">
+    <span class="tag">utd_studio_sdk · v0.1.0</span>
+    <h1>Installing UTD Studio SDK</h1>
+    <p>
+      <code>utd_studio_sdk</code> is consumed as a <strong>path dependency</strong>. It carries a
+      vendored fork of <code>stac</code> under <code>vendor/</code>; the host app wires the runtime
+      ports once at boot via <code>UtdStudio.init</code>.
+    </p>
+
+    <h2>1 · Add the path dependency</h2>
+    <p>In the app entrypoint <code>pubspec.yaml</code> (e.g. <code>utd_app</code> / <code>chatPackageV2</code>):</p>
+    <pre><code>dependencies:
+  utd_studio_sdk:
+    path: packages/utd_studio_sdk   # adjust to your relative path</code></pre>
+
+    <h2 id="overrides">2 · Duplicate the dependency_overrides (the known footgun)</h2>
+    <div class="danger">
+      <strong>This is the #1 mistake.</strong> <code>pub</code> honours <code>dependency_overrides</code>
+      <strong>only from the entrypoint (app) pubspec</strong> — a library package's overrides are ignored
+      transitively. So the vendored-stac override block below MUST be present <strong>identically</strong>
+      in <em>every app</em> that depends on <code>utd_studio_sdk</code>. If you forget it, <code>pub</code>
+      fetches the <em>real</em> <code>stac</code> from pub.dev → you end up with <strong>two copies of the
+      engine</strong>, <code>StacParser</code> type identity breaks, and parser / action registration
+      <strong>silently no-ops</strong> (screens render blank or ignore your custom widgets, with no error).
+    </div>
+    <p>Add to the app entrypoint <code>pubspec.yaml</code> (paths point into the SDK's <code>vendor/</code>):</p>
+    <pre><code>dependency_overrides:
+  stac:
+    path: packages/utd_studio_sdk/vendor/stac
+  stac_core:
+    path: packages/utd_studio_sdk/vendor/stac_core
+  stac_framework:
+    path: packages/utd_studio_sdk/vendor/stac_framework
+  stac_logger:
+    path: packages/utd_studio_sdk/vendor/stac_logger</code></pre>
+    <p>
+      The same block lives in the SDK's own <code>pubspec.yaml</code> (so it analyzes standalone), but
+      that copy does <strong>nothing</strong> for the app build — only the entrypoint's copy counts. A CI
+      grep guards against stray <code>package:stac/</code> imports outside <code>vendor/</code>.
+    </p>
+    <p>Then resolve:</p>
+    <pre><code>flutter pub get</code></pre>
+
+    <h2>3 · Initialize at boot</h2>
+    <p>
+      Call <code>UtdStudio.init</code> once before <code>runApp</code>. Implement the required ports
+      (<code>StacTransport</code> over your HTTP client, <code>KeyValueCache</code> over Hive /
+      SharedPreferences) and any optional ports for the <code>core.*</code> actions you use:
+    </p>
+    <pre><code>import 'package:utd_studio_sdk/utd_studio_sdk.dart';
+
+await UtdStudio.init(StudioConfig(
+  transport: MyHttpTransport(),   // required — /stac, /stac/{name}, /stac/{name}/version
+  cache:     MyKeyValueCache(),   // required — namespaced key/value store
+  navigator: MyNavigator(),       // optional — core.navigate / core.back / core.openDialog
+  theme:     MyThemeSource(),     // optional — core.toggleTheme
+  locale:    MyLocaleSource(),    // optional — core.setLocale
+  toast:     MyToastSink(),       // optional
+  translate: (ctx, key) => ctx.tr(key), // optional — t.* / tKey i18n binding
+  extraParsers: [/* custom StacParser widgets */],
+  extraActions: [/* custom StacActionParser actions */],
+));</code></pre>
+    <p>
+      <code>init</code> runs <code>Stac.initialize</code> once, opens the screen cache, and kicks a
+      background <code>syncAll()</code> — so startup never blocks on the network.
+    </p>
+
+    <h2>4 · Render screens &amp; register data</h2>
+    <pre><code>// Render a server-driven screen by name:
+StacDynamicScreen(screenName: 'profile');
+
+// Register data sources your screens bind to:
+UtdStudio.registerObject('core.currentUser', () async => myUserMap);
+UtdStudio.registerList('feed.items', () async => myItemsList);</code></pre>
+    <p>
+      Your backend must serve the screen contract: <code>GET /stac</code>, <code>GET /stac/{name}</code>,
+      <code>GET /stac/{name}/version</code>.
+    </p>
+
+    <h2>Re-merging upstream</h2>
+    <p>
+      To bump the vendored Stac version, replace <code>vendor/&lt;pkg&gt;/lib</code> wholesale (incl. all
+      generated <code>.g.dart</code> — never run <code>build_runner</code> against <code>vendor/</code>),
+      update the override paths if a coordinate changed, then re-run <code>flutter pub get</code> +
+      <code>flutter analyze</code>. Full runbook in <code>UPSTREAM.md</code>.
+    </p>
+  </section>
+
+  <!-- ============ ARABIC ============ -->
+  <section dir="rtl" lang="ar">
+    <span class="tag">utd_studio_sdk · v0.1.0</span>
+    <h1>تثبيت حزمة UTD Studio</h1>
+    <p>
+      تُستهلك <code>utd_studio_sdk</code> كـ<strong>اعتماد بالمسار (path dependency)</strong>. تحمل نسخة
+      مُضمَّنة من <code>stac</code> تحت <code>vendor/</code>؛ ويربط التطبيق المضيف منافذ التشغيل مرة
+      واحدة عند الإقلاع عبر <code>UtdStudio.init</code>.
+    </p>
+
+    <h2>١ · أضف الاعتماد بالمسار</h2>
+    <p>في ملف <code>pubspec.yaml</code> الخاص بنقطة دخول التطبيق (مثل <code>utd_app</code> / <code>chatPackageV2</code>):</p>
+    <pre><code>dependencies:
+  utd_studio_sdk:
+    path: packages/utd_studio_sdk   # عدّل المسار النسبي حسب مشروعك</code></pre>
+
+    <h2>٢ · كرّر كتلة dependency_overrides (المزلق المعروف)</h2>
+    <div class="danger" dir="rtl">
+      <strong>هذا أكثر خطأ شيوعًا.</strong> يحترم <code>pub</code> كتلة <code>dependency_overrides</code>
+      <strong>من pubspec نقطة الدخول (التطبيق) فقط</strong> — وتُتجاهَل تجاوزات الحزم المكتبية عبر
+      الاعتماد. لذا يجب وجود كتلة تجاوز stac المُضمَّن أدناه <strong>بشكل مطابق</strong> في
+      <em>كل تطبيق</em> يعتمد على <code>utd_studio_sdk</code>. وإن نسيتها، يجلب <code>pub</code> نسخة
+      <em>stac الحقيقية</em> من pub.dev، فتحصل على <strong>نسختين من المحرّك</strong>، وتنكسر هوية نوع
+      <code>StacParser</code>، ويفشل تسجيل المحلّلات والإجراءات <strong>بصمت</strong> (تظهر الشاشات فارغة
+      أو تتجاهل عناصرك المخصّصة دون أي خطأ).
+    </div>
+    <p>أضِف إلى <code>pubspec.yaml</code> الخاص بنقطة الدخول (تشير المسارات إلى <code>vendor/</code> داخل الحزمة):</p>
+    <pre><code>dependency_overrides:
+  stac:
+    path: packages/utd_studio_sdk/vendor/stac
+  stac_core:
+    path: packages/utd_studio_sdk/vendor/stac_core
+  stac_framework:
+    path: packages/utd_studio_sdk/vendor/stac_framework
+  stac_logger:
+    path: packages/utd_studio_sdk/vendor/stac_logger</code></pre>
+    <p>
+      توجد الكتلة نفسها في <code>pubspec.yaml</code> الخاص بالحزمة (لتُحلَّل بمفردها)، لكن تلك النسخة
+      <strong>لا تفعل شيئًا</strong> لبناء التطبيق — نسخة نقطة الدخول وحدها هي التي تُحتسب. ويحرس فحص في
+      CI ضد أي استيراد شارد لـ<code>package:stac/</code> خارج <code>vendor/</code>.
+    </p>
+    <p>ثم نفّذ:</p>
+    <pre><code>flutter pub get</code></pre>
+
+    <h2>٣ · التهيئة عند الإقلاع</h2>
+    <p>
+      استدعِ <code>UtdStudio.init</code> مرة واحدة قبل <code>runApp</code>. طبّق المنافذ المطلوبة
+      (<code>StacTransport</code> فوق عميل HTTP، و<code>KeyValueCache</code> فوق Hive /
+      SharedPreferences) وأي منافذ اختيارية لإجراءات <code>core.*</code> التي تستخدمها:
+    </p>
+    <pre><code>import 'package:utd_studio_sdk/utd_studio_sdk.dart';
+
+await UtdStudio.init(StudioConfig(
+  transport: MyHttpTransport(),   // مطلوب — /stac, /stac/{name}, /stac/{name}/version
+  cache:     MyKeyValueCache(),   // مطلوب — مخزن مفتاح/قيمة بنطاقات
+  navigator: MyNavigator(),       // اختياري — core.navigate / core.back / core.openDialog
+  theme:     MyThemeSource(),     // اختياري — core.toggleTheme
+  locale:    MyLocaleSource(),    // اختياري — core.setLocale
+  toast:     MyToastSink(),       // اختياري
+  translate: (ctx, key) => ctx.tr(key), // اختياري — ربط ترجمة t.* / tKey
+  extraParsers: [/* عناصر StacParser مخصّصة */],
+  extraActions: [/* إجراءات StacActionParser مخصّصة */],
+));</code></pre>
+    <p>
+      يُشغّل <code>init</code> الدالة <code>Stac.initialize</code> مرة واحدة، ويفتح كاش الشاشات، ويُطلق
+      <code>syncAll()</code> في الخلفية، فلا يتوقف الإقلاع على الشبكة.
+    </p>
+
+    <h2>٤ · عرض الشاشات وتسجيل البيانات</h2>
+    <pre><code>// عرض شاشة موجَّهة من الخادم بالاسم:
+StacDynamicScreen(screenName: 'profile');
+
+// تسجيل مصادر البيانات التي تربط بها الشاشات:
+UtdStudio.registerObject('core.currentUser', () async => myUserMap);
+UtdStudio.registerList('feed.items', () async => myItemsList);</code></pre>
+    <p>
+      يجب أن يقدّم خادمك عقد الشاشات: <code>GET /stac</code> و<code>GET /stac/{name}</code> و
+      <code>GET /stac/{name}/version</code>.
+    </p>
+
+    <h2>إعادة دمج النسخة الأصلية</h2>
+    <p>
+      لترقية نسخة Stac المُضمَّنة، استبدل <code>vendor/&lt;pkg&gt;/lib</code> بالكامل (بما في ذلك كل
+      <code>.g.dart</code> المُولَّد — ولا تُشغّل <code>build_runner</code> على <code>vendor/</code>
+      أبدًا)، وحدّث مسارات التجاوز إن تغيّر أي إحداثي، ثم أعد تشغيل <code>flutter pub get</code> و
+      <code>flutter analyze</code>. الدليل الكامل في <code>UPSTREAM.md</code>.
+    </p>
+  </section>
+
+</body>
+</html>

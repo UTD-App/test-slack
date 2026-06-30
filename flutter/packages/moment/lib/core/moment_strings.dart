@@ -74,11 +74,6 @@ class MomentStrings {
   static const addToYourPost = 'moment.add_to_your_post';
   static const photoVideo = 'moment.photo_video';
   static const gif = 'moment.gif';
-  static const poll = 'moment.poll';
-  static const adoption = 'moment.adoption';
-  static const lostNotice = 'moment.lost_notice';
-  static const event = 'moment.event';
-  static const comingSoon = 'moment.coming_soon';
   static const reportTitle = 'moment.report_title';
   static const reason = 'moment.reason';
   static const description = 'moment.description';
@@ -154,11 +149,6 @@ class MomentStrings {
           addToYourPost: 'Add to your post',
           photoVideo: 'Photo/Video',
           gif: 'Gif',
-          poll: 'Poll',
-          adoption: 'Adoption',
-          lostNotice: 'Lost Notice',
-          event: 'Event',
-          comingSoon: 'Coming soon',
           reportTitle: 'Report moment',
           reason: 'Reason',
           description: 'Description',
@@ -214,11 +204,6 @@ class MomentStrings {
           addToYourPost: 'أضف إلى منشورك',
           photoVideo: 'صورة/فيديو',
           gif: 'صورة متحركة',
-          poll: 'استطلاع',
-          adoption: 'تبنّي',
-          lostNotice: 'إعلان فقدان',
-          event: 'فعالية',
-          comingSoon: 'قريباً',
           reportTitle: 'الإبلاغ عن اللحظة',
           reason: 'السبب',
           description: 'الوصف',

@@ -479,7 +479,7 @@ class InternalLogicTest extends TestCase
         $this->assertSame(['love' => 2], $m->getAttribute('reactions_pre'));
     }
 
-    public function test_repository_get_liked_moments_returns_likes_for_user(): void
+    public function test_repository_get_liked_moments_returns_moments_for_user(): void
     {
         $repo = app(MomentRepository::class);
         $viewer = User::factory()->create();
@@ -491,8 +491,14 @@ class InternalLogicTest extends TestCase
 
         $page = $repo->getLikedMoments($viewer->id, 1);
 
+        // Returns the related Moment models (not MomentLikes rows) so the payload
+        // matches MomentResource — same shape as every other feed.
         $this->assertSame(1, $page->total());
-        $this->assertSame($moment->id, $page->items()[0]->moment_id);
+        $item = $page->items()[0];
+        $this->assertInstanceOf(Moment::class, $item);
+        $this->assertSame($moment->id, $item->id);
+        $this->assertSame('liked one', $item->description);
+        $this->assertTrue((bool) $item->likes_exists);
     }
 
     // =====================================================================

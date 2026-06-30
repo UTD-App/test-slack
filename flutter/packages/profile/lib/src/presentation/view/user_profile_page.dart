@@ -17,6 +17,7 @@ import 'package:utd_app/shared/profile/profile_view_arguments.dart';
 
 import '../../domain/user_profile_model.dart';
 import '../../profile_routes.dart';
+import '../../profile_strings.dart';
 import '../bloc/user_profile_bloc.dart';
 import '../widgets/feature_grid.dart';
 import '../widgets/profile_avatar_frame.dart';
@@ -269,7 +270,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                state.message ?? context.tr('profile.error'),
+                state.message ?? context.tr(ProfileStrings.error),
                 style: const TextStyle(color: ColorManager.lumiaTextPrimary),
               ),
               SizedBox(height: 16.h),
@@ -277,7 +278,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 onPressed: () => context
                     .read<UserProfileBloc>()
                     .add(LoadUserProfileEvent(userId: widget.userId)),
-                child: Text(context.tr('profile.retry')),
+                child: Text(context.tr(ProfileStrings.retry)),
               ),
             ],
           ),
@@ -287,7 +288,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
         if (profile == null) {
           return Center(
             child: Text(
-              context.tr('profile.not_found'),
+              context.tr(ProfileStrings.notFound),
               style: const TextStyle(color: ColorManager.lumiaTextPrimary),
             ),
           );

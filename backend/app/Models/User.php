@@ -59,11 +59,22 @@ class User extends Authenticatable
             && $this->online_time->gt(now()->subMinutes($minutes));
     }
 
-    public function setPasswordAttribute($value)
+    /**
+     * Hash the password on assignment — but idempotently and non-destructively:
+     *   - blank (null/'') is ignored, so "leave blank to keep current" flows
+     *     (e.g. admin edit) don't wipe the password.
+     *   - a value that is ALREADY a hash is stored as-is, so assigning an
+     *     already-hashed value no longer double-hashes it (the prior footgun).
+     *   - plaintext is bcrypt'd.
+     */
+    public function setPasswordAttribute($value): void
     {
-        if ($value) {
-            $this->attributes['password'] = bcrypt($value);
+        if (blank($value)) {
+            return;
         }
+
+        $alreadyHashed = is_string($value) && password_get_info($value)['algo'] !== null;
+        $this->attributes['password'] = $alreadyHashed ? $value : bcrypt($value);
     }
 
     public function country()

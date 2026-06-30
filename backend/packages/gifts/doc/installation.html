@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gifts Package — Installation</title>
+  <style>
+    body { font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; line-height: 1.6; color: #1f2430; max-width: 860px; margin: 0 auto; padding: 24px; }
+    h1 { color: #6d28d9; border-bottom: 2px solid #ede9fe; padding-bottom: 8px; }
+    h2 { color: #7c3aed; margin-top: 28px; }
+    h3 { color: #5b21b6; margin-top: 20px; }
+    code { background: #f3f0ff; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+    pre { background: #1f2430; color: #e8e6f3; padding: 14px 16px; border-radius: 8px; overflow-x: auto; direction: ltr; text-align: left; }
+    pre code { background: none; color: inherit; padding: 0; }
+    ol { padding-inline-start: 22px; }
+    li { margin: 8px 0; }
+    .lang { border: 1px solid #ede9fe; border-radius: 10px; padding: 18px 22px; margin: 18px 0; background: #fbfaff; }
+    .tag { display: inline-block; background: #ede9fe; color: #6d28d9; font-size: 0.78em; font-weight: 600; padding: 2px 10px; border-radius: 999px; margin-bottom: 8px; }
+    .note { background: #fff7ed; border-inline-start: 4px solid #f59e0b; padding: 10px 14px; border-radius: 6px; margin: 12px 0; }
+    hr { border: none; border-top: 1px dashed #ddd; margin: 36px 0; }
+    section[dir="rtl"] { text-align: right; }
+  </style>
+</head>
+<body>
+
+<!-- ============================ ENGLISH ============================ -->
+<section dir="ltr" lang="en">
+  <div class="lang">
+    <span class="tag">English</span>
+    <h1>Installing the Gifts Package</h1>
+    <p>
+      The Gifts package has two parts: a <strong>backend</strong> Laravel package
+      (<code>utd/gifts</code>) and a <strong>Flutter</strong> package (<code>gifts</code>).
+      It depends on the <strong>Wallet</strong> package — install Wallet first.
+    </p>
+
+    <h2>1. Backend package</h2>
+    <ol>
+      <li>
+        <strong>Add the package</strong> to the Base project. It lives at
+        <code>packages/gifts</code>; reference it as a path repository in the root
+        <code>composer.json</code>:
+        <pre><code>"repositories": [
+  { "type": "path", "url": "packages/gifts" }
+],
+"require": {
+  "utd/gifts": "*"
+}</code></pre>
+      </li>
+      <li>
+        <strong>Install / refresh autoload:</strong>
+        <pre><code>composer require utd/gifts
+# or, if already present as a path repo:
+composer update utd/gifts
+composer dump-autoload</code></pre>
+        The service provider <code>Utd\Gifts\Providers\GiftsServiceProvider</code> is
+        <strong>auto-discovered</strong> via the package's <code>extra.laravel.providers</code>
+        — no manual registration in <code>config/app.php</code> is required.
+      </li>
+      <li>
+        <strong>Run the migrations</strong> (gift categories, gifts, gift logs, gift levels,
+        user EXP, settings):
+        <pre><code>php artisan migrate</code></pre>
+      </li>
+      <li>
+        <strong>(Optional) seed a starter catalog:</strong>
+        <pre><code>php artisan db:seed --class="Utd\Gifts\Database\Seeders\GiftCatalogSeeder"</code></pre>
+      </li>
+      <li>
+        <strong>Register the Filament plugin</strong> in
+        <code>app/Providers/Filament/AdminPanelProvider.php</code> (this part is manual — only the
+        service provider is auto-discovered):
+        <pre><code>->plugin(\Utd\Gifts\Filament\GiftsPlugin::make())</code></pre>
+      </li>
+      <li>
+        <strong>Enable the package in admin</strong> → <em>Packages</em>. While disabled, the
+        provider does not bind <code>GiftSender</code> and the gift routes return
+        <code>403</code> (<code>package.enabled:gifts</code>).
+      </li>
+    </ol>
+    <div class="note">
+      <strong>Wallet currency:</strong> the sender spends <code>coins</code> and the receiver
+      earns <code>diamonds</code>. The provider auto-registers <code>diamonds</code> as a Wallet
+      earning currency at runtime, so no Wallet config edit is needed. Confirm Wallet is installed
+      and enabled.
+    </div>
+
+    <h2>2. Flutter package</h2>
+    <ol>
+      <li>
+        <strong>Add the path dependency</strong> in the app's <code>pubspec.yaml</code>:
+        <pre><code>dependencies:
+  gifts:
+    path: packages/gifts</code></pre>
+        then run <code>flutter pub get</code>.
+      </li>
+      <li>
+        <strong>Register the feature</strong> where the app builds its feature list:
+        <pre><code>import 'package:gifts/gifts.dart';
+
+// in the app's feature registry
+GiftsFeature(),</code></pre>
+        Registering <code>GiftsFeature</code> wires the <code>GiftBridge</code> seam so host
+        features (Moment, Reels…) can open the gift picker, adds the Gifts history drawer entry,
+        the profile gifts section, the gift routes, and the bundled translations.
+      </li>
+    </ol>
+    <div class="note">
+      <code>GiftsFeature</code> self-checks the backend at startup: if no Wallet package is
+      reported it does <strong>not</strong> register the <code>GiftBridge</code>, so host features
+      hide their gift button. It auto-enables on the next launch once Wallet is installed.
+    </div>
+
+    <h2>3. Verify</h2>
+    <p>
+      Hit <code>GET /api/gifts/categories</code> and <code>GET /api/gifts</code> (authenticated) —
+      both should return data once the catalog is seeded. In the app, the gift button should appear
+      on a Moment, and sending a gift should debit coins and credit diamonds.
+    </p>
+  </div>
+</section>
+
+<hr>
+
+<!-- ============================ ARABIC ============================ -->
+<section dir="rtl" lang="ar">
+  <div class="lang">
+    <span class="tag">العربية</span>
+    <h1>تثبيت حزمة الهدايا</h1>
+    <p>
+      تتكوّن حزمة الهدايا من جزأين: حزمة <strong>الخلفية</strong> في لارافيل
+      (<code>utd/gifts</code>) وحزمة <strong>فلاتر</strong> (<code>gifts</code>).
+      وهي تعتمد على حزمة <strong>المحفظة</strong> — ثبّت المحفظة أولًا.
+    </p>
+
+    <h2>١. حزمة الخلفية</h2>
+    <ol>
+      <li>
+        <strong>أضف الحزمة</strong> إلى مشروع القاعدة. مكانها <code>packages/gifts</code>؛
+        أشِر إليها كمستودع مسار في <code>composer.json</code> الجذري:
+        <pre><code>"repositories": [
+  { "type": "path", "url": "packages/gifts" }
+],
+"require": {
+  "utd/gifts": "*"
+}</code></pre>
+      </li>
+      <li>
+        <strong>ثبّت / حدّث التحميل التلقائي:</strong>
+        <pre><code>composer require utd/gifts
+# أو إن كانت مضافة مسبقًا كمستودع مسار:
+composer update utd/gifts
+composer dump-autoload</code></pre>
+        يتم <strong>اكتشاف</strong> مزوّد الخدمة
+        <code>Utd\Gifts\Providers\GiftsServiceProvider</code> تلقائيًا عبر
+        <code>extra.laravel.providers</code> — فلا حاجة لتسجيله يدويًا في
+        <code>config/app.php</code>.
+      </li>
+      <li>
+        <strong>شغّل الترحيلات</strong> (فئات الهدايا، الهدايا، سجلّات الهدايا، المستويات،
+        خبرة المستخدم، الإعدادات):
+        <pre><code>php artisan migrate</code></pre>
+      </li>
+      <li>
+        <strong>(اختياري) ازرع كتالوجًا مبدئيًا:</strong>
+        <pre><code>php artisan db:seed --class="Utd\Gifts\Database\Seeders\GiftCatalogSeeder"</code></pre>
+      </li>
+      <li>
+        <strong>سجّل إضافة Filament</strong> في
+        <code>app/Providers/Filament/AdminPanelProvider.php</code> (هذا الجزء يدوي — المُكتشف
+        تلقائيًا هو مزوّد الخدمة فقط):
+        <pre><code>->plugin(\Utd\Gifts\Filament\GiftsPlugin::make())</code></pre>
+      </li>
+      <li>
+        <strong>فعّل الحزمة من لوحة التحكم</strong> ← <em>الحزم</em>. وأثناء التعطيل لا يربط
+        المزوّد <code>GiftSender</code> وتُعيد مسارات الهدايا الرمز <code>403</code>
+        (<code>package.enabled:gifts</code>).
+      </li>
+    </ol>
+    <div class="note">
+      <strong>عملة المحفظة:</strong> يخصم المُرسِل <code>coins</code> ويكسب المستلِم
+      <code>diamonds</code>. يسجّل المزوّد <code>diamonds</code> تلقائيًا كعملة كسب على المحفظة
+      وقت التشغيل، فلا حاجة لتعديل إعدادات المحفظة. تأكّد أن المحفظة مثبّتة ومفعّلة.
+    </div>
+
+    <h2>٢. حزمة فلاتر</h2>
+    <ol>
+      <li>
+        <strong>أضف اعتماد المسار</strong> في <code>pubspec.yaml</code> الخاص بالتطبيق:
+        <pre><code>dependencies:
+  gifts:
+    path: packages/gifts</code></pre>
+        ثم نفّذ <code>flutter pub get</code>.
+      </li>
+      <li>
+        <strong>سجّل الميزة</strong> حيث يبني التطبيق قائمة ميزاته:
+        <pre><code>import 'package:gifts/gifts.dart';
+
+// في سجلّ ميزات التطبيق
+GiftsFeature(),</code></pre>
+        تسجيل <code>GiftsFeature</code> يربط وسيط <code>GiftBridge</code> لتفتح الميزات المضيفة
+        (مومنت، ريلز…) شاشة اختيار الهدايا، ويضيف مدخل سجلّ الهدايا في القائمة الجانبية، وقسم
+        الهدايا في الملف الشخصي، ومسارات الهدايا، والترجمات المضمّنة.
+      </li>
+    </ol>
+    <div class="note">
+      تتحقّق <code>GiftsFeature</code> من الخلفية عند الإقلاع: إن لم تكن المحفظة مُبلّغة فإنها
+      <strong>لا</strong> تسجّل <code>GiftBridge</code>، فتُخفي الميزات المضيفة زر الهدية.
+      وتُفعَّل تلقائيًا في الإقلاع التالي بمجرد تثبيت المحفظة.
+    </div>
+
+    <h2>٣. التحقّق</h2>
+    <p>
+      استدعِ <code>GET /api/gifts/categories</code> و<code>GET /api/gifts</code> (بمصادقة) —
+      يجب أن يعيدا بيانات بعد زرع الكتالوج. وفي التطبيق يجب أن يظهر زر الهدية على المومنت،
+      وعند إرسال هدية يُخصم رصيد العملات ويُضاف الألماس.
+    </p>
+  </div>
+</section>
+
+</body>
+</html>

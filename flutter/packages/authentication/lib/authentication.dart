@@ -13,7 +13,6 @@ export 'src/domain/repositories/auth_repository.dart';
 
 // Domain - Use Cases
 export 'src/domain/usecases/login_usecase.dart';
-export 'src/domain/usecases/check_email_usecase.dart';
 export 'src/domain/usecases/register_usecase.dart';
 export 'src/domain/usecases/forget_password_usecase.dart';
 export 'src/domain/usecases/add_info_usecase.dart';
@@ -39,6 +38,7 @@ export 'src/presentation/splash/bloc/splash_bloc.dart';
 export 'src/presentation/login/bloc/login_with_phone_bloc/login_bloc.dart';
 export 'src/presentation/register/bloc/register_bloc.dart';
 export 'src/presentation/add_information/bloc/add_information_bloc.dart';
+export 'src/presentation/recover_password/bloc/recover_password_bloc.dart';
 
 // Presentation - Pages
 export 'src/presentation/splash/view/splash_page.dart';
@@ -46,4 +46,5 @@ export 'src/presentation/intro/view/intro_page.dart';
 export 'src/presentation/login/view/login_page.dart';
 export 'src/presentation/register/view/register_page.dart';
 export 'src/presentation/add_information/view/add_information_page.dart';
+export 'src/presentation/recover_password/view/recover_password_page.dart';
 export 'src/presentation/on_boarding/on_boarding_screen.dart';

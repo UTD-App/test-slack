@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reels — Installation</title>
+  <style>
+    body { font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; line-height: 1.65; color: #1f2430; max-width: 860px; margin: 0 auto; padding: 32px 24px; }
+    h1 { font-size: 1.9rem; margin-bottom: .2em; }
+    h2 { font-size: 1.35rem; margin-top: 1.6em; border-bottom: 2px solid #6d28d9; padding-bottom: .2em; color: #6d28d9; }
+    h3 { font-size: 1.05rem; margin-top: 1.3em; }
+    code { background: #f3f0fb; color: #5b21b6; padding: .1em .4em; border-radius: 4px; font-size: .9em; }
+    pre { background: #1e1b2e; color: #e9e4ff; padding: 14px 16px; border-radius: 8px; overflow-x: auto; font-size: .88em; line-height: 1.5; }
+    pre code { background: none; color: inherit; padding: 0; }
+    ol { padding-inline-start: 1.4em; }
+    li { margin: .5em 0; }
+    .note { background: #fff7ed; border-inline-start: 4px solid #f59e0b; padding: 10px 14px; border-radius: 6px; margin: 1em 0; }
+    hr.section { border: none; border-top: 1px dashed #cbb8f0; margin: 3em 0; }
+    section[dir="rtl"] { text-align: right; }
+    section[dir="rtl"] pre { direction: ltr; text-align: left; }
+  </style>
+</head>
+<body>
+
+<!-- ============================ ENGLISH ============================ -->
+<section dir="ltr" lang="en">
+  <h1>Reels — Installation</h1>
+  <p>The Reels feature has two halves: the <strong>backend</strong> Composer package (<code>utd/reels</code>) and the <strong>Flutter</strong> package (<code>reels</code>). Install both.</p>
+
+  <h2>Backend</h2>
+  <ol>
+    <li><strong>Path</strong> — drop the package at <code>backend/packages/reels/</code> (standalone Composer package, namespace <code>Utd\Reels</code>; manual drop-in, not auto-discovered).</li>
+    <li><strong>Autoload</strong> — add the PSR-4 entries to the root <code>backend/composer.json</code>:
+      <pre><code>"autoload": { "psr-4": { "Utd\\Reels\\": "packages/reels/src/" } }
+"autoload-dev": { "psr-4": { "Utd\\Reels\\Tests\\": "packages/reels/tests/" } }</code></pre>
+    </li>
+    <li><strong>Service provider</strong> — register <code>Utd\Reels\Providers\ReelsServiceProvider</code> (auto-discovered via the package's <code>extra.laravel.providers</code>, or add it by hand to <code>config/app.php</code>). The provider merges config, loads migrations / views / translations, registers routes, the profile tab, and the notification types, and self-registers with the <code>PackageRegistry</code>.</li>
+    <li><strong>Filament admin</strong> — add the plugin to <code>AdminPanelProvider</code>:
+      <pre><code>->plugin(\Utd\Reels\Filament\ReelsPlugin::make())</code></pre>
+      This exposes the reels feed, the reel resource, and the report (reel / comment) moderation queues.
+    </li>
+    <li><strong>FFMpeg</strong> — the package requires <code>pbmedia/laravel-ffmpeg</code> (pulled in by Composer). The <code>ffmpeg</code> / <code>ffprobe</code> binaries must exist on the host for poster frames; if missing, reel creation still succeeds (no poster, best-effort).</li>
+    <li><strong>Install + migrate</strong>:
+      <pre><code>composer update          # pulls pbmedia/laravel-ffmpeg
+composer dump-autoload
+php artisan migrate</code></pre>
+    </li>
+    <li><strong>Register the package</strong> so it shows in <code>admin/packages</code> and <code>/api/packages/installed</code>:
+      <pre><code>php artisan utd:sync-packages</code></pre>
+    </li>
+    <li><strong>Enable in admin</strong> — open <code>admin/packages</code> and switch <em>Reels</em> on. The API route group is gated by <code>package.enabled:reels</code> and returns 403 while disabled.</li>
+  </ol>
+
+  <div class="note">
+    <strong>Dev seed route.</strong> <code>GET /api/reals/seed</code> fills the feed with ~100 demo reels (<code>ReelsBulkSeeder</code>). It runs freely in <code>local</code> / <code>development</code> / <code>testing</code>; in any other environment it requires <code>?key=</code> to match <code>config('reels.seed_key')</code> (set <code>REELS_SEED_KEY</code>), falling back to the baked-in default <code>utd-reels-seed</code> so it works on a config-cached server. Convenience only — do not rely on it in production.
+  </div>
+
+  <h3>Verify</h3>
+  <pre><code>php artisan route:list --path=reals
+php vendor/bin/phpunit packages/reels/tests --no-coverage</code></pre>
+
+  <h2>Flutter</h2>
+  <ol>
+    <li><strong>Path dependency</strong> — the package lives at <code>flutter/packages/reels/</code> (pubspec name <code>reels</code>). Add it to the host app's <code>pubspec.yaml</code>:
+      <pre><code>dependencies:
+  reels:
+    path: packages/reels</code></pre>
+      then run <code>flutter pub get</code>.
+    </li>
+    <li><strong>Register the feature</strong> — add <code>ReelsFeature()</code> to <code>buildFeatures()</code> in the host app's <code>main.dart</code>:
+      <pre><code>import 'package:reels/reels.dart';
+
+List&lt;AppFeature&gt; buildFeatures() =&gt; [
+  AuthFeature(),
+  // ...
+  ReelsFeature(),
+];</code></pre>
+      The feature self-wires its providers, routes, bottom-nav entry, profile tab, and translations. Server/admin overrides for the <code>reels.*</code> UI strings win automatically.
+    </li>
+  </ol>
+  <p>Enable/disable is honored at runtime: the app reads <code>/api/packages/installed</code>, and a disabled Reels package hides its UI contributions.</p>
+</section>
+
+<hr class="section">
+
+<!-- ============================ ARABIC ============================ -->
+<section dir="rtl" lang="ar">
+  <h1>الريلز — التثبيت</h1>
+  <p>ميزة الريلز ليها نصّين: باكيج <strong>الباك إند</strong> على Composer (<code>utd/reels</code>) وباكيج <strong>فلاتر</strong> (<code>reels</code>). ثبّت الاتنين.</p>
+
+  <h2>الباك إند</h2>
+  <ol>
+    <li><strong>المسار</strong> — حُط الباكيج في <code>backend/packages/reels/</code> (باكيج Composer مستقل، نيمسبيس <code>Utd\Reels</code>؛ تثبيت يدوي drop-in مش بيتكتشف أوتوماتيك).</li>
+    <li><strong>الـ autoload</strong> — ضيف مدخلات PSR-4 في <code>backend/composer.json</code> الرئيسي:
+      <pre><code>"autoload": { "psr-4": { "Utd\\Reels\\": "packages/reels/src/" } }
+"autoload-dev": { "psr-4": { "Utd\\Reels\\Tests\\": "packages/reels/tests/" } }</code></pre>
+    </li>
+    <li><strong>الـ Service Provider</strong> — سجّل <code>Utd\Reels\Providers\ReelsServiceProvider</code> (بيتكتشف عبر <code>extra.laravel.providers</code> بتاع الباكيج، أو ضيفه يدوي في <code>config/app.php</code>). الـ provider بيدمج الكونفيج، ويحمّل الـ migrations / views / الترجمات، ويسجّل الراوتس وتبويب البروفايل وأنواع الإشعارات، ويسجّل نفسه في الـ <code>PackageRegistry</code>.</li>
+    <li><strong>أدمن Filament</strong> — ضيف البلَجين في <code>AdminPanelProvider</code>:
+      <pre><code>->plugin(\Utd\Reels\Filament\ReelsPlugin::make())</code></pre>
+      ده بيظهّر فيد الريلز، ومورد الريل، وطوابير مراجعة البلاغات (ريل / كومنت).
+    </li>
+    <li><strong>FFMpeg</strong> — الباكيج بيتطلّب <code>pbmedia/laravel-ffmpeg</code> (بتتسحب مع Composer). لازم بايناريز <code>ffmpeg</code> / <code>ffprobe</code> موجودة على السيرفر عشان صور الغلاف؛ ولو ناقصة، إنشاء الريل بينجح برضه (من غير غلاف، best-effort).</li>
+    <li><strong>التثبيت + الـ migrate</strong>:
+      <pre><code>composer update          # بتسحب pbmedia/laravel-ffmpeg
+composer dump-autoload
+php artisan migrate</code></pre>
+    </li>
+    <li><strong>سجّل الباكيج</strong> عشان يبان في <code>admin/packages</code> و<code>/api/packages/installed</code>:
+      <pre><code>php artisan utd:sync-packages</code></pre>
+    </li>
+    <li><strong>فعّل من الأدمن</strong> — افتح <code>admin/packages</code> وشغّل <em>Reels</em>. مجموعة راوتس الـ API محميّة بـ <code>package.enabled:reels</code> وبترجّع 403 وهي مطفيّة.</li>
+  </ol>
+
+  <div class="note">
+    <strong>راوت الـ seed للتطوير.</strong> <code>GET /api/reals/seed</code> بيملا الفيد بحوالي 100 ريل تجريبي (<code>ReelsBulkSeeder</code>). بيشتغل بحرّية في <code>local</code> / <code>development</code> / <code>testing</code>؛ وفي أي بيئة تانية بيطلب <code>?key=</code> يطابق <code>config('reels.seed_key')</code> (اضبط <code>REELS_SEED_KEY</code>)، مع fallback للقيمة الافتراضية المدمجة <code>utd-reels-seed</code> عشان يشتغل على سيرفر مكوّن بـ config cache. للراحة بس — متعتمدش عليه في الإنتاج.
+  </div>
+
+  <h3>التحقق</h3>
+  <pre><code>php artisan route:list --path=reals
+php vendor/bin/phpunit packages/reels/tests --no-coverage</code></pre>
+
+  <h2>فلاتر</h2>
+  <ol>
+    <li><strong>اعتماد بالمسار (path dependency)</strong> — الباكيج موجود في <code>flutter/packages/reels/</code> (اسم الـ pubspec هو <code>reels</code>). ضيفه في <code>pubspec.yaml</code> بتاع التطبيق المضيف:
+      <pre><code>dependencies:
+  reels:
+    path: packages/reels</code></pre>
+      وبعدين شغّل <code>flutter pub get</code>.
+    </li>
+    <li><strong>سجّل الميزة</strong> — ضيف <code>ReelsFeature()</code> في <code>buildFeatures()</code> جوّه <code>main.dart</code> بتاع التطبيق المضيف:
+      <pre><code>import 'package:reels/reels.dart';
+
+List&lt;AppFeature&gt; buildFeatures() =&gt; [
+  AuthFeature(),
+  // ...
+  ReelsFeature(),
+];</code></pre>
+      الميزة بتوصّل نفسها: الـ providers والراوتس وأيقونة الـ bottom-nav وتبويب البروفايل والترجمات. وتعديلات السيرفر/الأدمن لنصوص <code>reels.*</code> بتغلب أوتوماتيك.
+    </li>
+  </ol>
+  <p>التشغيل/الإطفاء بيتحترم وقت التشغيل: التطبيق بيقرا <code>/api/packages/installed</code>، ولو باكيج الريلز مطفي بيتخفّي ما يضيفه من واجهة.</p>
+</section>
+
+</body>
+</html>

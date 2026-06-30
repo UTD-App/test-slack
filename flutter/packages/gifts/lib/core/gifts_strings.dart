@@ -8,7 +8,6 @@ class GiftsStrings {
   static const sendTo = 'gifts.send_to';
   static const quantity = 'gifts.quantity';
   static const custom = 'gifts.custom';
-  static const balance = 'gifts.balance';
   static const sent = 'gifts.sent';
   static const failed = 'gifts.failed';
   static const empty = 'gifts.empty';
@@ -19,8 +18,6 @@ class GiftsStrings {
   static const received = 'gifts.received';
   static const sentTab = 'gifts.sent_tab';
   static const noHistory = 'gifts.no_history';
-  static const senderLevel = 'gifts.sender_level';
-  static const receiverLevel = 'gifts.receiver_level';
   static const topSupporters = 'gifts.top_supporters';
   static const giftsSent = 'gifts.gifts_sent';
 
@@ -31,7 +28,6 @@ class GiftsStrings {
           sendTo: 'Send to',
           quantity: 'Quantity',
           custom: 'Custom',
-          balance: 'Balance',
           sent: 'Gift sent',
           failed: 'Could not send the gift',
           empty: 'No gifts available',
@@ -42,8 +38,6 @@ class GiftsStrings {
           received: 'Received',
           sentTab: 'Sent',
           noHistory: 'No gifts yet',
-          senderLevel: 'Sender level',
-          receiverLevel: 'Receiver level',
           topSupporters: 'Top supporters',
           giftsSent: 'Gifts sent',
         },
@@ -53,7 +47,6 @@ class GiftsStrings {
           sendTo: 'إرسال إلى',
           quantity: 'الكمية',
           custom: 'مخصص',
-          balance: 'الرصيد',
           sent: 'تم إرسال الهدية',
           failed: 'تعذّر إرسال الهدية',
           empty: 'لا توجد هدايا',
@@ -64,8 +57,6 @@ class GiftsStrings {
           received: 'المستلمة',
           sentTab: 'المُرسلة',
           noHistory: 'لا توجد هدايا بعد',
-          senderLevel: 'مستوى الراسل',
-          receiverLevel: 'مستوى المستلم',
           topSupporters: 'الداعمون',
           giftsSent: 'الهدايا المرسلة',
         },

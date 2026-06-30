@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reels — About</title>
+  <style>
+    body { font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; line-height: 1.65; color: #1f2430; max-width: 860px; margin: 0 auto; padding: 32px 24px; }
+    h1 { font-size: 1.9rem; margin-bottom: .2em; }
+    h2 { font-size: 1.35rem; margin-top: 1.6em; border-bottom: 2px solid #6d28d9; padding-bottom: .2em; color: #6d28d9; }
+    h3 { font-size: 1.05rem; margin-top: 1.2em; }
+    code { background: #f3f0fb; color: #5b21b6; padding: .1em .4em; border-radius: 4px; font-size: .9em; }
+    ul { padding-inline-start: 1.4em; }
+    li { margin: .35em 0; }
+    .lead { font-size: 1.05rem; color: #444; }
+    hr.section { border: none; border-top: 1px dashed #cbb8f0; margin: 3em 0; }
+    section[dir="rtl"] { text-align: right; }
+    .tag { display: inline-block; background: #ede9fe; color: #6d28d9; border-radius: 999px; padding: .1em .7em; font-size: .8rem; margin-inline-end: .4em; }
+  </style>
+</head>
+<body>
+
+<!-- ============================ ENGLISH ============================ -->
+<section dir="ltr" lang="en">
+  <h1>Reels</h1>
+  <p class="lead">A short-video feed for the app — users record/upload vertical clips, scroll an endless ranked feed, and react, comment, view, gift, and report.</p>
+
+  <h2>What it does</h2>
+  <ul>
+    <li><strong>Short-video feed</strong> — vertical reels with caption, poster frame, and author. Filters: the default mixed feed, a <code>following</code> feed (when the Follow graph is available), per-user reels, and the current user's "my reels".</li>
+    <li><strong>Weighted ranking + diversity</strong> — the feed serves a shared, briefly-cached "deck" of the most-recent reels. When ranking is on it is ordered by a recency-decayed engagement score (likes / comments / views) through a weighted shuffle plus an author-diversity pass, so fresher, better reels surface while no single author dominates. Each user is rotated to a different start offset in the deck so concurrent viewers read different windows instead of all hammering the newest few. A best-effort, cache-only seen-exclusion remembers what each user already watched and skips it on later pages and pull-to-refresh.</li>
+    <li><strong>Likes &amp; reactions</strong> — Facebook-style reactions (like, love, haha, wow, sad, angry). Toggle / switch / remove with a denormalized <code>like_num</code> counter and a per-type breakdown.</li>
+    <li><strong>Comments</strong> — top-level comments and one level of replies, comment reactions, and a denormalized <code>comment_num</code> counter (replies count too; deleting a parent cascades its replies).</li>
+    <li><strong>Views</strong> — atomic per-reel view counter (<code>view_num</code>).</li>
+    <li><strong>Reports</strong> — users report reels and comments; reports land in an admin moderation queue (Filament resources) and notify admins.</li>
+    <li><strong>Gifting</strong> — send a gift on a reel. The gift endpoint is always wired but degrades gracefully (HTTP 503) until the Gifts package binds <code>App\Contracts\GiftSender</code>; once installed, gifting auto-enables.</li>
+  </ul>
+
+  <h2>How it fits the platform</h2>
+  <ul>
+    <li>Standalone Composer package (<code>utd/reels</code>, namespace <code>Utd\Reels</code>) — a manual drop-in, not an nwidart module.</li>
+    <li>Depends on the Base only through contracts: <code>MediaUploader</code> (video upload), the notification system, and the optional <code>GiftSender</code>.</li>
+    <li>Poster frames are generated in-package via FFMpeg (<code>pbmedia/laravel-ffmpeg</code>), best-effort — a missing ffmpeg binary never fails reel creation.</li>
+    <li>Contributes a "Reels" tab to the Base user profile, Filament admin resources, and notification types (like / comment / comment-like / gift / report).</li>
+    <li>Toggle on/off from <code>admin/packages</code>; the route group is gated by <code>package.enabled:reels</code>.</li>
+  </ul>
+  <p><span class="tag">feed</span><span class="tag">likes</span><span class="tag">comments</span><span class="tag">views</span><span class="tag">reports</span><span class="tag">gifting</span></p>
+</section>
+
+<hr class="section">
+
+<!-- ============================ ARABIC ============================ -->
+<section dir="rtl" lang="ar">
+  <h1>الريلز (Reels)</h1>
+  <p class="lead">خلاصة فيديوهات قصيرة للتطبيق — المستخدم بيصوّر/يرفع مقاطع رأسية، ويتصفّح فيد لا نهائي مرتّب، ويتفاعل، ويعلّق، ويشاهد، ويهدي، ويبلّغ.</p>
+
+  <h2>بيعمل إيه</h2>
+  <ul>
+    <li><strong>فيد فيديوهات قصيرة</strong> — ريلز رأسية مع وصف وصورة غلاف (poster) وصاحب المقطع. فلاتر: الفيد المختلط الافتراضي، وفيد <code>following</code> (لما يكون جراف المتابعة متاح)، وريلز مستخدم معيّن، وريلزي أنا.</li>
+    <li><strong>ترتيب موزون + تنويع</strong> — الفيد بيقدّم "ديك" (deck) مشترك ومخزّن مؤقتًا لأحدث الريلز. لما الترتيب مفعّل بيتم ترتيبه حسب درجة تفاعل بتقل مع الوقت (لايكات / كومنتات / مشاهدات) عبر خلط موزون + تمريرة تنويع للمؤلّفين، فالأحدث والأفضل يطلع لفوق من غير ما مؤلّف واحد يسيطر. كل مستخدم بيتدوّر على نقطة بداية مختلفة في الديك عشان المتصفّحين المتزامنين يقروا نوافذ مختلفة بدل ما الكل يضرب على أحدث القليل. وفيه استبعاد للمُشاهَد (best-effort، في الكاش بس) بيفتكر اللي المستخدم شافه ويتخطّاه في الصفحات اللاحقة والسحب للتحديث.</li>
+    <li><strong>لايكات وتفاعلات</strong> — تفاعلات بنمط فيسبوك (like, love, haha, wow, sad, angry). تبديل / تغيير / إزالة مع عدّاد مُجمّع <code>like_num</code> وتفصيل لكل نوع.</li>
+    <li><strong>كومنتات</strong> — كومنتات رئيسية مع مستوى واحد من الردود، وتفاعلات على الكومنت، وعدّاد مُجمّع <code>comment_num</code> (الردود بتتعدّ كمان؛ حذف الكومنت الأصلي بيحذف ردوده).</li>
+    <li><strong>مشاهدات</strong> — عدّاد مشاهدات ذرّي لكل ريل (<code>view_num</code>).</li>
+    <li><strong>بلاغات</strong> — المستخدمون بيبلّغوا عن الريلز والكومنتات؛ البلاغات بتروح لطابور مراجعة في لوحة الأدمن (Filament) وبتبلّغ الأدمنز.</li>
+    <li><strong>الهدايا</strong> — إرسال هدية على الريل. نقطة الهدية موصولة دايمًا لكن بتتعطّل بلطف (HTTP 503) لحد ما باكيج Gifts يربط <code>App\Contracts\GiftSender</code>؛ وبعد التثبيت بتتفعّل الهدايا أوتوماتيك.</li>
+  </ul>
+
+  <h2>مكانه في المنصّة</h2>
+  <ul>
+    <li>باكيج Composer مستقل (<code>utd/reels</code>، نيمسبيس <code>Utd\Reels</code>) — تثبيت يدوي drop-in، مش nwidart module.</li>
+    <li>بيعتمد على الـ Base عبر contracts بس: <code>MediaUploader</code> (رفع الفيديو)، ونظام الإشعارات، و<code>GiftSender</code> الاختياري.</li>
+    <li>صور الغلاف بتتولّد جوّه الباكيج عبر FFMpeg (<code>pbmedia/laravel-ffmpeg</code>)، best-effort — غياب بايناري ffmpeg مش بيفشّل إنشاء الريل أبدًا.</li>
+    <li>بيضيف تبويب "Reels" لبروفايل مستخدم الـ Base، وموارد أدمن Filament، وأنواع إشعارات (لايك / كومنت / لايك-كومنت / هدية / بلاغ).</li>
+    <li>تشغيل/إطفاء من <code>admin/packages</code>؛ مجموعة الراوتس محميّة بـ <code>package.enabled:reels</code>.</li>
+  </ul>
+</section>
+
+</body>
+</html>

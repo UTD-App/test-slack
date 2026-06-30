@@ -1,104 +1,172 @@
-const Map<String, Map<String, String>> profileTranslations = {
-  'en': {
-    'profile.menu_profile': 'Profile',
-    'profile.title': 'Profile',
-    'profile.error': 'Failed to load profile',
-    'profile.retry': 'Retry',
-    'profile.not_found': 'User not found',
-    'profile.id': 'ID',
-    'profile.copied': 'ID copied',
-    'profile.coming_soon': 'Coming soon',
-    'profile.preview_as_visitor': 'Visitor view',
-    // Stats
-    'profile.friend': 'Friend',
-    'profile.following': 'Following',
-    'profile.followers': 'Followers',
-    'profile.visitors': 'Visitors',
-    // SVIP banner
-    'profile.svip_title': 'SVIP Club',
-    'profile.svip_subtitle': 'Enjoy distinguished privileges',
-    'profile.get_svip': 'Get SVIP',
-    // Wallet
-    'profile.diamonds': 'Diamonds',
-    'profile.coins': 'Coins',
-    // Feature grid
-    'profile.level': 'Level',
-    'profile.store': 'Store',
-    'profile.tasks': 'Tasks',
-    'profile.family': 'Family',
-    'profile.vip': 'VIP',
-    'profile.cp': 'CP',
-    'profile.bd_center': 'BD Center',
-    'profile.agency_center': 'Agency Center',
-    'profile.my_post': 'My Post',
-    'profile.offline_recharge': 'Offline Recharge',
-    'profile.host_center': 'Host Center',
-    'profile.my_videos': 'My Videos',
-    'profile.settings': 'Settings',
-    'profile.add_bio': 'Add a bio',
-    // Cover banner
-    'profile.cover': 'Cover',
-    'profile.add_cover': 'Add a cover',
-    'profile.manage_covers': 'Cover photos',
-    'profile.max_covers_reached': 'You can add up to 3 covers',
-    // Visited-profile content tabs
-    'profile.tab_general': 'General',
-    // Badge chips (keyed on canonical badge id)
-    'profile.badge_agency': 'Agency',
-    'profile.badge_tasks': 'Tasks',
-    'profile.badge_vip': 'VIP',
-    'profile.badge_bd': 'BD',
-    'profile.badge_verified': 'Verified',
-  },
-  'ar': {
-    'profile.menu_profile': 'الملف الشخصي',
-    'profile.title': 'الملف الشخصي',
-    'profile.error': 'فشل تحميل الملف الشخصي',
-    'profile.retry': 'إعادة المحاولة',
-    'profile.not_found': 'المستخدم غير موجود',
-    'profile.id': 'الأيدي',
-    'profile.copied': 'تم نسخ الأيدي',
-    'profile.coming_soon': 'قريبًا',
-    'profile.preview_as_visitor': 'كما يراه الزائر',
-    // Stats
-    'profile.friend': 'الأصدقاء',
-    'profile.following': 'يتابع',
-    'profile.followers': 'المتابعون',
-    'profile.visitors': 'الزوار',
-    // SVIP banner
-    'profile.svip_title': 'نادي SVIP',
-    'profile.svip_subtitle': 'استمتع بامتيازات مميزة',
-    'profile.get_svip': 'احصل على SVIP',
-    // Wallet
-    'profile.diamonds': 'الماس',
-    'profile.coins': 'العملات',
-    // Feature grid
-    'profile.level': 'المستوى',
-    'profile.store': 'المتجر',
-    'profile.tasks': 'المهام',
-    'profile.family': 'العائلة',
-    'profile.vip': 'VIP',
-    'profile.cp': 'CP',
-    'profile.bd_center': 'مركز BD',
-    'profile.agency_center': 'مركز الوكالة',
-    'profile.my_post': 'منشوراتي',
-    'profile.offline_recharge': 'شحن أوفلاين',
-    'profile.host_center': 'مركز المضيف',
-    'profile.my_videos': 'فيديوهاتي',
-    'profile.settings': 'الإعدادات',
-    'profile.add_bio': 'أضف نبذة',
-    // Cover banner
-    'profile.cover': 'الغلاف',
-    'profile.add_cover': 'أضف صورة غلاف',
-    'profile.manage_covers': 'صور الغلاف',
-    'profile.max_covers_reached': 'يمكنك إضافة 3 صور غلاف كحد أقصى',
-    // Visited-profile content tabs
-    'profile.tab_general': 'عام',
-    // Badge chips (keyed on canonical badge id)
-    'profile.badge_agency': 'وكالة',
-    'profile.badge_tasks': 'المهام',
-    'profile.badge_vip': 'VIP',
-    'profile.badge_bd': 'BD',
-    'profile.badge_verified': 'موثّق',
-  },
-};
+/// Translation keys + bundled values for the Profile feature.
+/// Usage: `context.tr(ProfileStrings.title)`.
+///
+/// Key strings and en/ar values mirror the backend translation catalog
+/// (`resources/lang/<locale>/profile.php`) — keep them in sync.
+class ProfileStrings {
+  ProfileStrings._();
+
+  static const menuProfile = 'profile.menu_profile';
+  static const title = 'profile.title';
+  static const error = 'profile.error';
+  static const retry = 'profile.retry';
+  static const notFound = 'profile.not_found';
+  static const id = 'profile.id';
+  static const copied = 'profile.copied';
+  static const comingSoon = 'profile.coming_soon';
+  static const previewAsVisitor = 'profile.preview_as_visitor';
+
+  // Stats
+  static const friend = 'profile.friend';
+  static const following = 'profile.following';
+  static const followers = 'profile.followers';
+  static const visitors = 'profile.visitors';
+
+  // SVIP banner
+  static const svipTitle = 'profile.svip_title';
+  static const svipSubtitle = 'profile.svip_subtitle';
+  static const getSvip = 'profile.get_svip';
+
+  // Wallet
+  static const diamonds = 'profile.diamonds';
+  static const coins = 'profile.coins';
+
+  // Feature grid
+  static const level = 'profile.level';
+  static const store = 'profile.store';
+  static const tasks = 'profile.tasks';
+  static const family = 'profile.family';
+  static const vip = 'profile.vip';
+  static const cp = 'profile.cp';
+  static const bdCenter = 'profile.bd_center';
+  static const agencyCenter = 'profile.agency_center';
+  static const myPost = 'profile.my_post';
+  static const offlineRecharge = 'profile.offline_recharge';
+  static const hostCenter = 'profile.host_center';
+  static const myVideos = 'profile.my_videos';
+  static const settings = 'profile.settings';
+  static const addBio = 'profile.add_bio';
+
+  // Cover banner
+  static const cover = 'profile.cover';
+  static const addCover = 'profile.add_cover';
+  static const manageCovers = 'profile.manage_covers';
+  static const maxCoversReached = 'profile.max_covers_reached';
+
+  // Visited-profile content tabs
+  static const tabGeneral = 'profile.tab_general';
+
+  // Badge chips (keyed on canonical badge id) — built as
+  // `'${ProfileStrings.badgePrefix}$id'`.
+  static const badgePrefix = 'profile.badge_';
+  static const badgeAgency = 'profile.badge_agency';
+  static const badgeTasks = 'profile.badge_tasks';
+  static const badgeVip = 'profile.badge_vip';
+  static const badgeBd = 'profile.badge_bd';
+  static const badgeVerified = 'profile.badge_verified';
+
+  static Map<String, Map<String, String>> translations() => {
+        'en': {
+          menuProfile: 'Profile',
+          title: 'Profile',
+          error: 'Failed to load profile',
+          retry: 'Retry',
+          notFound: 'User not found',
+          id: 'ID',
+          copied: 'ID copied',
+          comingSoon: 'Coming soon',
+          previewAsVisitor: 'Visitor view',
+          // Stats
+          friend: 'Friend',
+          following: 'Following',
+          followers: 'Followers',
+          visitors: 'Visitors',
+          // SVIP banner
+          svipTitle: 'SVIP Club',
+          svipSubtitle: 'Enjoy distinguished privileges',
+          getSvip: 'Get SVIP',
+          // Wallet
+          diamonds: 'Diamonds',
+          coins: 'Coins',
+          // Feature grid
+          level: 'Level',
+          store: 'Store',
+          tasks: 'Tasks',
+          family: 'Family',
+          vip: 'VIP',
+          cp: 'CP',
+          bdCenter: 'BD Center',
+          agencyCenter: 'Agency Center',
+          myPost: 'My Post',
+          offlineRecharge: 'Offline Recharge',
+          hostCenter: 'Host Center',
+          myVideos: 'My Videos',
+          settings: 'Settings',
+          addBio: 'Add a bio',
+          // Cover banner
+          cover: 'Cover',
+          addCover: 'Add a cover',
+          manageCovers: 'Cover photos',
+          maxCoversReached: 'You can add up to 3 covers',
+          // Visited-profile content tabs
+          tabGeneral: 'General',
+          // Badge chips (keyed on canonical badge id)
+          badgeAgency: 'Agency',
+          badgeTasks: 'Tasks',
+          badgeVip: 'VIP',
+          badgeBd: 'BD',
+          badgeVerified: 'Verified',
+        },
+        'ar': {
+          menuProfile: 'الملف الشخصي',
+          title: 'الملف الشخصي',
+          error: 'فشل تحميل الملف الشخصي',
+          retry: 'إعادة المحاولة',
+          notFound: 'المستخدم غير موجود',
+          id: 'الأيدي',
+          copied: 'تم نسخ الأيدي',
+          comingSoon: 'قريبًا',
+          previewAsVisitor: 'كما يراه الزائر',
+          // Stats
+          friend: 'الأصدقاء',
+          following: 'يتابع',
+          followers: 'المتابعون',
+          visitors: 'الزوار',
+          // SVIP banner
+          svipTitle: 'نادي SVIP',
+          svipSubtitle: 'استمتع بامتيازات مميزة',
+          getSvip: 'احصل على SVIP',
+          // Wallet
+          diamonds: 'الماس',
+          coins: 'العملات',
+          // Feature grid
+          level: 'المستوى',
+          store: 'المتجر',
+          tasks: 'المهام',
+          family: 'العائلة',
+          vip: 'VIP',
+          cp: 'CP',
+          bdCenter: 'مركز BD',
+          agencyCenter: 'مركز الوكالة',
+          myPost: 'منشوراتي',
+          offlineRecharge: 'شحن أوفلاين',
+          hostCenter: 'مركز المضيف',
+          myVideos: 'فيديوهاتي',
+          settings: 'الإعدادات',
+          addBio: 'أضف نبذة',
+          // Cover banner
+          cover: 'الغلاف',
+          addCover: 'أضف صورة غلاف',
+          manageCovers: 'صور الغلاف',
+          maxCoversReached: 'يمكنك إضافة 3 صور غلاف كحد أقصى',
+          // Visited-profile content tabs
+          tabGeneral: 'عام',
+          // Badge chips (keyed on canonical badge id)
+          badgeAgency: 'وكالة',
+          badgeTasks: 'المهام',
+          badgeVip: 'VIP',
+          badgeBd: 'BD',
+          badgeVerified: 'موثّق',
+        },
+      };
+}

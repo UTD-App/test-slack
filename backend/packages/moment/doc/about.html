@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UTD Moment — About / الشرح</title>
+<style>
+  :root { --bg:#0f1117; --card:#171a23; --line:#262a36; --txt:#e7e9ee; --mut:#9aa3b2;
+          --acc:#6d8bff; --code:#11131a; --pill:#1d2230; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--txt);
+         font-family:-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,"Noto Sans Arabic",sans-serif;
+         line-height:1.7; }
+  .wrap { max-width:880px; margin:0 auto; padding:32px 22px 80px; }
+  header.hero { text-align:center; padding:34px 0 18px; border-bottom:1px solid var(--line); }
+  header.hero h1 { margin:0 0 6px; font-size:30px; }
+  header.hero p { margin:0; color:var(--mut); }
+  .pill { display:inline-block; background:var(--pill); color:var(--acc); border:1px solid var(--line);
+          border-radius:999px; padding:4px 14px; font-size:13px; margin-bottom:14px; }
+  section.lang { margin-top:34px; }
+  section.lang[dir="rtl"] { text-align:right; border-top:2px dashed var(--line); padding-top:26px; margin-top:46px; }
+  h2 { font-size:23px; border-bottom:1px solid var(--line); padding-bottom:8px; margin-top:8px; }
+  h3 { font-size:18px; color:var(--acc); margin-top:28px; }
+  code { background:var(--code); border:1px solid var(--line); border-radius:5px; padding:1px 6px;
+         font-family:"SFMono-Regular",Consolas,Menlo,monospace; font-size:13px; }
+  pre { background:var(--code); border:1px solid var(--line); border-radius:10px; padding:14px 16px;
+        overflow:auto; direction:ltr; text-align:left; }
+  pre code { background:none; border:none; padding:0; }
+  ul { padding-inline-start:22px; }
+  li { margin:6px 0; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin:14px 0; }
+  .feat { font-weight:600; color:var(--txt); }
+  table { width:100%; border-collapse:collapse; margin:14px 0; font-size:14px; }
+  th,td { border:1px solid var(--line); padding:8px 10px; text-align:start; vertical-align:top; }
+  th { background:var(--pill); }
+  .note { background:#15203a; border:1px solid #2b3d63; border-radius:10px; padding:12px 16px; margin:14px 0; color:#cdd9f5; }
+  a { color:var(--acc); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <span class="pill">UTD Package · utd/moment</span>
+    <h1>Moment — the social moments feed</h1>
+    <p>Posts · media galleries · reactions · threaded comments · reports · gifting</p>
+  </header>
+
+  <!-- ============ ENGLISH ============ -->
+  <section class="lang" dir="ltr" lang="en">
+    <h2>About (English)</h2>
+
+    <p><strong>Moment</strong> is a standalone, drop-in package (<code>utd/moment</code>,
+    namespace <code>Utd\Moment</code>) that adds a complete <strong>social moments feed</strong>
+    on top of the UTD base — without touching the base. Users post moments (text + image gallery),
+    react to them, write threaded comments and replies, report offending content, and send gifts.
+    It self-registers in the base <code>PackageRegistry</code> and can be toggled on/off from
+    <code>admin/packages</code>.</p>
+
+    <h3>Features</h3>
+    <div class="card">
+      <ul>
+        <li><span class="feat">Feed</span> — paginated moments feed with multiple list types: a user's own
+          posts (type&nbsp;1), the viewer's liked moments (type&nbsp;2), a <em>Following</em> feed
+          (type&nbsp;3, via <code>FollowProvider</code>), the full feed (types&nbsp;4/5), and a follow
+          variant (type&nbsp;6). Eagle-style ordering floats not-yet-liked moments to the top,
+          then most-recent first.</li>
+        <li><span class="feat">Posts &amp; media</span> — each moment has a text description and a
+          multi-image gallery (<code>moment_galleries</code>); up to 9 images per post, validated for
+          MIME type and size, uploaded via the base <code>MediaUploader</code> contract and resolved
+          to absolute URLs.</li>
+        <li><span class="feat">Likes &amp; reactions</span> — like a moment with a reaction type
+          (<code>like / love / haha / wow / sad / angry</code>); the feed pre-computes the viewer's
+          reaction and a per-type breakdown per page (no N+1).</li>
+        <li><span class="feat">Comments &amp; replies</span> — threaded comments with replies
+          (<code>parent_id</code>) and likes on the comments themselves.</li>
+        <li><span class="feat">Reports</span> — report a moment or a comment with a reason and
+          description (<code>spam / abuse / nudity / violence / other</code>), surfaced for moderation
+          in the Filament admin.</li>
+        <li><span class="feat">Gifting</span> — sending/listing gifts on a moment auto-enables when the
+          <strong>Gifts</strong> package binds <code>App\Contracts\GiftDirectory</code>; until then gift
+          routes return a safe <code>503</code> and the rest of the feed keeps working. Gift counts and
+          coin totals are read through the <code>GiftDirectory</code> seam — no hard dependency on Gifts.</li>
+        <li><span class="feat">Following feed</span> — the <em>Following</em> feed filters moments by the
+          social follow graph through the optional <code>App\Contracts\FollowProvider</code> seam;
+          when the social package isn't installed it gracefully falls back to the full feed.</li>
+        <li><span class="feat">Profile &amp; admin integration</span> — contributes a profile tab via
+          <code>ProfileContributorRegistry</code>, plus "Reports filed" and "User moments" tabs on the
+          admin user page via <code>UserProfileTabRegistry</code>, and a <code>MomentFeed</code> Filament
+          moderation page.</li>
+      </ul>
+    </div>
+
+    <h3>API surface</h3>
+    <p>All routes sit under <code>auth:sanctum</code> + ban/presence/localization middleware +
+    <code>package.enabled:moment</code> (returns <code>403</code> while the package is disabled):</p>
+<pre><code>GET    /api/moment                 # feed (type=1..6)
+POST   /api/moment                 # create a moment (text + multi_image[])
+GET    /api/moment/{id}            # show one moment
+DELETE /api/moment/{id}            # delete (owner only)
+GET    /api/moment/user/{user_id}  # a specific user's moments
+
+GET    /api/moment/{id}/comment            # comments
+POST   /api/moment/{id}/comment            # add a comment / reply
+POST   /api/moment/{id}/comment/{cid}/like   # react to a comment
+POST   /api/moment/{id}/comment/{cid}/report # report a comment
+DELETE /api/moment/{id}/comment/{cid}
+
+GET    /api/moment/{id}/like       # who liked
+POST   /api/moment/{id}/like       # like / unlike (+ reaction_type)
+POST   /api/moment/{id}/report     # report a moment
+
+POST   /api/moment/{id}/gift           # send a gift (Gifts pkg; else 503)
+GET    /api/moments/{id}/gifts         # gifts on a moment
+GET    /api/moments/users/{id}/gifts   # gifts a user sent</code></pre>
+
+    <h3>Data tables</h3>
+    <table>
+      <thead><tr><th>Table</th><th>Role</th></tr></thead>
+      <tbody>
+        <tr><td><code>moment</code></td><td>The moments (description + counters)</td></tr>
+        <tr><td><code>moment_galleries</code></td><td>Gallery images per moment (multi-image)</td></tr>
+        <tr><td><code>moment_user_likes</code></td><td>Moment likes with <code>reaction_type</code></td></tr>
+        <tr><td><code>moment_user_comments</code></td><td>Comments &amp; replies (<code>parent_id</code>)</td></tr>
+        <tr><td><code>moment_comment_likes</code></td><td>Comment likes</td></tr>
+        <tr><td><code>report_moments</code></td><td>Moment reports</td></tr>
+        <tr><td><code>report_moment_comments</code></td><td>Comment reports</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note">The Flutter half is the <code>moment</code> package (singular), registered as a
+    <code>MomentFeature()</code> in the host app. Ready to install? See
+    <a href="installation.html">installation.html</a>.</div>
+  </section>
+
+  <!-- ============ ARABIC ============ -->
+  <section class="lang" dir="rtl" lang="ar">
+    <h2>الشرح (بالعربية)</h2>
+
+    <p><strong>Moment</strong> حزمة مستقلة (drop-in) باسم <code>utd/moment</code> و namespace
+    <code>Utd\Moment</code>، بتضيف <strong>فيد لحظات اجتماعي</strong> كامل فوق قاعدة UTD —
+    من غير ما تلمس القاعدة. المستخدم ينشر لحظة (نص + معرض صور), يتفاعل عليها, يكتب تعليقات وردود
+    متداخلة, يبلّغ عن المحتوى المخالف, ويبعت هدايا. الحزمة بتسجّل نفسها في
+    <code>PackageRegistry</code> وتقدر تشغّلها/تطفّيها من <code>admin/packages</code>.</p>
+
+    <h3>المميزات</h3>
+    <div class="card">
+      <ul>
+        <li><span class="feat">الفيد</span> — فيد لحظات بصفحات وأنواع متعددة: منشورات مستخدم معيّن
+          (type&nbsp;1), اللحظات اللي عملها المستخدم لايك (type&nbsp;2), فيد <em>المتابَعين</em>
+          (type&nbsp;3 عبر <code>FollowProvider</code>), الفيد الكامل (type&nbsp;4/5), ونسخة متابعة
+          (type&nbsp;6). الترتيب على طريقة Eagle: اللحظات اللي لسه ما اتعملهاش لايك بتطفو لفوق, بعدين
+          الأحدث.</li>
+        <li><span class="feat">المنشورات والوسائط</span> — كل لحظة فيها وصف نصّي ومعرض صور متعدد
+          (<code>moment_galleries</code>) لحد 9 صور للمنشور, متحقّق من نوع الملف وحجمه, بترفع عبر
+          عقد القاعدة <code>MediaUploader</code> وبتترجم لروابط مطلقة.</li>
+        <li><span class="feat">الإعجابات والتفاعلات</span> — لايك على اللحظة مع نوع تفاعل
+          (<code>like / love / haha / wow / sad / angry</code>); الفيد بيحسب تفاعل المشاهد وتوزيع
+          الأنواع لكل صفحة مسبقاً (من غير N+1).</li>
+        <li><span class="feat">التعليقات والردود</span> — تعليقات مترابطة بردود متداخلة
+          (<code>parent_id</code>) وإعجاب على التعليقات نفسها.</li>
+        <li><span class="feat">البلاغات</span> — إبلاغ عن لحظة أو تعليق بسبب ووصف
+          (<code>spam / abuse / nudity / violence / other</code>) بتظهر للإشراف في لوحة Filament.</li>
+        <li><span class="feat">الهدايا</span> — إرسال/عرض الهدايا على اللحظة بيتفعّل أوتوماتيك لما حزمة
+          <strong>Gifts</strong> تربط <code>App\Contracts\GiftDirectory</code>; لحد ما يحصل ده مسارات
+          الهدايا بترجع <code>503</code> بشكل آمن وباقي الفيد شغّال. العدّادات وإجمالي الكوينز بتتقري
+          من خلال seam الـ <code>GiftDirectory</code> — من غير اعتماد صارم على Gifts.</li>
+        <li><span class="feat">فيد المتابَعين</span> — فيد <em>المتابَعين</em> بيفلتر اللحظات حسب
+          شبكة المتابعة عبر seam اختياري <code>App\Contracts\FollowProvider</code>; لو حزمة السوشيال
+          مش متثبّتة بيرجع للفيد الكامل بأمان.</li>
+        <li><span class="feat">التكامل مع البروفايل واللوحة</span> — بيضيف تبويب على البروفايل عبر
+          <code>ProfileContributorRegistry</code>, وتبويبات "البلاغات المُقدّمة" و"لحظات المستخدم"
+          على صفحة المستخدم في اللوحة عبر <code>UserProfileTabRegistry</code>, وصفحة إشراف
+          <code>MomentFeed</code> في Filament.</li>
+      </ul>
+    </div>
+
+    <h3>واجهة الـ API</h3>
+    <p>كل المسارات تحت <code>auth:sanctum</code> + ميدلوير الحظر/الحضور/الترجمة +
+    <code>package.enabled:moment</code> (بترجع <code>403</code> لو الحزمة معطّلة):</p>
+<pre><code>GET    /api/moment                 # الفيد (type=1..6)
+POST   /api/moment                 # نشر لحظة (نص + multi_image[])
+GET    /api/moment/{id}            # عرض لحظة
+DELETE /api/moment/{id}            # حذف (صاحبها فقط)
+GET    /api/moment/user/{user_id}  # لحظات مستخدم معيّن
+
+GET    /api/moment/{id}/comment            # التعليقات
+POST   /api/moment/{id}/comment            # إضافة تعليق / رد
+POST   /api/moment/{id}/comment/{cid}/like   # تفاعل على تعليق
+POST   /api/moment/{id}/comment/{cid}/report # إبلاغ عن تعليق
+DELETE /api/moment/{id}/comment/{cid}
+
+GET    /api/moment/{id}/like       # مين عمل لايك
+POST   /api/moment/{id}/like       # لايك / إلغاء (+ reaction_type)
+POST   /api/moment/{id}/report     # إبلاغ عن لحظة
+
+POST   /api/moment/{id}/gift           # إرسال هدية (حزمة Gifts; غير كده 503)
+GET    /api/moments/{id}/gifts         # هدايا لحظة
+GET    /api/moments/users/{id}/gifts   # هدايا أرسلها مستخدم</code></pre>
+
+    <h3>جداول البيانات</h3>
+    <table>
+      <thead><tr><th>الجدول</th><th>الدور</th></tr></thead>
+      <tbody>
+        <tr><td><code>moment</code></td><td>اللحظات (وصف + عدّادات)</td></tr>
+        <tr><td><code>moment_galleries</code></td><td>صور المعرض لكل لحظة (متعددة)</td></tr>
+        <tr><td><code>moment_user_likes</code></td><td>إعجابات اللحظات مع <code>reaction_type</code></td></tr>
+        <tr><td><code>moment_user_comments</code></td><td>التعليقات والردود (<code>parent_id</code>)</td></tr>
+        <tr><td><code>moment_comment_likes</code></td><td>إعجابات التعليقات</td></tr>
+        <tr><td><code>report_moments</code></td><td>بلاغات اللحظات</td></tr>
+        <tr><td><code>report_moment_comments</code></td><td>بلاغات التعليقات</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note">نُص الـ Flutter هو حزمة <code>moment</code> (بالمفرد) بتتسجّل كـ
+    <code>MomentFeature()</code> في التطبيق. جاهز للتثبيت؟ شوف
+    <a href="installation.html">installation.html</a>.</div>
+  </section>
+
+</div>
+</body>
+</html>

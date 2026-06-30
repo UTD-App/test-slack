@@ -8,7 +8,6 @@ return [
     'send_to'         => 'إرسال إلى',
     'quantity'        => 'الكمية',
     'custom'          => 'مخصص',
-    'balance'         => 'الرصيد',
     'sent'            => 'تم إرسال الهدية',
     'failed'          => 'تعذّر إرسال الهدية',
     'empty'           => 'لا توجد هدايا',
@@ -18,8 +17,6 @@ return [
     'received'        => 'المستلمة',
     'sent_tab'        => 'المُرسلة',
     'no_history'      => 'لا توجد هدايا بعد',
-    'sender_level'    => 'مستوى الراسل',
-    'receiver_level'  => 'مستوى المستلم',
     'top_supporters'  => 'الداعمون',
     'gifts_sent'      => 'الهدايا المرسلة',
 ];

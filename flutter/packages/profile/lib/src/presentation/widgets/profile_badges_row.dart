@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:utd_app/localization/localization.dart';
 
 import '../../domain/user_profile_model.dart';
+import '../../profile_strings.dart';
 
 /// Horizontal scrollable row of colorful tag chips (Agency, Tasks, VIP, …).
 class ProfileBadgesRow extends StatelessWidget {
@@ -22,7 +23,7 @@ class ProfileBadgesRow extends StatelessWidget {
 
   /// Canonical id for a raw backend badge string. Maps known display variants
   /// (case-insensitive) onto stable ids used by [_palette] and the
-  /// `profile.badge_<id>` translation keys.
+  /// `${ProfileStrings.badgePrefix}<id>` translation keys.
   static String _canonicalId(String raw) => raw.trim().toLowerCase();
 
   @override
@@ -50,7 +51,7 @@ class ProfileBadgesRow extends StatelessWidget {
     // Localized label; falls back to the raw backend string when no
     // translation exists for this badge id (context.tr returns the key, so we
     // detect that and show the original text instead).
-    final key = 'profile.badge_$id';
+    final key = '${ProfileStrings.badgePrefix}$id';
     final translated = context.tr(key);
     final label = translated == key ? raw : translated;
     return Container(

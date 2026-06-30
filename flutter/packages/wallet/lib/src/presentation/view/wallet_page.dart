@@ -20,6 +20,8 @@ class WalletPage extends StatefulWidget {
 }
 
 class _WalletPageState extends State<WalletPage> {
+  final ScrollController _scrollController = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -27,6 +29,25 @@ class _WalletPageState extends State<WalletPage> {
     // (flipping balancesStatus out of `initial`), so gating on it would skip
     // loading the transactions + recharge catalogue until a manual refresh.
     context.read<WalletCubit>().loadAll();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController
+      ..removeListener(_onScroll)
+      ..dispose();
+    super.dispose();
+  }
+
+  /// Trigger the next page when the user nears the bottom. The cubit no-ops if
+  /// there is nothing more to load or a request is already in flight.
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 320) {
+      context.read<WalletCubit>().loadMoreTransactions();
+    }
   }
 
   @override
@@ -57,6 +78,7 @@ class _WalletPageState extends State<WalletPage> {
                 final coins = state.balanceFor('coins');
 
                 return ListView(
+              controller: _scrollController,
               padding: const EdgeInsets.all(16),
               children: [
                 // Coin balance (the dollar wallet lives in the target package).
@@ -184,12 +206,29 @@ class _TransactionsList extends StatelessWidget {
       );
     }
 
+    // Append a trailing spinner row while the next page is loading.
+    final count = state.transactions.length + (state.txLoadingMore ? 1 : 0);
+
     return ListView.separated(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemCount: state.transactions.length,
+      itemCount: count,
       separatorBuilder: (_, __) => const Divider(height: 1),
-      itemBuilder: (context, i) => TransactionTile(tx: state.transactions[i]),
+      itemBuilder: (context, i) {
+        if (i >= state.transactions.length) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Center(
+              child: SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            ),
+          );
+        }
+        return TransactionTile(tx: state.transactions[i]);
+      },
     );
   }
 }

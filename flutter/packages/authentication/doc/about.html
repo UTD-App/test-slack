@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Authentication — About / الشرح</title>
+<style>
+  :root { --bg:#0f1020; --card:#1a1b30; --line:#2b2c45; --txt:#e7e7f0; --mut:#a8a9c0; --acc:#b15cff; --acc2:#ff5ca8; --code:#11122a; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--txt); font-family:-apple-system,Segoe UI,Roboto,Arial,"Cairo",sans-serif; line-height:1.7; }
+  .wrap { max-width:920px; margin:0 auto; padding:32px 22px 80px; }
+  .hero { background:linear-gradient(135deg,var(--acc),var(--acc2)); border-radius:18px; padding:26px 28px; margin-bottom:28px; }
+  .hero h1 { margin:0 0 6px; font-size:30px; }
+  .hero p { margin:0; opacity:.95; }
+  .pill { display:inline-block; background:rgba(255,255,255,.18); border-radius:999px; padding:3px 12px; font-size:12px; margin-bottom:10px; }
+  section { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:20px 22px; margin:18px 0; }
+  h2 { margin:0 0 12px; font-size:22px; border-bottom:1px solid var(--line); padding-bottom:8px; }
+  h3 { margin:18px 0 6px; font-size:16px; color:var(--acc); }
+  code { background:var(--code); border:1px solid var(--line); border-radius:6px; padding:1px 6px; font-family:"JetBrains Mono",Consolas,monospace; font-size:13px; }
+  pre { background:var(--code); border:1px solid var(--line); border-radius:10px; padding:14px 16px; overflow:auto; font-size:13px; }
+  ul { margin:8px 0; padding-inline-start:22px; }
+  li { margin:5px 0; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:12px; margin-top:10px; }
+  .feat { background:var(--code); border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
+  .feat b { color:var(--acc2); }
+  .lang-head { display:flex; align-items:center; gap:10px; margin:46px 0 0; }
+  .lang-head span { font-size:13px; color:var(--mut); border:1px solid var(--line); border-radius:999px; padding:2px 12px; }
+  table { width:100%; border-collapse:collapse; margin-top:10px; font-size:14px; }
+  th,td { border:1px solid var(--line); padding:8px 10px; text-align:start; }
+  th { background:var(--code); color:var(--acc); }
+  [dir="rtl"] { font-family:"Cairo",-apple-system,Segoe UI,Tahoma,sans-serif; }
+  .mut { color:var(--mut); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <span class="pill">UTD App · Flutter package</span>
+    <h1>Authentication</h1>
+    <p>Email login / register / password recovery / onboarding — clean architecture, BLoC, and server-driven (UTD Studio) screens with native fallback.</p>
+  </div>
+
+  <!-- ===================== ENGLISH ===================== -->
+  <div class="lang-head"><span>English</span></div>
+
+  <section>
+    <h2>Overview</h2>
+    <p><b>Authentication</b> is the core auth feature for the UTD add-on platform. It owns the whole pre-login journey and talks to the base host's <code>/api/auth/*</code> endpoints. The Flutter package is <code>authentication</code> and the entry class is <code>AuthFeature</code> (registered with the platform's <code>FeatureRegistry</code>).</p>
+    <p>It is built as <b>clean architecture</b>: <code>data</code> (api service / datasource / repository impl) → <code>domain</code> (entities / params / use cases / repository contract) → <code>presentation</code> (BLoC + pages). Each screen is exposed as a route and renders the UTD Studio server-driven version when published, with the native page as a guaranteed fallback.</p>
+  </section>
+
+  <section>
+    <h2>What it does</h2>
+    <div class="grid">
+      <div class="feat"><b>Login</b><br>Email + password → <code>POST /auth/login</code>, saves the token, hydrates the session, lands on home.</div>
+      <div class="feat"><b>Register</b><br>Email + password → <code>POST /auth/register</code>, then routes to add-information.</div>
+      <div class="feat"><b>Recover password</b><br>3-step <b>email OTP</b> flow: send code → verify code → set new password, with a resend cooldown timer.</div>
+      <div class="feat"><b>Add information</b><br>Name / gender / birthday / avatar → <code>POST /profile/update</code> to complete the profile.</div>
+      <div class="feat"><b>Onboarding</b><br>Swipeable intro slides ending in "Get Started".</div>
+      <div class="feat"><b>Intro &amp; Splash</b><br>Splash decides session vs intro; intro offers sign-in / create-account.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Routes &amp; server-driven screens</h2>
+    <p><code>AuthRoutes</code> exposes the auth navigation paths. The <code>intro</code>, <code>login</code>, <code>register</code> and <code>add_information</code> routes wrap a <code>StacDynamicScreen</code> (from <code>utd_studio_sdk</code>): they render the published UTD Studio screen by name and <b>fall back to the native page</b> when nothing is published yet or the device is offline on first run — so auth never breaks before screens are synced+published.</p>
+    <table>
+      <thead><tr><th>Path</th><th>Studio screen</th><th>Native fallback</th></tr></thead>
+      <tbody>
+        <tr><td><code>/splash</code></td><td class="mut">native only</td><td><code>SplashPage</code></td></tr>
+        <tr><td><code>/intro</code></td><td><code>intro</code></td><td><code>IntroPage</code></td></tr>
+        <tr><td><code>/login</code></td><td><code>login</code></td><td><code>LoginPage</code></td></tr>
+        <tr><td><code>/register</code></td><td><code>register</code></td><td><code>RegisterPage</code></td></tr>
+        <tr><td><code>/add-information</code></td><td><code>add_information</code></td><td><code>AddInformationPage</code></td></tr>
+        <tr><td><code>/recover-password</code></td><td class="mut">native only</td><td><code>RecoverPasswordPage</code></td></tr>
+        <tr><td><code>/on-boarding</code></td><td class="mut">native only</td><td><code>OnBoardingScreen</code></td></tr>
+        <tr><td><code>/privacy</code></td><td class="mut">CMS</td><td><code>ContentPage('privacy-policy')</code></td></tr>
+      </tbody>
+    </table>
+    <p class="mut">The Studio glue (<code>core.login</code> / <code>core.register</code> / <code>core.forgotPassword</code> / <code>core.completeProfile</code> action parsers) reuses the same use cases via <code>AuthLocator</code>, so a tap inside a server-driven screen runs the identical success/failure flow as the native BLoC.</p>
+  </section>
+
+  <section>
+    <h2>Architecture</h2>
+    <h3>State management</h3>
+    <p>Each feature has its own BLoC: <code>SplashBloc</code>, <code>LoginBloc</code>, <code>RegisterBloc</code>, <code>AddInformationBloc</code>, <code>RecoverPasswordBloc</code>. They are created once in <code>AuthFeature.initialize()</code> and provided app-wide via <code>getProviders()</code>.</p>
+    <h3>Use cases &amp; data</h3>
+    <p>Use cases (<code>LoginUseCase</code>, <code>RegisterUseCase</code>, <code>AddInfoUseCase</code>, OTP-recovery use cases, <code>ForgetPasswordUseCase</code>) delegate to <code>AuthRepository</code> → <code>AuthRemoteDataSource</code> → <code>AuthApiService</code>, which holds the endpoint paths.</p>
+    <pre>authentication/
+├── lib/authentication.dart            # public barrel
+├── lib/core/
+│   ├── auth_impl.dart                  # AuthFeature (init / providers / routes / translations)
+│   ├── auth_routes.dart                # AuthRoutes + StacDynamicScreen wiring
+│   ├── auth_locator.dart               # use cases exposed to Studio actions
+│   └── auth_strings.dart               # AR + EN translation catalog
+└── lib/src/
+    ├── data/        (api service · datasource · repository impl · models)
+    ├── domain/      (entities · params · use cases · repository contract)
+    └── presentation/(splash · intro · login · register · recover_password · add_information · on_boarding)</pre>
+  </section>
+
+  <section>
+    <h2>Translations</h2>
+    <p>All strings are keyed under <code>auth.*</code> and shipped bilingual (EN + AR) by <code>AuthStrings.translations(appName)</code>, surfaced to the platform via <code>AuthFeature.getTranslations()</code>. No hardcoded UI text — onboarding titles interpolate the app name.</p>
+  </section>
+
+  <!-- ===================== ARABIC ===================== -->
+  <div class="lang-head"><span>العربية</span></div>
+
+  <section dir="rtl">
+    <h2>نظرة عامة</h2>
+    <p><b>Authentication</b> هي حزمة المصادقة الأساسية في منصّة UTD. بتمتلك رحلة ما قبل تسجيل الدخول بالكامل وبتتكلم مع مسارات القاعدة <code>/api/auth/*</code>. اسم الحزمة في Flutter هو <code>authentication</code> والكلاس الرئيسي <code>AuthFeature</code> (بيتسجّل في <code>FeatureRegistry</code> الخاص بالمنصّة).</p>
+    <p>مبنية بأسلوب <b>Clean Architecture</b>: طبقة <code>data</code> (خدمة الـ API / مصدر البيانات / تنفيذ الـ repository) ← طبقة <code>domain</code> (الكيانات / المعاملات / الـ use cases / عقد الـ repository) ← طبقة <code>presentation</code> (الـ BLoC + الصفحات). كل شاشة معروضة كـ route وبترندر نسخة UTD Studio المنشورة لما تكون متاحة، مع الصفحة الأصلية (native) كبديل مضمون.</p>
+  </section>
+
+  <section dir="rtl">
+    <h2>إيه اللي بتعمله</h2>
+    <div class="grid">
+      <div class="feat"><b>تسجيل الدخول</b><br>بريد + كلمة مرور ← <code>POST /auth/login</code>، بيحفظ التوكن ويجهّز الجلسة ويوصّل للرئيسية.</div>
+      <div class="feat"><b>إنشاء حساب</b><br>بريد + كلمة مرور ← <code>POST /auth/register</code>، وبعدين يوجّه لإكمال المعلومات.</div>
+      <div class="feat"><b>استعادة كلمة المرور</b><br>تدفّق <b>OTP عبر البريد</b> من 3 خطوات: إرسال الرمز ← التحقق ← تعيين كلمة مرور جديدة، مع مؤقّت لإعادة الإرسال.</div>
+      <div class="feat"><b>إكمال المعلومات</b><br>الاسم / الجنس / تاريخ الميلاد / الصورة ← <code>POST /profile/update</code> لإكمال الملف الشخصي.</div>
+      <div class="feat"><b>onboarding</b><br>شرائح تعريفية قابلة للتمرير تنتهي بـ "ابدأ الآن".</div>
+      <div class="feat"><b>المقدّمة والـ Splash</b><br>الـ Splash بيقرّر جلسة أم مقدّمة؛ والمقدّمة بتعرض دخول / إنشاء حساب.</div>
+    </div>
+  </section>
+
+  <section dir="rtl">
+    <h2>المسارات والشاشات المُدارة من السيرفر</h2>
+    <p><code>AuthRoutes</code> بيوفّر مسارات التنقّل. مسارات <code>intro</code> و<code>login</code> و<code>register</code> و<code>add_information</code> بتغلّف <code>StacDynamicScreen</code> (من <code>utd_studio_sdk</code>): بترندر شاشة UTD Studio المنشورة بالاسم، و<b>بترجع للصفحة الأصلية</b> لو مفيش شاشة منشورة أو الجهاز offline في أول تشغيل — عشان المصادقة ما تتعطّلش قبل مزامنة ونشر الشاشات.</p>
+    <p class="mut">الـ Studio glue (مُعالجات الأفعال <code>core.login</code> / <code>core.register</code> / <code>core.forgotPassword</code> / <code>core.completeProfile</code>) بتعيد استخدام نفس الـ use cases عبر <code>AuthLocator</code>، فالضغط جوّه شاشة سيرفر بيشغّل نفس تدفّق النجاح/الفشل بتاع الـ BLoC الأصلي.</p>
+  </section>
+
+  <section dir="rtl">
+    <h2>المعمارية</h2>
+    <h3>إدارة الحالة</h3>
+    <p>كل ميزة ليها BLoC خاص: <code>SplashBloc</code> و<code>LoginBloc</code> و<code>RegisterBloc</code> و<code>AddInformationBloc</code> و<code>RecoverPasswordBloc</code>. بتتعمل مرة واحدة في <code>AuthFeature.initialize()</code> وبتتوفّر للتطبيق كله عبر <code>getProviders()</code>.</p>
+    <h3>الـ use cases والبيانات</h3>
+    <p>الـ use cases (<code>LoginUseCase</code> و<code>RegisterUseCase</code> و<code>AddInfoUseCase</code> و use cases استعادة الـ OTP و<code>ForgetPasswordUseCase</code>) بتفوّض لـ <code>AuthRepository</code> ← <code>AuthRemoteDataSource</code> ← <code>AuthApiService</code> اللي بيحمل مسارات الـ endpoints.</p>
+  </section>
+
+  <section dir="rtl">
+    <h2>الترجمات</h2>
+    <p>كل النصوص مفهرسة تحت <code>auth.*</code> وبتشحن ثنائية اللغة (إنجليزي + عربي) عبر <code>AuthStrings.translations(appName)</code>، وبتتعرض للمنصّة من خلال <code>AuthFeature.getTranslations()</code>. مفيش نصوص واجهة مكتوبة بشكل ثابت — وعناوين الـ onboarding بتدمج اسم التطبيق.</p>
+  </section>
+
+</div>
+</body>
+</html>

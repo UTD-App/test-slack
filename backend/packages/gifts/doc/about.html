@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gifts Package — About</title>
+  <style>
+    body { font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; line-height: 1.6; color: #1f2430; max-width: 860px; margin: 0 auto; padding: 24px; }
+    h1 { color: #6d28d9; border-bottom: 2px solid #ede9fe; padding-bottom: 8px; }
+    h2 { color: #7c3aed; margin-top: 28px; }
+    h3 { color: #5b21b6; margin-top: 20px; }
+    code { background: #f3f0ff; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+    ul { padding-inline-start: 22px; }
+    li { margin: 4px 0; }
+    .lang { border: 1px solid #ede9fe; border-radius: 10px; padding: 18px 22px; margin: 18px 0; background: #fbfaff; }
+    .tag { display: inline-block; background: #ede9fe; color: #6d28d9; font-size: 0.78em; font-weight: 600; padding: 2px 10px; border-radius: 999px; margin-bottom: 8px; }
+    hr { border: none; border-top: 1px dashed #ddd; margin: 36px 0; }
+    section[dir="rtl"] { text-align: right; }
+  </style>
+</head>
+<body>
+
+<!-- ============================ ENGLISH ============================ -->
+<section dir="ltr" lang="en">
+  <div class="lang">
+    <span class="tag">English</span>
+    <h1>Gifts Package</h1>
+    <p>
+      The <strong>Gifts</strong> package (<code>utd/gifts</code>) adds a complete in-app gifting
+      experience: a managed gift catalog, a send/picker flow, gift history, and sender/receiver
+      levels driven by EXP. It is the engine that turns coins into diamonds — it spends the
+      sender's <code>coins</code> (via the <strong>Wallet</strong> package) and credits the
+      receiver's <code>diamonds</code>, recording a gift log for every send.
+    </p>
+
+    <h2>What it does</h2>
+    <p>
+      Installing the package binds the Base <code>App\Contracts\GiftSender</code> and
+      <code>App\Contracts\GiftDirectory</code> contracts. Once bound, gifting "lights up"
+      everywhere it is wired (Moment now; Room / Live / Reels later) without those host
+      features needing a hard dependency on Gifts. Each send: validates the gift, spends
+      coins, credits diamonds, writes a <code>gift_logs</code> row per receiver, bumps the
+      gift's use count, and fires an <code>App\Events\Gifts\GiftSent</code> event so other
+      packages can layer their own effects.
+    </p>
+
+    <h2>Key features</h2>
+    <ul>
+      <li><strong>Gift catalog</strong> — admin-managed gifts and categories (Filament resources),
+          with media (image / SVGA / mp4), price in coins, and a cached read API
+          (<code>GET /api/gifts</code>, <code>GET /api/gifts/categories</code>).</li>
+      <li><strong>Send &amp; picker</strong> — single-receiver and multi-receiver (batch) sends
+          through the <code>GiftSender</code> contract; one debit, one <code>batch_id</code>,
+          a gift log + event per receiver. The Flutter picker sheet opens from any host feature
+          via the <code>GiftBridge</code> seam.</li>
+      <li><strong>History</strong> — sent / received gift history per user
+          (<code>GET /api/gifts/history?type=sent|received</code>) plus per-context gifters and
+          receivers (<code>GET /api/gifts/context/{type}/{id}</code>).</li>
+      <li><strong>Levels &amp; EXP</strong> — every send banks EXP (sender from coins spent,
+          receiver from diamonds earned); the level is the highest <code>gift_levels</code>
+          threshold the stored EXP reaches. Admin-tunable EXP rates on the Gift EXP settings page.</li>
+      <li><strong>Seams for other packages</strong> — <code>GiftSender</code> and
+          <code>GiftDirectory</code> are bound here; optional contracts
+          (<code>LuckyGiftResolver</code>, <code>GiftBagProvider</code>, <code>VipLevelProvider</code>)
+          stay graceful no-ops until their own plugins bind them. The <code>GiftSent</code> event
+          lets Room / Agency / Family / Levels packages add their splits and effects.</li>
+      <li><strong>Profile contribution</strong> — contributes a "received gifts" section
+          (gift wall + sender/receiver level badges + top supporters) to the Profile package, and
+          "Gifts received" / "Gifts sent" tabs to the admin User profile.</li>
+    </ul>
+
+    <h2>Dependencies</h2>
+    <p>
+      Requires the <strong>Wallet</strong> package: the sender spends <code>coins</code> and the
+      receiver earns <code>diamonds</code>. The package registers the <code>diamonds</code>
+      earning currency on the Wallet at runtime, so no Wallet edits are needed.
+    </p>
+  </div>
+</section>
+
+<hr>
+
+<!-- ============================ ARABIC ============================ -->
+<section dir="rtl" lang="ar">
+  <div class="lang">
+    <span class="tag">العربية</span>
+    <h1>حزمة الهدايا</h1>
+    <p>
+      تضيف حزمة <strong>الهدايا</strong> (<code>utd/gifts</code>) تجربة إهداء متكاملة داخل التطبيق:
+      كتالوج هدايا يُدار من لوحة التحكم، وشاشة اختيار وإرسال، وسجلّ للهدايا، ومستويات للمُرسِل
+      والمستلِم تعتمد على نقاط الخبرة. وهي المحرّك الذي يحوّل العملات إلى ألماس — يخصم
+      <code>coins</code> من رصيد المُرسِل (عبر حزمة <strong>المحفظة</strong>) ويضيف
+      <code>diamonds</code> لرصيد المستلِم، مع تسجيل كل عملية إهداء.
+    </p>
+
+    <h2>ماذا تفعل الحزمة</h2>
+    <p>
+      عند التثبيت تربط الحزمة عقدَي القاعدة <code>App\Contracts\GiftSender</code> و
+      <code>App\Contracts\GiftDirectory</code>. وبمجرد الربط تعمل ميزة الإهداء في كل مكان
+      موصول بها (مومنت الآن؛ والغرف والبث والريلز لاحقًا) دون أن تعتمد تلك الميزات على حزمة
+      الهدايا اعتمادًا صلبًا. كل عملية إرسال: تتحقّق من الهدية، تخصم العملات، تضيف الألماس،
+      تكتب صفًّا في <code>gift_logs</code> لكل مستلِم، تزيد عدّاد استخدام الهدية، وتطلق الحدث
+      <code>App\Events\Gifts\GiftSent</code> لتبني عليه الحزم الأخرى تأثيراتها.
+    </p>
+
+    <h2>أهم المزايا</h2>
+    <ul>
+      <li><strong>كتالوج الهدايا</strong> — هدايا وفئات تُدار من لوحة التحكم (موارد Filament)،
+          مع وسائط (صورة / SVGA / mp4)، وسعر بالعملات، وواجهة قراءة مع تخزين مؤقت
+          (<code>GET /api/gifts</code>، <code>GET /api/gifts/categories</code>).</li>
+      <li><strong>الإرسال والاختيار</strong> — إرسال لمستلِم واحد أو لعدة مستلِمين (دُفعة) عبر
+          عقد <code>GiftSender</code>؛ خصم واحد، و<code>batch_id</code> واحد، وسجلّ وحدث لكل
+          مستلِم. تُفتح شاشة الاختيار في فلاتر من أي ميزة مضيفة عبر وسيط <code>GiftBridge</code>.</li>
+      <li><strong>السجلّ</strong> — سجلّ الهدايا المُرسلة / المستلَمة لكل مستخدم
+          (<code>GET /api/gifts/history?type=sent|received</code>) إضافةً إلى المُهدين
+          والمستلِمين حسب السياق (<code>GET /api/gifts/context/{type}/{id}</code>).</li>
+      <li><strong>المستويات ونقاط الخبرة</strong> — كل إرسال يبنك نقاط خبرة (المُرسِل من العملات
+          المنفقة، والمستلِم من الألماس المكتسب)؛ والمستوى هو أعلى عتبة في <code>gift_levels</code>
+          تصلها النقاط المخزّنة. ومعدّلات الخبرة قابلة للضبط من صفحة إعدادات الخبرة.</li>
+      <li><strong>وصلات للحزم الأخرى</strong> — يُربط هنا <code>GiftSender</code> و
+          <code>GiftDirectory</code>؛ بينما تبقى العقود الاختيارية
+          (<code>LuckyGiftResolver</code>، <code>GiftBagProvider</code>، <code>VipLevelProvider</code>)
+          بلا تأثير بأمان حتى تربطها إضافاتها. ويتيح حدث <code>GiftSent</code> لحزم الغرف والوكالات
+          والعائلة والمستويات إضافة حصصها وتأثيراتها.</li>
+      <li><strong>المساهمة في الملف الشخصي</strong> — تضيف قسم "الهدايا المستلَمة"
+          (حائط الهدايا + شارات مستوى المُرسِل/المستلِم + أبرز الداعمين) إلى حزمة الملف الشخصي،
+          وتبويبَي "الهدايا المستلَمة" / "الهدايا المُرسلة" في ملف المستخدم بلوحة التحكم.</li>
+    </ul>
+
+    <h2>المتطلبات</h2>
+    <p>
+      تتطلّب حزمة <strong>المحفظة</strong>: يخصم المُرسِل <code>coins</code> ويكسب المستلِم
+      <code>diamonds</code>. وتسجّل الحزمة عملة الكسب <code>diamonds</code> على المحفظة وقت
+      التشغيل، فلا حاجة لتعديل المحفظة.
+    </p>
+  </div>
+</section>
+
+</body>
+</html>

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:utd_app/localization/localization.dart';
 
+import '../../../../core/wallet_strings.dart';
 import '../../../domain/entities/wallet_transaction.dart';
 
 /// One row in the transactions list. Green for credits, red for debits.
@@ -15,8 +17,23 @@ class TransactionTile extends StatelessWidget {
     return DateFormat('yyyy-MM-dd  HH:mm').format(dt.toLocal());
   }
 
-  String _humanReason(String reason) =>
-      reason.replaceAll('_', ' ').trim();
+  String _humanize(String value) => value.replaceAll('_', ' ').trim();
+
+  /// Localized label for the transaction's type (`wallet.tx_type.<type>`),
+  /// falling back to the humanized type/reason when no key is registered so
+  /// unknown/new backend types still render.
+  String _label(BuildContext context) {
+    final type = tx.type.trim();
+    if (type.isNotEmpty) {
+      final key = WalletStrings.txType(type);
+      final translated = context.tr(key);
+      // `context.tr` returns the raw key when it is missing — treat that as
+      // "no label" and fall back to the humanized reason/type below.
+      if (translated != key && translated.trim().isNotEmpty) return translated;
+    }
+    final fallback = tx.reason.trim().isNotEmpty ? tx.reason : type;
+    return _humanize(fallback);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +53,7 @@ class TransactionTile extends StatelessWidget {
         ),
       ),
       title: Text(
-        _humanReason(tx.reason),
+        _label(context),
         style: const TextStyle(fontWeight: FontWeight.w600),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,

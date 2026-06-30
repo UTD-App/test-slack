@@ -7,6 +7,7 @@ import 'package:utd_app/localization/localization.dart';
 import 'package:utd_app/shared/core/color_manager.dart';
 import 'package:utd_app/shared/profile/profile_view_arguments.dart';
 
+import '../../profile_strings.dart';
 import 'feature_grid_item.dart';
 import 'profile_assets.dart';
 
@@ -20,51 +21,51 @@ class FeatureGrid extends StatelessWidget {
   const FeatureGrid({super.key});
 
   static const List<FeatureGridItem> _items = [
-    // 'profile.level' is intentionally omitted until the level package exists —
-    // it will return as a package-contributed tile, not hardcoded.
+    // ProfileStrings.level is intentionally omitted until the level package
+    // exists — it will return as a package-contributed tile, not hardcoded.
     FeatureGridItem(
-        labelKey: 'profile.store',
+        labelKey: ProfileStrings.store,
         assetIcon: ProfileAssets.icStore,
         featureId: 'com.utd.store'),
     FeatureGridItem(
-        labelKey: 'profile.tasks',
+        labelKey: ProfileStrings.tasks,
         materialIcon: Icons.checklist,
         featureId: 'com.utd.tasks'),
     FeatureGridItem(
-        labelKey: 'profile.family',
+        labelKey: ProfileStrings.family,
         assetIcon: ProfileAssets.icFamily,
         featureId: 'com.utd.family'),
     FeatureGridItem(
-        labelKey: 'profile.vip',
+        labelKey: ProfileStrings.vip,
         materialIcon: Icons.workspace_premium,
         featureId: 'com.utd.vip'),
     FeatureGridItem(
-        labelKey: 'profile.cp',
+        labelKey: ProfileStrings.cp,
         materialIcon: Icons.favorite,
         featureId: 'com.utd.cp'),
     FeatureGridItem(
-        labelKey: 'profile.bd_center',
+        labelKey: ProfileStrings.bdCenter,
         materialIcon: Icons.cake,
         featureId: 'com.utd.birthday'),
     FeatureGridItem(
-        labelKey: 'profile.agency_center',
+        labelKey: ProfileStrings.agencyCenter,
         materialIcon: Icons.apartment,
         featureId: 'com.utd.agency'),
     // Moment package — routed to the viewed user's posts in _resolveItems.
     FeatureGridItem(
-        labelKey: 'profile.my_post',
+        labelKey: ProfileStrings.myPost,
         materialIcon: Icons.article,
         featureId: 'com.utd.moment'),
     FeatureGridItem(
-        labelKey: 'profile.offline_recharge',
+        labelKey: ProfileStrings.offlineRecharge,
         assetIcon: ProfileAssets.icCoinBg,
         featureId: 'com.utd.recharge'),
     FeatureGridItem(
-        labelKey: 'profile.host_center',
+        labelKey: ProfileStrings.hostCenter,
         materialIcon: Icons.mic_external_on,
         featureId: 'com.utd.host'),
     FeatureGridItem(
-        labelKey: 'profile.my_videos',
+        labelKey: ProfileStrings.myVideos,
         materialIcon: Icons.video_library,
         featureId: 'com.utd.reels'),
   ];
@@ -84,7 +85,7 @@ class FeatureGrid extends StatelessWidget {
       // "My posts" needs the viewed user's id wired into its route. On a VISITED
       // profile this is a dedicated tab, so the shortcut tile is redundant and
       // hidden; it stays on your OWN profile (which has no tabs).
-      if (item.labelKey == 'profile.my_post') {
+      if (item.labelKey == ProfileStrings.myPost) {
         if (!args.isMe) continue;
         resolved.add(
           FeatureGridItem(
@@ -98,7 +99,7 @@ class FeatureGrid extends StatelessWidget {
       }
 
       // "My videos" → same: a tab when visiting, a shortcut only on own profile.
-      if (item.labelKey == 'profile.my_videos') {
+      if (item.labelKey == ProfileStrings.myVideos) {
         if (!args.isMe) continue;
         resolved.add(
           FeatureGridItem(
@@ -119,7 +120,7 @@ class FeatureGrid extends StatelessWidget {
     if (args.isMe) {
       resolved.add(
         const FeatureGridItem(
-          labelKey: 'profile.settings',
+          labelKey: ProfileStrings.settings,
           materialIcon: Icons.settings,
           route: '/settings',
         ),
@@ -167,7 +168,7 @@ class FeatureGrid extends StatelessWidget {
           context.push(item.route!);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(context.tr('profile.coming_soon'))),
+            SnackBar(content: Text(context.tr(ProfileStrings.comingSoon))),
           );
         }
       },

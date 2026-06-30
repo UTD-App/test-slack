@@ -142,7 +142,7 @@ class RealsService extends ReelsBaseModelService
         return true;
     }
 
-    public function deleteReeltAndReport($reelId, $reportId): array
+    public function deleteReelAndReport($reelId, $reportId): array
     {
         $reel = Real::find($reelId);
         if (! $reel) {

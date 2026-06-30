@@ -4,22 +4,23 @@ import 'package:utd_app/localization/localization.dart';
 import '../../../core/reels_strings.dart';
 
 /// One Facebook-style reaction. [type] is what the backend stores/expects.
+/// The display name is resolved via `ReelsStrings.reactionLabelKey(type)` (so it
+/// localizes); there is no static English label here.
 class ReelReaction {
   final String type;
   final String emoji;
-  final String label;
-  const ReelReaction(this.type, this.emoji, this.label);
+  const ReelReaction(this.type, this.emoji);
 }
 
 /// The 6 supported reactions, in display order. Order matters: the first one
 /// ('like') is the default for a plain tap.
 const reelReactions = <ReelReaction>[
-  ReelReaction('like', '👍', 'Like'),
-  ReelReaction('love', '❤️', 'Love'),
-  ReelReaction('haha', '😂', 'Haha'),
-  ReelReaction('wow', '😮', 'Wow'),
-  ReelReaction('sad', '😢', 'Sad'),
-  ReelReaction('angry', '😡', 'Angry'),
+  ReelReaction('like', '👍'),
+  ReelReaction('love', '❤️'),
+  ReelReaction('haha', '😂'),
+  ReelReaction('wow', '😮'),
+  ReelReaction('sad', '😢'),
+  ReelReaction('angry', '😡'),
 ];
 
 ReelReaction? reactionByType(String? type) {

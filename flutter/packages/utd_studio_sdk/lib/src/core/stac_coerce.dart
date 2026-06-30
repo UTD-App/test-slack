@@ -55,6 +55,8 @@ class StacCoerce {
   }
 
   static void _log(String at, String wasType) {
-    debugPrint('[UTD][coerce] $at was $wasType -> String (force-parsed)');
+    if (kDebugMode) {
+      debugPrint('[UTD][coerce] $at was $wasType -> String (force-parsed)');
+    }
   }
 }

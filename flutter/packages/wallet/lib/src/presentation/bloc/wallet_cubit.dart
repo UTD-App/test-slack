@@ -19,6 +19,15 @@ class WalletState extends Equatable {
   final String? endDate; // yyyy-MM-dd
   final String? error;
 
+  /// 1-based page of the transactions currently loaded.
+  final int txPage;
+
+  /// Whether the server reports more transaction pages to fetch.
+  final bool txHasMore;
+
+  /// True while a load-more (next page) request is in flight.
+  final bool txLoadingMore;
+
   const WalletState({
     this.balancesStatus = WalletStatus.initial,
     this.txStatus = WalletStatus.initial,
@@ -28,6 +37,9 @@ class WalletState extends Equatable {
     this.startDate,
     this.endDate,
     this.error,
+    this.txPage = 1,
+    this.txHasMore = false,
+    this.txLoadingMore = false,
   });
 
   /// Balance for a currency (zero if the user has none).
@@ -48,6 +60,9 @@ class WalletState extends Equatable {
     String? endDate,
     bool clearDates = false,
     String? error,
+    int? txPage,
+    bool? txHasMore,
+    bool? txLoadingMore,
   }) {
     return WalletState(
       balancesStatus: balancesStatus ?? this.balancesStatus,
@@ -58,6 +73,9 @@ class WalletState extends Equatable {
       startDate: clearDates ? null : (startDate ?? this.startDate),
       endDate: clearDates ? null : (endDate ?? this.endDate),
       error: error,
+      txPage: txPage ?? this.txPage,
+      txHasMore: txHasMore ?? this.txHasMore,
+      txLoadingMore: txLoadingMore ?? this.txLoadingMore,
     );
   }
 
@@ -71,6 +89,9 @@ class WalletState extends Equatable {
         startDate,
         endDate,
         error,
+        txPage,
+        txHasMore,
+        txLoadingMore,
       ];
 }
 
@@ -79,7 +100,7 @@ class WalletCubit extends Cubit<WalletState> {
 
   WalletCubit(this.repository) : super(const WalletState());
 
-  /// Load balances and the transactions for the selected currency.
+  /// Load balances and the first page of transactions for the selected currency.
   Future<void> loadAll() async {
     await Future.wait([loadBalances(), loadTransactions()]);
   }
@@ -95,18 +116,64 @@ class WalletCubit extends Cubit<WalletState> {
     );
   }
 
+  /// (Re)load the FIRST page of transactions, replacing the current list.
   Future<void> loadTransactions() async {
-    emit(state.copyWith(txStatus: WalletStatus.loading, error: null));
+    emit(state.copyWith(
+      txStatus: WalletStatus.loading,
+      txLoadingMore: false,
+      error: null,
+    ));
     final res = await repository.fetchTransactions(
       currency: state.selectedCurrency,
+      page: 1,
       startDate: state.startDate,
       endDate: state.endDate,
     );
     res.when(
-      success: (list) =>
-          emit(state.copyWith(txStatus: WalletStatus.success, transactions: list)),
+      success: (page) => emit(state.copyWith(
+        txStatus: WalletStatus.success,
+        transactions: page.items,
+        txPage: 1,
+        // null meta → infer "more" from a full-looking first page is not possible
+        // here (no per_page known), so treat unknown as "no more" to avoid an
+        // endless fetch loop; an empty/short page stops load-more anyway.
+        txHasMore: page.hasMore ?? false,
+      )),
       failure: (msg, _) =>
           emit(state.copyWith(txStatus: WalletStatus.failure, error: msg)),
+    );
+  }
+
+  /// Append the next page of transactions (infinite scroll). No-op when there
+  /// are no more pages, a load-more is already running, or the first page is
+  /// still loading.
+  Future<void> loadMoreTransactions() async {
+    if (!state.txHasMore ||
+        state.txLoadingMore ||
+        state.txStatus == WalletStatus.loading) {
+      return;
+    }
+
+    final nextPage = state.txPage + 1;
+    emit(state.copyWith(txLoadingMore: true, error: null));
+
+    final res = await repository.fetchTransactions(
+      currency: state.selectedCurrency,
+      page: nextPage,
+      startDate: state.startDate,
+      endDate: state.endDate,
+    );
+    res.when(
+      success: (page) => emit(state.copyWith(
+        txLoadingMore: false,
+        transactions: [...state.transactions, ...page.items],
+        txPage: nextPage,
+        // Prefer the server flag; fall back to "an empty page means no more".
+        txHasMore: page.hasMore ?? page.items.isNotEmpty,
+      )),
+      // Keep the already-loaded rows; just stop the spinner and surface the error.
+      failure: (msg, _) =>
+          emit(state.copyWith(txLoadingMore: false, error: msg)),
     );
   }
 

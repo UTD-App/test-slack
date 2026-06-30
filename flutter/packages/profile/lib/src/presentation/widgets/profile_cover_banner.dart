@@ -5,6 +5,7 @@ import 'package:utd_app/localization/localization.dart';
 import 'package:utd_app/shared/core/color_manager.dart';
 import 'package:utd_app/shared/media/app_cache_manager.dart';
 
+import '../../profile_strings.dart';
 import '../utils/media.dart';
 
 /// The swipeable, multi-image cover banner shown at the top of a profile.
@@ -167,7 +168,7 @@ class _ProfileCoverBannerState extends State<ProfileCoverBanner> {
             Icon(Icons.add_a_photo_outlined, size: 30.sp, color: Colors.white),
             SizedBox(height: 8.h),
             Text(
-              context.tr('profile.add_cover'),
+              context.tr(ProfileStrings.addCover),
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 13.sp,

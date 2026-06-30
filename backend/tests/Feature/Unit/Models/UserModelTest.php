@@ -41,7 +41,7 @@ class UserModelTest extends TestCase
         $this->assertArrayNotHasKey('remember_token', $array);
     }
 
-    // ---- setPasswordAttribute (KNOWN double-hash footgun) ------------------
+    // ---- setPasswordAttribute (idempotent — footgun fixed) ------------------
 
     public function test_password_mutator_bcrypts_plain_values(): void
     {
@@ -52,20 +52,20 @@ class UserModelTest extends TestCase
     }
 
     /**
-     * BUG (KNOWN footgun): setPasswordAttribute ALWAYS bcrypts, so assigning an
-     * already-hashed value double-hashes it — the original plain text no longer
-     * verifies against the stored value. Documented in MEMORY; asserting current
-     * behavior. User::setPasswordAttribute — User.php:62
+     * FIXED: the mutator now detects an already-hashed value (password_get_info)
+     * and stores it as-is, so assigning an already-hashed value no longer
+     * double-hashes it and the original plain text still verifies.
+     * User::setPasswordAttribute — User.php
      */
-    public function test_password_mutator_double_hashes_an_already_hashed_value(): void
+    public function test_password_mutator_does_not_double_hash_an_already_hashed_value(): void
     {
         $alreadyHashed = bcrypt('secret');
         $user = User::factory()->create(['password' => $alreadyHashed]);
 
-        // The plain text does NOT verify because the hash was hashed again.
-        $this->assertFalse(Hash::check('secret', $user->password));
-        // …and the stored value is not the hash we passed in either.
-        $this->assertNotSame($alreadyHashed, $user->password);
+        // The plain text STILL verifies (the hash was not re-hashed)…
+        $this->assertTrue(Hash::check('secret', $user->password));
+        // …and the stored value is exactly the hash we passed in.
+        $this->assertSame($alreadyHashed, $user->password);
     }
 
     public function test_password_mutator_ignores_empty_values(): void

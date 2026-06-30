@@ -66,5 +66,6 @@ class ProfileFeature extends AppFeature {
   }
 
   @override
-  Map<String, Map<String, String>> getTranslations() => profileTranslations;
+  Map<String, Map<String, String>> getTranslations() =>
+      ProfileStrings.translations();
 }

@@ -6,6 +6,7 @@ import 'package:utd_app/localization/localization.dart';
 import 'package:utd_app/shared/core/color_manager.dart';
 
 import '../../domain/user_profile_model.dart';
+import '../../profile_strings.dart';
 import '../utils/media.dart';
 import 'profile_assets.dart';
 
@@ -60,7 +61,7 @@ class ProfileIdentity extends StatelessWidget {
               child: GestureDetector(
                 onTap: onTap,
                 child: Text(
-                  profile.name ?? context.tr('profile.title'),
+                  profile.name ?? context.tr(ProfileStrings.title),
                   style: TextStyle(
                     color: ColorManager.lumiaTextPrimary,
                     fontSize: 20.sp,
@@ -113,7 +114,7 @@ class ProfileIdentity extends StatelessWidget {
             mainAxisAlignment: mainAlign,
             children: [
               Text(
-                '${context.tr('profile.id')}: $displayUid',
+                '${context.tr(ProfileStrings.id)}: $displayUid',
                 style: TextStyle(
                   color: ColorManager.lumiaTextSecondary,
                   fontSize: 12.sp,
@@ -125,7 +126,7 @@ class ProfileIdentity extends StatelessWidget {
                   onTap: () {
                     Clipboard.setData(ClipboardData(text: displayUid));
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text(context.tr('profile.copied'))),
+                      SnackBar(content: Text(context.tr(ProfileStrings.copied))),
                     );
                   },
                   child: Icon(
@@ -186,7 +187,7 @@ class ProfileIdentity extends StatelessWidget {
               Icon(Icons.edit, size: 14.sp, color: ColorManager.lumiaAccent),
               SizedBox(width: 4.w),
               Text(
-                context.tr('profile.add_bio'),
+                context.tr(ProfileStrings.addBio),
                 style: TextStyle(
                   color: ColorManager.lumiaAccent,
                   fontSize: 13.sp,

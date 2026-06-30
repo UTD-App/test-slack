@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Authentication — Installation / التثبيت</title>
+<style>
+  :root { --bg:#0f1020; --card:#1a1b30; --line:#2b2c45; --txt:#e7e7f0; --mut:#a8a9c0; --acc:#b15cff; --acc2:#ff5ca8; --code:#11122a; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--txt); font-family:-apple-system,Segoe UI,Roboto,Arial,"Cairo",sans-serif; line-height:1.7; }
+  .wrap { max-width:920px; margin:0 auto; padding:32px 22px 80px; }
+  .hero { background:linear-gradient(135deg,var(--acc),var(--acc2)); border-radius:18px; padding:26px 28px; margin-bottom:28px; }
+  .hero h1 { margin:0 0 6px; font-size:30px; }
+  .hero p { margin:0; opacity:.95; }
+  .pill { display:inline-block; background:rgba(255,255,255,.18); border-radius:999px; padding:3px 12px; font-size:12px; margin-bottom:10px; }
+  section { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:20px 22px; margin:18px 0; }
+  h2 { margin:0 0 12px; font-size:22px; border-bottom:1px solid var(--line); padding-bottom:8px; }
+  h3 { margin:18px 0 6px; font-size:16px; color:var(--acc); }
+  code { background:var(--code); border:1px solid var(--line); border-radius:6px; padding:1px 6px; font-family:"JetBrains Mono",Consolas,monospace; font-size:13px; }
+  pre { background:var(--code); border:1px solid var(--line); border-radius:10px; padding:14px 16px; overflow:auto; font-size:13px; }
+  ol,ul { margin:8px 0; padding-inline-start:22px; }
+  li { margin:6px 0; }
+  table { width:100%; border-collapse:collapse; margin-top:10px; font-size:14px; }
+  th,td { border:1px solid var(--line); padding:8px 10px; text-align:start; vertical-align:top; }
+  th { background:var(--code); color:var(--acc); }
+  .lang-head { display:flex; align-items:center; gap:10px; margin:46px 0 0; }
+  .lang-head span { font-size:13px; color:var(--mut); border:1px solid var(--line); border-radius:999px; padding:2px 12px; }
+  .note { background:var(--code); border:1px solid var(--acc); border-radius:10px; padding:12px 14px; margin-top:12px; font-size:14px; }
+  [dir="rtl"] { font-family:"Cairo",-apple-system,Segoe UI,Tahoma,sans-serif; }
+  .mut { color:var(--mut); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <span class="pill">UTD App · Flutter package</span>
+    <h1>Authentication — Installation</h1>
+    <p>How to add the package to a host app, wire it into the platform, and the base API it expects.</p>
+  </div>
+
+  <!-- ===================== ENGLISH ===================== -->
+  <div class="lang-head"><span>English</span></div>
+
+  <section>
+    <h2>1 · Add the dependency</h2>
+    <p>Add a path dependency to the host app's <code>pubspec.yaml</code> (the package lives under <code>packages/authentication</code>):</p>
+    <pre>dependencies:
+  authentication:
+    path: packages/authentication</pre>
+    <p>Then fetch packages:</p>
+    <pre>flutter pub get</pre>
+    <p class="mut">The package itself depends on <code>utd_app</code> (the feature contract) and <code>utd_studio_sdk</code> (the server-driven screen renderer), both as path deps.</p>
+  </section>
+
+  <section>
+    <h2>2 · Register the feature</h2>
+    <p>Add <code>AuthFeature()</code> to the list of features the platform builds. Auth is a core feature (<code>isCore = true</code>), so register it first:</p>
+    <pre>import 'package:authentication/authentication.dart';
+
+List&lt;AppFeature&gt; buildFeatures() {
+  return [
+    AuthFeature(),   // core — register first
+    // ...other features
+  ];
+}</pre>
+    <p>That single registration is enough. The platform's <code>FeatureRegistry</code> drives the rest automatically:</p>
+    <table>
+      <thead><tr><th>Hook</th><th>What it wires</th></tr></thead>
+      <tbody>
+        <tr><td><code>initialize()</code></td><td>Builds the api service → datasource → repository → use cases, fills <code>AuthLocator</code> (for Studio actions), and creates the BLoCs. Awaited before any route builds.</td></tr>
+        <tr><td><code>getRoutes()</code></td><td>Returns <code>AuthRoutes.routes()</code> — splash / intro / login / register / add-information / recover-password / on-boarding / privacy.</td></tr>
+        <tr><td><code>getProviders()</code></td><td>Provides <code>SplashBloc</code>, <code>LoginBloc</code>, <code>RegisterBloc</code>, <code>AddInformationBloc</code>, <code>RecoverPasswordBloc</code> app-wide.</td></tr>
+        <tr><td><code>getTranslations()</code></td><td>Merges the <code>auth.*</code> EN + AR catalog into the app's translations (app name interpolated).</td></tr>
+      </tbody>
+    </table>
+    <div class="note">For server-driven screens, pass the auth Studio action parsers (<code>core.login</code> / <code>core.register</code> / <code>core.forgotPassword</code> / <code>core.completeProfile</code>) into <code>UtdStudio.init</code> via <code>StudioConfig.extraActions</code>. They read use cases from <code>AuthLocator</code>, which <code>initialize()</code> fills. If a screen is unpublished, the native fallback page runs instead.</div>
+  </section>
+
+  <section>
+    <h2>3 · Base API contract</h2>
+    <p>The package talks to the base host under the <code>/api</code> prefix. Endpoints (from <code>AuthApiService</code>):</p>
+    <table>
+      <thead><tr><th>Use case</th><th>Endpoint</th></tr></thead>
+      <tbody>
+        <tr><td>Login</td><td><code>POST /auth/login</code></td></tr>
+        <tr><td>Register</td><td><code>POST /auth/register</code></td></tr>
+        <tr><td>Add information</td><td><code>POST /profile/update</code></td></tr>
+        <tr><td>Recover — send OTP</td><td><code>POST /auth/forgot-password/send-otp</code></td></tr>
+        <tr><td>Recover — verify code</td><td><code>POST /auth/forgot-password/verify-code</code></td></tr>
+        <tr><td>Recover — reset</td><td><code>POST /auth/forgot-password/reset-otp</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Login request &amp; response</h3>
+    <p>Login posts <code>{ "type": "email_pass", "email", "password" }</code>. On success the response data must carry the token under <code>data.auth_token</code> (the package reads <code>json['auth_token']</code> into the session and saves it):</p>
+    <pre>POST /api/auth/login
+{ "type": "email_pass", "email": "user@x.com", "password": "secret" }
+
+200 OK
+{
+  "message": "Logged in",
+  "data": { "id": 12, "is_first": false, "auth_token": "..." }
+}</pre>
+    <p>The login response carries no full user object (only <code>id</code> / <code>is_first</code> / <code>auth_token</code>); the package then loads the current user from <code>/my-data</code> into the session.</p>
+
+    <h3>Bad credentials → 422</h3>
+    <p>On invalid credentials (or validation failures) the base must return HTTP <b>422</b> with a <code>message</code>. The package surfaces that <code>message</code> as the error toast — it does not retry. Register similarly returns the new <code>data.auth_token</code> on success, then routes to add-information.</p>
+  </section>
+
+  <section>
+    <h2>4 · Verify</h2>
+    <ul>
+      <li><code>flutter pub get</code> resolves with no version conflicts.</li>
+      <li><code>flutter test test/pkg/authentication</code> is green.</li>
+      <li>Launch the app: splash → intro → login; a wrong password shows a 422 error toast; a correct one lands on home.</li>
+    </ul>
+  </section>
+
+  <!-- ===================== ARABIC ===================== -->
+  <div class="lang-head"><span>العربية</span></div>
+
+  <section dir="rtl">
+    <h2>١ · أضف الاعتمادية</h2>
+    <p>أضف اعتمادية مسار (path dependency) في ملف <code>pubspec.yaml</code> الخاص بالتطبيق المضيف (الحزمة موجودة تحت <code>packages/authentication</code>):</p>
+    <pre>dependencies:
+  authentication:
+    path: packages/authentication</pre>
+    <p>ثم نزّل الحزم:</p>
+    <pre>flutter pub get</pre>
+    <p class="mut">الحزمة نفسها بتعتمد على <code>utd_app</code> (عقد الميزات) و<code>utd_studio_sdk</code> (مُحرّك الشاشات المُدارة من السيرفر)، الاثنين كاعتمادية مسار.</p>
+  </section>
+
+  <section dir="rtl">
+    <h2>٢ · سجّل الميزة</h2>
+    <p>أضف <code>AuthFeature()</code> لقائمة الميزات اللي بتبنيها المنصّة. المصادقة ميزة أساسية (<code>isCore = true</code>) فسجّلها أولاً:</p>
+    <pre>import 'package:authentication/authentication.dart';
+
+List&lt;AppFeature&gt; buildFeatures() {
+  return [
+    AuthFeature(),   // أساسية — تُسجّل أولاً
+    // ...باقي الميزات
+  ];
+}</pre>
+    <p>التسجيل ده لوحده كفاية. الـ <code>FeatureRegistry</code> بيقوم بالباقي أوتوماتيك:</p>
+    <table>
+      <thead><tr><th>الـ Hook</th><th>اللي بيوصّله</th></tr></thead>
+      <tbody>
+        <tr><td><code>initialize()</code></td><td>بيبني خدمة الـ API ← مصدر البيانات ← الـ repository ← الـ use cases، ويملأ <code>AuthLocator</code> (لأفعال Studio)، وينشئ الـ BLoCs. ويُنتظَر قبل بناء أي route.</td></tr>
+        <tr><td><code>getRoutes()</code></td><td>بيرجّع <code>AuthRoutes.routes()</code> — splash / intro / login / register / add-information / recover-password / on-boarding / privacy.</td></tr>
+        <tr><td><code>getProviders()</code></td><td>بيوفّر <code>SplashBloc</code> و<code>LoginBloc</code> و<code>RegisterBloc</code> و<code>AddInformationBloc</code> و<code>RecoverPasswordBloc</code> للتطبيق كله.</td></tr>
+        <tr><td><code>getTranslations()</code></td><td>بيدمج كتالوج <code>auth.*</code> (إنجليزي + عربي) في ترجمات التطبيق (مع دمج اسم التطبيق).</td></tr>
+      </tbody>
+    </table>
+    <div class="note">للشاشات المُدارة من السيرفر، مرّر مُعالجات أفعال المصادقة (<code>core.login</code> / <code>core.register</code> / <code>core.forgotPassword</code> / <code>core.completeProfile</code>) إلى <code>UtdStudio.init</code> عبر <code>StudioConfig.extraActions</code>. بتقرأ الـ use cases من <code>AuthLocator</code> اللي بيملأه <code>initialize()</code>. ولو الشاشة مش منشورة، بتشتغل الصفحة الأصلية البديلة.</div>
+  </section>
+
+  <section dir="rtl">
+    <h2>٣ · عقد الـ API في القاعدة</h2>
+    <p>الحزمة بتتكلم مع القاعدة تحت بادئة <code>/api</code>. المسارات (من <code>AuthApiService</code>):</p>
+    <table>
+      <thead><tr><th>الـ use case</th><th>الـ endpoint</th></tr></thead>
+      <tbody>
+        <tr><td>تسجيل الدخول</td><td><code>POST /auth/login</code></td></tr>
+        <tr><td>إنشاء حساب</td><td><code>POST /auth/register</code></td></tr>
+        <tr><td>إكمال المعلومات</td><td><code>POST /profile/update</code></td></tr>
+        <tr><td>استعادة — إرسال OTP</td><td><code>POST /auth/forgot-password/send-otp</code></td></tr>
+        <tr><td>استعادة — التحقق من الرمز</td><td><code>POST /auth/forgot-password/verify-code</code></td></tr>
+        <tr><td>استعادة — إعادة التعيين</td><td><code>POST /auth/forgot-password/reset-otp</code></td></tr>
+      </tbody>
+    </table>
+
+    <h3>طلب وردّ تسجيل الدخول</h3>
+    <p>تسجيل الدخول بيرسل <code>{ "type": "email_pass", "email", "password" }</code>. عند النجاح لازم يحمل الردّ التوكن تحت <code>data.auth_token</code> (الحزمة بتقرأ <code>json['auth_token']</code> داخل الجلسة وبتحفظه):</p>
+    <pre>POST /api/auth/login
+{ "type": "email_pass", "email": "user@x.com", "password": "secret" }
+
+200 OK
+{
+  "message": "تم تسجيل الدخول",
+  "data": { "id": 12, "is_first": false, "auth_token": "..." }
+}</pre>
+    <p>ردّ تسجيل الدخول مابيحملش كائن المستخدم الكامل (بس <code>id</code> / <code>is_first</code> / <code>auth_token</code>)؛ والحزمة بعدها بتحمّل المستخدم الحالي من <code>/my-data</code> داخل الجلسة.</p>
+
+    <h3>بيانات اعتماد خاطئة ← 422</h3>
+    <p>عند بيانات اعتماد غير صحيحة (أو فشل التحقق) لازم القاعدة ترجّع HTTP <b>422</b> مع <code>message</code>. الحزمة بتعرض الـ <code>message</code> ده كرسالة خطأ (toast) — وماتعيدش المحاولة. الـ register بالمثل بيرجّع <code>data.auth_token</code> الجديد عند النجاح، وبعدها يوجّه لإكمال المعلومات.</p>
+  </section>
+
+  <section dir="rtl">
+    <h2>٤ · التحقق</h2>
+    <ul>
+      <li><code>flutter pub get</code> بيتحلّ بدون تعارض إصدارات.</li>
+      <li><code>flutter test test/pkg/authentication</code> أخضر.</li>
+      <li>شغّل التطبيق: splash ← intro ← login؛ كلمة مرور خاطئة بتظهر رسالة خطأ 422، والصحيحة بتوصّل للرئيسية.</li>
+    </ul>
+  </section>
+
+</div>
+</body>
+</html>

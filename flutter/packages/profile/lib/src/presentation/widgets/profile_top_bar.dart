@@ -6,6 +6,7 @@ import 'package:utd_app/localization/localization.dart';
 import 'package:utd_app/shared/core/color_manager.dart';
 
 import '../../domain/user_profile_model.dart';
+import '../../profile_strings.dart';
 import '../bloc/user_profile_bloc.dart';
 
 /// Top bar over the gradient: circular back button (left) and, on the editable
@@ -88,7 +89,7 @@ class ProfileTopBar extends StatelessWidget {
           Icon(Icons.visibility_outlined, color: Colors.white, size: 14.sp),
           SizedBox(width: 6.w),
           Text(
-            context.tr('profile.preview_as_visitor'),
+            context.tr(ProfileStrings.previewAsVisitor),
             style: TextStyle(color: Colors.white, fontSize: 12.sp),
           ),
         ],

@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UTD Moment — Installation / التثبيت</title>
+<style>
+  :root { --bg:#0f1117; --card:#171a23; --line:#262a36; --txt:#e7e9ee; --mut:#9aa3b2;
+          --acc:#6d8bff; --code:#11131a; --pill:#1d2230; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--txt);
+         font-family:-apple-system,Segoe UI,Roboto,"Helvetica Neue",Arial,"Noto Sans Arabic",sans-serif;
+         line-height:1.7; }
+  .wrap { max-width:880px; margin:0 auto; padding:32px 22px 80px; }
+  header.hero { text-align:center; padding:34px 0 18px; border-bottom:1px solid var(--line); }
+  header.hero h1 { margin:0 0 6px; font-size:30px; }
+  header.hero p { margin:0; color:var(--mut); }
+  .pill { display:inline-block; background:var(--pill); color:var(--acc); border:1px solid var(--line);
+          border-radius:999px; padding:4px 14px; font-size:13px; margin-bottom:14px; }
+  section.lang { margin-top:34px; }
+  section.lang[dir="rtl"] { text-align:right; border-top:2px dashed var(--line); padding-top:26px; margin-top:46px; }
+  h2 { font-size:23px; border-bottom:1px solid var(--line); padding-bottom:8px; margin-top:8px; }
+  h3 { font-size:18px; color:var(--acc); margin-top:28px; }
+  code { background:var(--code); border:1px solid var(--line); border-radius:5px; padding:1px 6px;
+         font-family:"SFMono-Regular",Consolas,Menlo,monospace; font-size:13px; }
+  pre { background:var(--code); border:1px solid var(--line); border-radius:10px; padding:14px 16px;
+        overflow:auto; direction:ltr; text-align:left; }
+  pre code { background:none; border:none; padding:0; }
+  ol { padding-inline-start:22px; }
+  ol > li { margin:18px 0; }
+  .step-t { font-weight:600; display:block; margin-bottom:6px; }
+  .note { background:#15203a; border:1px solid #2b3d63; border-radius:10px; padding:12px 16px; margin:14px 0; color:#cdd9f5; }
+  .warn { background:#3a2415; border-color:#634a2b; color:#f5e6cd; }
+  table { width:100%; border-collapse:collapse; margin:14px 0; font-size:14px; }
+  th,td { border:1px solid var(--line); padding:8px 10px; text-align:start; vertical-align:top; }
+  th { background:var(--pill); }
+  a { color:var(--acc); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <span class="pill">UTD Package · utd/moment</span>
+    <h1>Installing the Moment package</h1>
+    <p>Manual drop-in — Backend (Laravel) + Flutter</p>
+  </header>
+
+  <!-- ============ ENGLISH ============ -->
+  <section class="lang" dir="ltr" lang="en">
+    <h2>Installation (English)</h2>
+
+    <p>Moment is a <strong>standalone composer package</strong> (<code>utd/moment</code>, namespace
+    <code>Utd\Moment</code>) installed manually as a drop-in — it is <em>not</em> an nwidart module and is
+    <em>not</em> auto-discovered. Requires PHP <strong>8.2+</strong>. Install both halves on top of an
+    existing UTD base.</p>
+
+    <h3>Backend (Laravel)</h3>
+    <ol>
+      <li>
+        <span class="step-t">1. Copy the package folder</span>
+        Place the backend package at <code>backend/packages/moment/</code>.
+      </li>
+      <li>
+        <span class="step-t">2. Register the PSR-4 autoload (root <code>composer.json</code>)</span>
+        Add under <code>autoload.psr-4</code> in <code>backend/composer.json</code> (and the test namespace
+        under <code>autoload-dev.psr-4</code> if you run the package tests):
+<pre><code>"autoload": {
+  "psr-4": {
+    "Utd\\Moment\\": "packages/moment/src/"
+  }
+},
+"autoload-dev": {
+  "psr-4": {
+    "Utd\\Moment\\Tests\\": "packages/moment/tests/"
+  }
+}</code></pre>
+      </li>
+      <li>
+        <span class="step-t">3. Register the service provider</span>
+        Add to the <code>providers</code> list (in <code>config/app.php</code> or
+        <code>bootstrap/providers.php</code>):
+<pre><code>Utd\Moment\Providers\MomentServiceProvider::class,</code></pre>
+        The provider auto-wires config, migrations, views, translations and the API routes, and
+        self-registers the package in the base <code>PackageRegistry</code>. (The provider is also
+        listed under <code>extra.laravel.providers</code> in the package's <code>composer.json</code>,
+        so it is auto-discovered when the package is required via Composer.)
+      </li>
+      <li>
+        <span class="step-t">4. Register the Filament admin plugin</span>
+        In <code>app/Providers/Filament/AdminPanelProvider.php</code> add to the panel:
+<pre><code>->plugin(\Utd\Moment\Filament\MomentPlugin::make())</code></pre>
+      </li>
+      <li>
+        <span class="step-t">5. Dump autoload &amp; run migrations</span>
+<pre><code>composer dump-autoload
+php artisan migrate</code></pre>
+        Migrations create <code>moment</code>, <code>moment_galleries</code>,
+        <code>moment_user_likes</code>, <code>moment_user_comments</code>,
+        <code>moment_comment_likes</code>, <code>report_moments</code> and
+        <code>report_moment_comments</code>.
+      </li>
+      <li>
+        <span class="step-t">6. Sync the package (required)</span>
+<pre><code>php artisan utd:sync-packages</code></pre>
+        Writes the package row into the <code>packages</code> table so it appears in
+        <code>admin/packages</code> (enable / disable) and in <code>/api/packages/installed</code>
+        (which the app reads). Run after every install/update.
+      </li>
+      <li>
+        <span class="step-t">7. Enable in admin/packages</span>
+        Open <code>admin/packages</code> and toggle <strong>Moment</strong> on. While it is disabled,
+        the API routes return <code>403</code> (the <code>package.enabled:moment</code> middleware) and
+        the admin page hides itself.
+      </li>
+    </ol>
+
+    <div class="note"><strong>Verify:</strong>
+<pre><code>php artisan route:list --path=moment
+php vendor/bin/phpunit packages/moment/tests --no-coverage</code></pre></div>
+
+    <h3>Flutter</h3>
+    <ol>
+      <li>
+        <span class="step-t">1. Copy the package &amp; fix its path dep</span>
+        Place the Flutter package at <code>flutter/packages/moment/</code> (singular). In
+        <code>packages/moment/pubspec.yaml</code>, point the <code>utd_app</code> path at your base app root.
+      </li>
+      <li>
+        <span class="step-t">2. Add it as a path dependency</span>
+        In the host app's <code>flutter/pubspec.yaml</code>:
+<pre><code>dependencies:
+  moment:
+    path: packages/moment</code></pre>
+      </li>
+      <li>
+        <span class="step-t">3. Register <code>MomentFeature()</code></span>
+        In <code>lib/main.dart</code> → <code>buildFeatures()</code>:
+<pre><code>import 'package:moment/moment.dart';
+
+List&lt;AppFeature&gt; buildFeatures() => [
+  AuthFeature(),
+  MomentFeature(),   // ← the moments feed
+];</code></pre>
+        <code>MomentFeature</code> registers the feed routes, Stac SDUI parsers/data sources, and merges
+        the <code>moment.*</code> UI translations (admin/server overrides win).
+      </li>
+      <li>
+        <span class="step-t">4. Fetch packages &amp; run</span>
+<pre><code>cd flutter
+flutter pub get
+flutter run</code></pre>
+      </li>
+    </ol>
+
+    <div class="note warn"><strong>Naming:</strong> the Composer name is <code>utd/moment</code> and the
+    Flutter package is <code>moment</code> (singular). Import is <code>package:moment/moment.dart</code>.</div>
+
+    <h3>Optional: gifting</h3>
+    <p>Gifting on moments auto-enables once the <strong>Gifts</strong> package is installed and binds
+    <code>App\Contracts\GiftDirectory</code> — no extra step in Moment. Without it, gift routes return a
+    safe <code>503</code> and the rest of the feed works.</p>
+
+    <h3>Uninstall</h3>
+    <p>Reverse steps 2/3/4, delete the folder, run <code>composer dump-autoload</code>, and remove the
+    package row from <code>admin/packages</code>. Roll back the migrations first if you want the tables gone.</p>
+  </section>
+
+  <!-- ============ ARABIC ============ -->
+  <section class="lang" dir="rtl" lang="ar">
+    <h2>التثبيت (بالعربية)</h2>
+
+    <p>Moment حزمة <strong>Composer مستقلة</strong> (<code>utd/moment</code>, namespace
+    <code>Utd\Moment</code>) بتتسطّب يدوي (drop-in) — مش nwidart module ومش بتتكتشف أوتوماتيك. بتحتاج
+    PHP <strong>8.2+</strong>. ركّب النُصّين فوق قاعدة UTD مثبّتة.</p>
+
+    <h3>الـ Backend (Laravel)</h3>
+    <ol>
+      <li>
+        <span class="step-t">1. انسخ فولدر الحزمة</span>
+        حُط حزمة الـ backend في <code>backend/packages/moment/</code>.
+      </li>
+      <li>
+        <span class="step-t">2. سجّل الـ PSR-4 autoload (في الـ root <code>composer.json</code>)</span>
+        ضيف تحت <code>autoload.psr-4</code> في <code>backend/composer.json</code> (و namespace الاختبارات
+        تحت <code>autoload-dev.psr-4</code> لو هتشغّل اختبارات الحزمة):
+<pre><code>"autoload": {
+  "psr-4": {
+    "Utd\\Moment\\": "packages/moment/src/"
+  }
+},
+"autoload-dev": {
+  "psr-4": {
+    "Utd\\Moment\\Tests\\": "packages/moment/tests/"
+  }
+}</code></pre>
+      </li>
+      <li>
+        <span class="step-t">3. سجّل الـ Service Provider</span>
+        ضيف في قائمة <code>providers</code> (في <code>config/app.php</code> أو
+        <code>bootstrap/providers.php</code>):
+<pre><code>Utd\Moment\Providers\MomentServiceProvider::class,</code></pre>
+        الـ provider بيظبط الـ config والـ migrations والـ views والترجمات ومسارات الـ API أوتوماتيك,
+        وبيسجّل الحزمة في <code>PackageRegistry</code>. (الـ provider مكتوب كمان تحت
+        <code>extra.laravel.providers</code> في <code>composer.json</code> بتاع الحزمة, فبيتكتشف
+        أوتوماتيك لو الحزمة اتعملها <code>composer require</code>.)
+      </li>
+      <li>
+        <span class="step-t">4. سجّل بلَجن الأدمن (Filament)</span>
+        في <code>app/Providers/Filament/AdminPanelProvider.php</code> ضيف للـ panel:
+<pre><code>->plugin(\Utd\Moment\Filament\MomentPlugin::make())</code></pre>
+      </li>
+      <li>
+        <span class="step-t">5. حدّث الـ autoload وشغّل الـ migrations</span>
+<pre><code>composer dump-autoload
+php artisan migrate</code></pre>
+        الـ migrations بتنشئ <code>moment</code>, <code>moment_galleries</code>,
+        <code>moment_user_likes</code>, <code>moment_user_comments</code>,
+        <code>moment_comment_likes</code>, <code>report_moments</code>,
+        <code>report_moment_comments</code>.
+      </li>
+      <li>
+        <span class="step-t">6. سجّل الحزمة في النظام (مطلوب)</span>
+<pre><code>php artisan utd:sync-packages</code></pre>
+        بيكتب صف الحزمة في جدول <code>packages</code> عشان تبان في <code>admin/packages</code>
+        (تشغيل/إطفاء) وفي <code>/api/packages/installed</code> (اللي التطبيق بيقرا منه). شغّلها بعد كل
+        تثبيت أو تحديث.
+      </li>
+      <li>
+        <span class="step-t">7. فعّلها من admin/packages</span>
+        افتح <code>admin/packages</code> وشغّل <strong>Moment</strong>. وهي معطّلة, مسارات الـ API
+        بترجع <code>403</code> (الميدلوير <code>package.enabled:moment</code>) وصفحة الأدمن بتختفي.
+      </li>
+    </ol>
+
+    <div class="note"><strong>التحقق:</strong>
+<pre><code>php artisan route:list --path=moment
+php vendor/bin/phpunit packages/moment/tests --no-coverage</code></pre></div>
+
+    <h3>الـ Flutter</h3>
+    <ol>
+      <li>
+        <span class="step-t">1. انسخ الحزمة وظبّط مسار الاعتماد</span>
+        حُط حزمة الـ Flutter في <code>flutter/packages/moment/</code> (بالمفرد). في
+        <code>packages/moment/pubspec.yaml</code> خلّي مسار <code>utd_app</code> يشاور على جذر تطبيق القاعدة.
+      </li>
+      <li>
+        <span class="step-t">2. ضيفها كـ path dependency</span>
+        في <code>flutter/pubspec.yaml</code> بتاع التطبيق:
+<pre><code>dependencies:
+  moment:
+    path: packages/moment</code></pre>
+      </li>
+      <li>
+        <span class="step-t">3. سجّل <code>MomentFeature()</code></span>
+        في <code>lib/main.dart</code> ← <code>buildFeatures()</code>:
+<pre><code>import 'package:moment/moment.dart';
+
+List&lt;AppFeature&gt; buildFeatures() => [
+  AuthFeature(),
+  MomentFeature(),   // ← فيد اللحظات
+];</code></pre>
+        <code>MomentFeature</code> بيسجّل مسارات الفيد, ومعالِجات/مصادر بيانات Stac (SDUI), وبيدمج ترجمات
+        الـ <code>moment.*</code> (الأدمن/السيرفر بيكسبوا في الأولوية).
+      </li>
+      <li>
+        <span class="step-t">4. حمّل الحزم وشغّل التطبيق</span>
+<pre><code>cd flutter
+flutter pub get
+flutter run</code></pre>
+      </li>
+    </ol>
+
+    <div class="note warn"><strong>تنبيه على الاسم:</strong> اسم Composer هو <code>utd/moment</code> وحزمة
+    الـ Flutter اسمها <code>moment</code> (بالمفرد). الاستيراد <code>package:moment/moment.dart</code>.</div>
+
+    <h3>اختياري: الهدايا</h3>
+    <p>الهدايا على اللحظات بتتفعّل أوتوماتيك بمجرد تثبيت حزمة <strong>Gifts</strong> وربطها
+    <code>App\Contracts\GiftDirectory</code> — مفيش خطوة زيادة في Moment. من غيرها مسارات الهدايا بترجع
+    <code>503</code> بأمان وباقي الفيد شغّال.</p>
+
+    <h3>الإلغاء (Uninstall)</h3>
+    <p>اعكس الخطوات 2/3/4, امسح الفولدر, شغّل <code>composer dump-autoload</code>, وامسح صف الحزمة من
+    <code>admin/packages</code>. لو عايز تشيل الجداول اعمل rollback للـ migrations الأول.</p>
+  </section>
+
+</div>
+</body>
+</html>

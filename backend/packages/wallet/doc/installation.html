@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wallet Package — Installation</title>
+  <style>
+    body { font-family: -apple-system, "Segoe UI", Roboto, Arial, sans-serif; line-height: 1.6; color: #1f2430; max-width: 860px; margin: 0 auto; padding: 24px; }
+    h1 { color: #6d28d9; border-bottom: 2px solid #ede9fe; padding-bottom: 8px; }
+    h2 { color: #7c3aed; margin-top: 28px; }
+    h3 { color: #5b21b6; margin-top: 20px; }
+    code { background: #f3f0ff; padding: 1px 6px; border-radius: 4px; font-size: 0.92em; }
+    pre { background: #1f2430; color: #e8e6f3; padding: 14px 16px; border-radius: 8px; overflow-x: auto; direction: ltr; text-align: left; }
+    pre code { background: none; color: inherit; padding: 0; }
+    ol { padding-inline-start: 22px; }
+    li { margin: 8px 0; }
+    .lang { border: 1px solid #ede9fe; border-radius: 10px; padding: 18px 22px; margin: 18px 0; background: #fbfaff; }
+    .tag { display: inline-block; background: #ede9fe; color: #6d28d9; font-size: 0.78em; font-weight: 600; padding: 2px 10px; border-radius: 999px; margin-bottom: 8px; }
+    .note { background: #fff7ed; border-inline-start: 4px solid #f59e0b; padding: 10px 14px; border-radius: 6px; margin: 12px 0; }
+    hr { border: none; border-top: 1px dashed #ddd; margin: 36px 0; }
+    section[dir="rtl"] { text-align: right; }
+  </style>
+</head>
+<body>
+
+<!-- ============================ ENGLISH ============================ -->
+<section dir="ltr" lang="en">
+  <div class="lang">
+    <span class="tag">English</span>
+    <h1>Installing the Wallet Package</h1>
+    <p>
+      The Wallet package has two parts: a <strong>backend</strong> Laravel package
+      (<code>utd/wallet</code>) and a <strong>Flutter</strong> package (<code>wallet</code>). It
+      depends only on the Base seam (contract / facade / events / NullWallet), which already ships
+      in the Base project — no other package is required.
+    </p>
+
+    <h2>1. Backend package</h2>
+    <ol>
+      <li>
+        <strong>Add the package</strong> to the Base project. It lives at
+        <code>packages/wallet</code>; reference it as a path repository in the root
+        <code>composer.json</code> and register the PSR-4 autoload:
+        <pre><code>"repositories": [
+  { "type": "path", "url": "packages/wallet" }
+],
+"require": {
+  "utd/wallet": "*"
+},
+"autoload": {
+  "psr-4": { "Utd\\Wallet\\": "packages/wallet/src/" }
+},
+"autoload-dev": {
+  "psr-4": { "Utd\\Wallet\\Tests\\": "packages/wallet/tests/" }
+}</code></pre>
+      </li>
+      <li>
+        <strong>Install / refresh autoload:</strong>
+        <pre><code>composer require utd/wallet
+# or, if already present as a path repo:
+composer update utd/wallet
+composer dump-autoload</code></pre>
+        The service provider <code>Utd\Wallet\Providers\WalletServiceProvider</code> is
+        <strong>auto-discovered</strong> via the package's <code>extra.laravel.providers</code> — no
+        manual entry in <code>config/app.php</code> is required. It binds the Base
+        <code>WalletContract</code> to <code>DatabaseWallet</code> (or <code>NullWallet</code> when
+        disabled) and wires config, migrations, routes and translations.
+      </li>
+      <li>
+        <strong>Run the migrations</strong> (<code>user_wallets</code>,
+        <code>wallet_transactions</code>, <code>coins</code>, <code>payment_coins</code>,
+        <code>coin_logs</code>, <code>charges</code>):
+        <pre><code>php artisan migrate</code></pre>
+      </li>
+      <li>
+        <strong>Register the Filament plugin</strong> in
+        <code>app/Providers/Filament/AdminPanelProvider.php</code> so the Charges, Wallet
+        Transactions, Coins and Payment Coins resources appear under the "Wallet" group:
+        <pre><code>->plugin(\Utd\Wallet\Filament\WalletPlugin::make())</code></pre>
+      </li>
+      <li>
+        <strong>Enable the package in admin</strong> → <em>Packages</em>. While disabled
+        (<code>WALLET_ENABLED=false</code> or toggled off), the provider binds
+        <code>NullWallet</code>: balance reads return <code>0</code> and writes throw.
+      </li>
+    </ol>
+    <div class="note">
+      <strong>Config:</strong> <code>config/config.php</code> (merged as <code>wallet</code>) sets
+      <code>enabled</code>, <code>default_currency = coins</code> and
+      <code>currencies = ['coins']</code>. Add a string to <code>currencies</code> to support an
+      extra currency — <code>DatabaseWallet</code> serves it with no schema change.
+    </div>
+
+    <h2>2. Flutter package</h2>
+    <ol>
+      <li>
+        <strong>Add the path dependency</strong> in the app's <code>pubspec.yaml</code>:
+        <pre><code>dependencies:
+  wallet:
+    path: packages/wallet</code></pre>
+        then run <code>flutter pub get</code>.
+      </li>
+      <li>
+        <strong>Register the feature</strong> where the app builds its feature list:
+        <pre><code>import 'package:wallet/wallet.dart';
+
+// in the app's feature registry
+WalletFeature(),</code></pre>
+        Registering <code>WalletFeature</code> wires the wallet cubit/repository, adds the coin
+        balance card to the user's own profile (<code>UiSlot.userProfile</code>) and a drawer entry,
+        the <code>/wallet</code> route, the bundled <code>wallet.*</code> translations, and the UTD
+        Studio coin-card source. It is hidden automatically when the backend <code>wallet</code>
+        package is disabled (<code>packageSlug: 'wallet'</code>).
+      </li>
+    </ol>
+
+    <h2>3. Verify</h2>
+    <p>
+      Hit <code>GET /api/wallet/balances</code> and
+      <code>GET /api/wallet/transactions</code> (authenticated) — both should return the standard
+      envelope. In the app, the coin card should appear on your own profile and open the wallet
+      page with the (paginated) transaction history.
+    </p>
+  </div>
+</section>
+
+<hr>
+
+<!-- ============================ ARABIC ============================ -->
+<section dir="rtl" lang="ar">
+  <div class="lang">
+    <span class="tag">العربية</span>
+    <h1>تثبيت حزمة المحفظة</h1>
+    <p>
+      تتكوّن حزمة المحفظة من جزأين: حزمة <strong>الخلفية</strong> في لارافيل
+      (<code>utd/wallet</code>) وحزمة <strong>فلاتر</strong> (<code>wallet</code>). وهي تعتمد فقط
+      على بذرة القاعدة (العقد / الـ facade / الأحداث / NullWallet) الموجودة أصلًا في مشروع القاعدة
+      — فلا حاجة لأي حزمة أخرى.
+    </p>
+
+    <h2>١. حزمة الخلفية</h2>
+    <ol>
+      <li>
+        <strong>أضف الحزمة</strong> إلى مشروع القاعدة. مكانها <code>packages/wallet</code>؛ أشِر
+        إليها كمستودع مسار في <code>composer.json</code> الجذري وسجّل تحميل PSR-4:
+        <pre><code>"repositories": [
+  { "type": "path", "url": "packages/wallet" }
+],
+"require": {
+  "utd/wallet": "*"
+},
+"autoload": {
+  "psr-4": { "Utd\\Wallet\\": "packages/wallet/src/" }
+},
+"autoload-dev": {
+  "psr-4": { "Utd\\Wallet\\Tests\\": "packages/wallet/tests/" }
+}</code></pre>
+      </li>
+      <li>
+        <strong>ثبّت / حدّث التحميل التلقائي:</strong>
+        <pre><code>composer require utd/wallet
+# أو إن كانت مضافة مسبقًا كمستودع مسار:
+composer update utd/wallet
+composer dump-autoload</code></pre>
+        يتم <strong>اكتشاف</strong> مزوّد الخدمة
+        <code>Utd\Wallet\Providers\WalletServiceProvider</code> تلقائيًا عبر
+        <code>extra.laravel.providers</code> — فلا حاجة لإدخاله يدويًا في
+        <code>config/app.php</code>. وهو يربط <code>WalletContract</code> من القاعدة بـ
+        <code>DatabaseWallet</code> (أو <code>NullWallet</code> عند التعطيل) ويهيّئ الإعدادات
+        والترحيلات والمسارات والترجمات.
+      </li>
+      <li>
+        <strong>شغّل الترحيلات</strong> (<code>user_wallets</code>،
+        <code>wallet_transactions</code>، <code>coins</code>، <code>payment_coins</code>،
+        <code>coin_logs</code>، <code>charges</code>):
+        <pre><code>php artisan migrate</code></pre>
+      </li>
+      <li>
+        <strong>سجّل إضافة Filament</strong> في
+        <code>app/Providers/Filament/AdminPanelProvider.php</code> لتظهر موارد الشحنات ومعاملات
+        المحفظة والكوينز وكوينز الدفع ضمن مجموعة "المحفظة":
+        <pre><code>->plugin(\Utd\Wallet\Filament\WalletPlugin::make())</code></pre>
+      </li>
+      <li>
+        <strong>فعّل الحزمة من لوحة التحكم</strong> ← <em>الحزم</em>. وأثناء التعطيل
+        (<code>WALLET_ENABLED=false</code> أو الإيقاف من اللوحة) يربط المزوّد
+        <code>NullWallet</code>: تُعيد قراءة الرصيد <code>0</code> وتُطلِق الكتابة استثناء.
+      </li>
+    </ol>
+    <div class="note">
+      <strong>الإعداد:</strong> يضبط <code>config/config.php</code> (المدموج باسم
+      <code>wallet</code>) القيم <code>enabled</code> و<code>default_currency = coins</code> و
+      <code>currencies = ['coins']</code>. أضف سلسلة إلى <code>currencies</code> لدعم عملة إضافية —
+      ويقدّمها <code>DatabaseWallet</code> دون أي تغيير في المخطط.
+    </div>
+
+    <h2>٢. حزمة فلاتر</h2>
+    <ol>
+      <li>
+        <strong>أضف اعتماد المسار</strong> في <code>pubspec.yaml</code> الخاص بالتطبيق:
+        <pre><code>dependencies:
+  wallet:
+    path: packages/wallet</code></pre>
+        ثم نفّذ <code>flutter pub get</code>.
+      </li>
+      <li>
+        <strong>سجّل الميزة</strong> حيث يبني التطبيق قائمة ميزاته:
+        <pre><code>import 'package:wallet/wallet.dart';
+
+// في سجلّ ميزات التطبيق
+WalletFeature(),</code></pre>
+        تسجيل <code>WalletFeature</code> يربط مكعّب/مستودع المحفظة، ويضيف بطاقة رصيد الكوينز إلى
+        الملف الشخصي للمستخدم نفسه (<code>UiSlot.userProfile</code>) ومدخلًا في القائمة الجانبية،
+        ومسار <code>/wallet</code>، وترجمات <code>wallet.*</code> المضمّنة، ومصدر بطاقة الكوينز
+        في UTD Studio. وتُخفى تلقائيًا عند تعطيل حزمة <code>wallet</code> في الخلفية
+        (<code>packageSlug: 'wallet'</code>).
+      </li>
+    </ol>
+
+    <h2>٣. التحقّق</h2>
+    <p>
+      استدعِ <code>GET /api/wallet/balances</code> و<code>GET /api/wallet/transactions</code>
+      (بمصادقة) — يجب أن يعيدا الغلاف القياسي. وفي التطبيق يجب أن تظهر بطاقة الكوينز على ملفك
+      الشخصي وتفتح صفحة المحفظة مع تاريخ المعاملات (المقسّم لصفحات).
+    </p>
+  </div>
+</section>
+
+</body>
+</html>

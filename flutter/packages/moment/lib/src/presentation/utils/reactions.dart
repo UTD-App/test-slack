@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
 
-/// One Facebook-style reaction. [type] is what the backend stores/expects.
+/// One Facebook-style reaction. [type] is what the backend stores/expects;
+/// the localized display word comes from `MomentStrings.reactionLabelKey`.
 class MomentReaction {
   final String type;
   final String emoji;
-  final String label;
-  const MomentReaction(this.type, this.emoji, this.label);
+  const MomentReaction(this.type, this.emoji);
 }
 
 /// The 6 supported reactions, in display order. Order matters: the first one
 /// ('like') is the default for a plain tap.
 const momentReactions = <MomentReaction>[
-  MomentReaction('like', '👍', 'Like'),
-  MomentReaction('love', '❤️', 'Love'),
-  MomentReaction('haha', '😂', 'Haha'),
-  MomentReaction('wow', '😮', 'Wow'),
-  MomentReaction('sad', '😢', 'Sad'),
-  MomentReaction('angry', '😡', 'Angry'),
+  MomentReaction('like', '👍'),
+  MomentReaction('love', '❤️'),
+  MomentReaction('haha', '😂'),
+  MomentReaction('wow', '😮'),
+  MomentReaction('sad', '😢'),
+  MomentReaction('angry', '😡'),
 ];
 
 MomentReaction? reactionByType(String? type) {
