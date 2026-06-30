@@ -1,0 +1,43 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dart analyze *)",
+      "Bash(xargs grep -l \"class UTDMiniOverlayMachine\")",
+      "Bash(find \"C:\\\\Users\\\\CONNECT\\\\StudioProjects\\\\Eagle-Flutter\" -type f -name \"pubspec.yaml\" | head -5)",
+      "Read(//c/Users/CONNECT/StudioProjects/Eagle-Flutter/**)",
+      "Bash(grep -E \"\\\\.\\(dart|kt\\)$\")",
+      "Bash(xargs grep -l \"audio_room\\\\|AudioRoom\\\\|BackgroundService\")",
+      "Bash(cd c:/Users/CONNECT/StudioProjects/audio-room-sync && find backend -type f 2>/dev/null | head -20)",
+      "Read(//c/Users/CONNECT/StudioProjects/audio-room-sync/**)",
+      "Bash(mkdir -p backend)",
+      "Bash(cp -r c:/Users/CONNECT/StudioProjects/test-slack/backend/packages/audio-room/* backend/)",
+      "Bash(xargs grep -l \"utd_audio_room_kit\")",
+      "Bash(flutter clean *)",
+      "Bash(flutter pub *)",
+      "Bash(flutter build *)",
+      "Bash(grep -E \"\\\\.dart$\")",
+      "Bash(grep -n \"createRoomPage\\\\|Routes\\\\\\\\.createRoom\" \"C:\\\\Users\\\\CONNECT\\\\StudioProjects\\\\Eagle-Flutter\\\\lib\\\\src\\\\core\\\\routes\\\\routes_manager.dart\" -B 2 -A 5)",
+      "Bash(grep -r \"class AnimatedBuilder\" .flutter/)",
+      "Bash(grep -r \"AnimatedBuilder\" packages/audio-room/flutter/lib/)",
+      "Bash(flutter analyze *)",
+      "Bash(xargs grep -l \"AssetsManager\\\\|assets_manager\")",
+      "Bash(cp \"c:/Users/CONNECT/StudioProjects/Eagle-Flutter/assets/icons/ic_home_item_audio.webp\" \"c:/Users/CONNECT/StudioProjects/test-slack/flutter/packages/audio-room/flutter/assets/icons/ic_create_room.webp\")",
+      "Bash(ls -la .git)",
+      "Bash(git config *)",
+      "Bash(gh repo *)",
+      "Bash(git add *)",
+      "Bash(git ls-remote *)",
+      "Read(//tmp/_audio_room_check/**)",
+      "Bash(rm -rf /tmp/audio-room-push /tmp/_audio_room_check)",
+      "Bash(git clone *)",
+      "Bash(cp -r \"c:/Users/CONNECT/StudioProjects/test-slack/flutter/packages/audio-room/flutter/\"* /tmp/audio-room-push/flutter/ 2>&1)",
+      "Read(//tmp/audio-room-check/**)",
+      "Bash(cat \"c:/Users/CONNECT/AppData/Local/Temp/audio-room-check/load-test/package.json\")",
+      "Read(//c/Users/CONNECT/AppData/Local/Temp/audio-room-check/load-test/**)",
+      "Bash(xargs grep -l \"translation\\\\|locale\")"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\CONNECT\\StudioProjects\\Eagle-Flutter\\assets\\icons"
+    ]
+  }
+}
