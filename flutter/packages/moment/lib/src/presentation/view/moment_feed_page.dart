@@ -50,12 +50,23 @@ class MomentFeedPage extends StatelessWidget {
           ),
         ),
       ),
+      // The host shell (test-slack) draws its bottom nav OVER this screen
+      // (`extendBody: true`), and a nested Scaffold's FAB ignores that bar's
+      // height — so a plain FAB lands 16px from the screen bottom, hidden BEHIND
+      // the frosted nav bar. Lift it by MediaQuery.padding.bottom (the bar
+      // height the shell injects; just the system inset in the standalone app)
+      // so the "add moment" button always clears the bar.
       floatingActionButton: showAdd
-          ? FloatingActionButton(
-              backgroundColor: ColorManager.lumiaAccent,
-              foregroundColor: Colors.white,
-              onPressed: () => context.push('/moment/add'),
-              child: const Icon(Icons.add),
+          ? Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).padding.bottom,
+              ),
+              child: FloatingActionButton(
+                backgroundColor: ColorManager.lumiaAccent,
+                foregroundColor: Colors.white,
+                onPressed: () => context.push('/moment/add'),
+                child: const Icon(Icons.add),
+              ),
             )
           : null,
       body: const GradientBackground(
