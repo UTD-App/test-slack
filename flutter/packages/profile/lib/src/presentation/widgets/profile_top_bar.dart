@@ -54,9 +54,9 @@ class ProfileTopBar extends StatelessWidget {
                 SizedBox(width: 8.w),
                 _circleButton(
                   icon: Icons.edit_outlined,
-                  // Opens the server-driven edit-profile screen (`/profile` →
-                  // StacDynamicScreen 'edit_profile'). The form self-sources its
-                  // covers from the profile API, so no route args are needed.
+                  // Opens the native edit-profile screen (`/profile` →
+                  // EditProfileForm). The form self-sources its covers from the
+                  // profile API, so no route args are needed.
                   onTap: () => context.push('/profile'),
                 ),
               ],

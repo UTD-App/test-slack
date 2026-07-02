@@ -59,18 +59,14 @@ GoRouter createRouter(FeatureRegistry registry) {
           userId: int.tryParse(state.pathParameters['id'] ?? '') ?? 0,
         ),
       ),
-      // Edit profile — server-driven (UTD Studio `edit_profile` screen), with the
-      // native [EditProfileForm] as the fallback until that screen is published.
+      // Edit profile — native only (UTD Studio removed from the profile package).
       // The form is too rich for Stac primitives (image pick+upload, multi-cover,
-      // save-with-state), so the Studio screen just hosts the `core.editProfileForm`
-      // node — same pattern as the self-profile landing. Both the Me-landing edit
-      // pencils (core.editProfile action) and the full-profile pencil push here.
+      // save-with-state) anyway. Both the Me-landing edit pencils (core.editProfile
+      // action) and the full-profile pencil push here.
       GoRoute(
-          path: '/profile',
-          builder: (context, state) => const StacDynamicScreen(
-                screenName: 'edit_profile',
-                fallback: EditProfileForm(),
-              )),
+        path: '/profile',
+        builder: (context, state) => const EditProfileForm(),
+      ),
       GoRoute(path: '/settings', builder: (context, state) => const SettingsScreen()),
       // Language picker reached from the (server-driven) Settings screen, whose
       // "Language" row fires `core.navigate → /language-screen` (see the core

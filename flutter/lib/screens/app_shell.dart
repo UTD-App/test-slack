@@ -184,16 +184,14 @@ class _AppShellState extends State<AppShell> {
     // identical to the standalone app, same /users/{id}/profile data + behaviours
     // — falling back to the base placeholder when the Profile package is absent.
     if (tab.screen == 'user_profile' || tab.screen == 'profile') {
-      // Server-driven (Studio composes the screen and places the rich
-      // `profile.card` widget — see ProfileCardParser), with the package's native
-      // landing as a FALLBACK until the screen is published / if offline.
-      return StacDynamicScreen(
-        screenName: tab.screen,
-        fallback: Builder(
-          builder: (context) =>
-              widget.registry.widgetRegistry.build(kSelfProfileWidget, context) ??
-                  const SelfProfileFallback(),
-        ),
+      // Native-only (UTD Studio removed from the profile package): render the
+      // package's native landing directly via the WidgetRegistry seam, ignoring
+      // any published `user_profile`/`profile` Studio screen. Falls back to the
+      // base placeholder when the Profile package is absent.
+      return Builder(
+        builder: (context) =>
+            widget.registry.widgetRegistry.build(kSelfProfileWidget, context) ??
+                const SelfProfileFallback(),
       );
     }
     return StacDynamicScreen(screenName: tab.screen);
